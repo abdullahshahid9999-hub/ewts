@@ -1,0 +1,271 @@
+// ═══════════════════════════════════════════════════════════
+// EAST & WEST TRAVEL — canonical Prisma schema
+// Shared by all three apps (public site, agent portal, admin panel)
+// running in this one repo. Field names match the existing live
+// system exactly — do not rename without updating everywhere.
+// ═══════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── PUBLIC CONTENT ──
+
+model Package {
+  id          String   @id @default(uuid())
+  category    String   // "umrah" | "tours"
+  name        String
+  duration    String?
+  price       String?
+  priceNote   String?  @map("price_note")
+  destination String?
+  depDate     String?  @map("dep_date")
+  retDate     String?  @map("ret_date")
+  airline     String?
+  route       String?
+  hotels      String?
+  includes    String?
+  excludes    String?
+  imageUrl    String?  @map("image_url")
+  featured    Boolean  @default(false)
+  status      String   @default("active") // active | inactive
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("packages")
+}
+
+model GroupFlight {
+  id            String   @id @default(uuid())
+  flightNo      String?  @map("flight_no")
+  airline       String
+  airlineCode   String?  @map("airline_code")
+  route         String
+  depDate       String?  @map("dep_date")
+  arrDate       String?  @map("arr_date")
+  depTime       String?  @map("dep_time")
+  baggage       String?
+  meal          String?
+  price         String
+  airlineLogoUrl String? @map("airline_logo_url")
+  seats         Int      @default(0)
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  agentBookings AgentBooking[]
+
+  @@map("group_flights")
+}
+
+model VisaService {
+  id             String   @id @default(uuid())
+  title          String
+  country        String
+  type           String   // tourist | umrah | business | work
+  price          String?
+  days           String?
+  validity       String?
+  maxStay        String?  @map("max_stay")
+  processingTime String?  @map("processing_time")
+  requirements   String?
+  countryFlag    String?  @map("country_flag")
+  countryImage   String?  @map("country_image")
+  status         String   @default("active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("visa_services")
+}
+
+model InsuranceCompany {
+  id          String   @id @default(uuid())
+  name        String
+  logoUrl     String?  @map("logo_url")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  plans InsurancePlan[]
+
+  @@map("insurance_companies")
+}
+
+model InsurancePlan {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company InsuranceCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rates   InsuranceRate[]
+
+  @@map("insurance_plans")
+}
+
+model InsuranceRate {
+  id              String   @id @default(uuid())
+  planId          String   @map("plan_id")
+  pricePkr        Int      @map("price_pkr")
+  coverageDetails String?  @map("coverage_details")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  plan InsurancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("insurance_rates")
+}
+
+model Blog {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  category    String?
+  coverImage  String?  @map("cover_image")
+  excerpt     String?
+  content     String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("blogs")
+}
+
+// ── DIRECT (WALK-IN) BOOKINGS ──
+
+model Booking {
+  id           String   @id @default(uuid())
+  bookingRef   String   @unique @map("booking_ref")
+  customerName String?  @map("customer_name")
+  service      String?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  travellers Traveller[]
+
+  @@map("bookings")
+}
+
+model Traveller {
+  id         String  @id @default(uuid())
+  bookingId  String  @map("booking_id")
+  fullName   String  @map("full_name")
+  passportNo String? @map("passport_no")
+  cnic       String?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("travellers")
+}
+
+// ── AGENTS ──
+
+model Agent {
+  id           String   @id @default(uuid())
+  agentCode    String   @unique @map("agent_code")
+  fullName     String   @map("full_name")
+  email        String   @unique
+  phone        String?
+  passwordHash String   @map("password_hash")
+  balance      Int      @default(0)      // in PKR — admin-write-only
+  creditLimit  Int      @default(0) @map("credit_limit") // admin-write-only
+  tier         String   @default("standard") // admin-write-only
+  status       String   @default("active")   // active | suspended
+  logoUrl      String?  @map("logo_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  bookings     AgentBooking[]
+  transactions AgentTransaction[]
+  otps         AgentOtp[]
+  paymentSlips PaymentSlip[]
+
+  @@map("agents")
+}
+
+model AgentBooking {
+  id                String    @id @default(uuid())
+  agentId           String    @map("agent_id")
+  serviceType       String    @map("service_type") // "umrah" | "group_ticket" | "insurance" — exact strings, do not rename
+  groupFlightId     String?   @map("group_flight_id")
+  status            String    @default("pending") // pending | confirmed | issue_requested | issued | cancelled
+  sellPrice         Int       @map("sell_price")
+  commission        Int       @default(0)
+  bookingRef        String    @unique @map("booking_ref")
+  expiresAt         DateTime? @map("expires_at")
+  issueRequestedAt  DateTime? @map("issue_requested_at")
+  issueRequestedBy  String?   @map("issue_requested_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  agent       Agent        @relation(fields: [agentId], references: [id])
+  groupFlight GroupFlight? @relation(fields: [groupFlightId], references: [id])
+
+  @@map("agent_bookings")
+}
+
+model AgentTransaction {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  amount    Int
+  type      String   // debit | credit
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@map("agent_transactions")
+}
+
+// Backend-only table. No client (public/agent/admin frontend) queries this
+// directly — only the OTP request/verify API routes touch it, using the
+// database connection on the server. See security notes in the agent
+// portal brief: OTP codes are generated + verified entirely server-side.
+model AgentOtp {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  otpCode   String   @map("otp_code")
+  purpose   String   // "issue_request" | "password_reset"
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@map("agent_otps")
+}
+
+model PaymentSlip {
+  id           String   @id @default(uuid())
+  agentId      String   @map("agent_id")
+  amount       Int
+  slipImageUrl String?  @map("slip_image_url")
+  status       String   @default("pending") // pending | approved | rejected
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@map("payment_slips")
+}
+
+// ── ADMIN USERS ──
+// Separate from Agent — admins are internal staff, gated additionally by
+// the ADMIN_EMAILS allow-list at the application layer (see admin panel
+// brief's security section), not just by having a row in this table.
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String?  @map("full_name")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}
