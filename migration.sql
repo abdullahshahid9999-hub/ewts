@@ -2,7 +2,7 @@
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE packages (
+CREATE TABLE IF NOT EXISTS packages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   category TEXT NOT NULL,
   name TEXT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE packages (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE group_flights (
+CREATE TABLE IF NOT EXISTS group_flights (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   flight_no TEXT, airline TEXT NOT NULL, airline_code TEXT, route TEXT NOT NULL,
   dep_date TEXT, arr_date TEXT, dep_time TEXT, baggage TEXT, meal TEXT,
@@ -25,7 +25,7 @@ CREATE TABLE group_flights (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE visa_services (
+CREATE TABLE IF NOT EXISTS visa_services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL, country TEXT NOT NULL, type TEXT NOT NULL,
   price TEXT, days TEXT, validity TEXT, max_stay TEXT, processing_time TEXT,
@@ -35,27 +35,27 @@ CREATE TABLE visa_services (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE insurance_companies (
+CREATE TABLE IF NOT EXISTS insurance_companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL, logo_url TEXT, description TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE insurance_plans (
+CREATE TABLE IF NOT EXISTS insurance_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES insurance_companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL, description TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE insurance_rates (
+CREATE TABLE IF NOT EXISTS insurance_rates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   plan_id UUID NOT NULL REFERENCES insurance_plans(id) ON DELETE CASCADE,
   price_pkr INT NOT NULL, coverage_details TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE blogs (
+CREATE TABLE IF NOT EXISTS blogs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL, slug TEXT NOT NULL UNIQUE, category TEXT,
   cover_image TEXT, excerpt TEXT, content TEXT,
@@ -64,7 +64,7 @@ CREATE TABLE blogs (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_ref TEXT NOT NULL UNIQUE, customer_name TEXT, service TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
@@ -72,13 +72,13 @@ CREATE TABLE bookings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE travellers (
+CREATE TABLE IF NOT EXISTS travellers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id UUID NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL, passport_no TEXT, cnic TEXT
 );
 
-CREATE TABLE agents (
+CREATE TABLE IF NOT EXISTS agents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_code TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE, phone TEXT, password_hash TEXT NOT NULL,
@@ -89,7 +89,7 @@ CREATE TABLE agents (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE agent_bookings (
+CREATE TABLE IF NOT EXISTS agent_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES agents(id),
   service_type TEXT NOT NULL,
@@ -102,14 +102,14 @@ CREATE TABLE agent_bookings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE agent_transactions (
+CREATE TABLE IF NOT EXISTS agent_transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES agents(id),
   amount INT NOT NULL, type TEXT NOT NULL, note TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE agent_otps (
+CREATE TABLE IF NOT EXISTS agent_otps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES agents(id),
   otp_code TEXT NOT NULL, purpose TEXT NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE agent_otps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE payment_slips (
+CREATE TABLE IF NOT EXISTS payment_slips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   agent_id UUID NOT NULL REFERENCES agents(id),
   amount INT NOT NULL, slip_image_url TEXT,
@@ -126,7 +126,7 @@ CREATE TABLE payment_slips (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE admin_users (
+CREATE TABLE IF NOT EXISTS admin_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
