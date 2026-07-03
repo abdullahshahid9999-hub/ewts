@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gold: #D4A843;
+  --gold-l: #F0C050;
+  --gold-bg: rgba(212,168,67,0.08);
+  --navy: #071120;
+  --bg: #F4F3EF;
+  --white: #FFFFFF;
+  --surface: #FAFAF7;
+  --text: #14142B;
+  --text2: #3D3D5C;
+  --muted: #7A7A95;
+  --bdr: #E4DFD4;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-l);
+  --color-navy: var(--navy);
+  --color-bg: var(--bg);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-muted: var(--muted);
+  --color-border: var(--bdr);
+  --font-display: var(--font-cormorant);
+  --font-body: var(--font-jakarta);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(180deg, #FAFAF7 0%, var(--bg) 340px);
+  color: var(--text);
+  font-family: var(--font-jakarta), sans-serif;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-cormorant), serif;
 }
