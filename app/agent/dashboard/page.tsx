@@ -36,6 +36,15 @@ function DashboardInner() {
             View and manage Umrah, group ticket, and insurance bookings.
           </p>
         </Link>
+        <Link
+          href="/agent/profile"
+          className="rounded-2xl border border-[var(--bdr)] bg-white p-6 shadow-sm transition hover:border-[var(--gold)]"
+        >
+          <h2 className="font-display text-lg text-[var(--navy)]">Profile</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            View your details and change your password.
+          </p>
+        </Link>
       </div>
 
       <p className="mt-6 text-xs text-[var(--muted)]">

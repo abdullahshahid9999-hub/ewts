@@ -67,6 +67,13 @@ export default function AgentLoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <a
+          href="/agent/forgot-password"
+          className="mt-4 block text-center text-sm text-[var(--muted)] hover:text-[var(--gold)]"
+        >
+          Forgot your password?
+        </a>
       </div>
     </div>
   );
