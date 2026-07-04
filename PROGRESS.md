@@ -178,7 +178,56 @@ document upload. Admin panel UI is entirely untouched this session — still
 just the one packages CRUD route from last session, no UI, no other content
 types wired.
 
-## RESOLVED: commission calculation (was blocking item 4)
+## Session 3 update, continued — Admin Panel (item 4) built out
+
+All 6 content types now have full CRUD, matching the packages pattern:
+visa-services, group-flights, blogs, insurance (3-level company→plan→rate),
+plus packages from before. Also built: agent management (create agent,
+edit balance/creditLimit/tier/status — this is the ONLY UI/route path that
+can write those fields), per-agent commission-rate setter, agent-bookings
+review (filter + mark issued/cancel), payment-slips review (approve credits
+balance + writes an AgentTransaction atomically, reject just closes it out).
+
+Admin auth client (`lib/adminAuthClient.tsx`) mirrors the agent one —
+same in-memory-token-only design, same silent-refresh-on-401 pattern.
+Added missing `/api/admin/refresh` and `/api/admin/logout` routes (didn't
+exist before, login route existed but nothing to refresh/end the session).
+
+`lib/imageCompression.ts` — client-side compression (canvas resize to
+1280px + JPEG q0.8) used by every admin CRUD form with an image field.
+This is R2 item 5's client half; the server half (`lib/r2.ts`,
+`uploadToR2()`) already existed from an earlier session.
+
+**Not done in admin panel**: finance/reporting dashboard (aggregate
+revenue/commission views — brief mentions "finance reporting" as a
+sub-bullet, no other spec on what it should show; whoever picks this up
+next should decide what metrics matter, or ask). No pagination on any
+list (fine at current data volumes, will need it eventually). No
+bulk actions. Admin login page doesn't have a "forgot password" flow
+(brief didn't ask for one for admins, only agents — deliberately skipped).
+
+## R2 (item 5) — effectively done
+Server upload (`lib/r2.ts`) already existed; client compression now added
+and wired into every admin image field. Nothing else specified in the
+brief for R2 beyond this.
+
+## Deploy (item 6) — not started, and genuinely can't be from here
+This requires a Render account login, DNS access to Cloudflare, and the
+actual domain cutover — none of which are things an AI session can do
+without a human at the keyboard for the account/credential steps. This is
+a "stop and hand back" item, not a "keep going" item.
+
+## Where this leaves the whole project
+Items 1 (build verify — blocked on sandbox network, needs re-run
+elsewhere), 3 (agent portal), 4 (admin panel), and 5 (R2) are functionally
+complete pending a real `prisma generate` + build pass. Item 2 (public
+site) was already done. Item 6 (deploy) needs a human.
+
+**The single most important next step, above all remaining polish**: get
+this onto a machine that can reach `binaries.prisma.sh` (Render's own
+build step will do it) and run the real build. Nothing above has been
+verified beyond `tsc --noEmit` against a client-less Prisma import — real
+runtime behavior against the live Postgres database is still unverified.
 Answered by the project owner directly:
 
 - Commission is **per-agent, per-service-type**, admin-configured, either a
