@@ -135,3 +135,37 @@ someone still needs to build the React pages, wire up forms, and replicate
 the CRUD-route pattern across the remaining five content models. I'd
 estimate this is roughly 25-35% of the total remaining work described in
 the brief, concentrated on the security-sensitive backend pieces first.
+
+## RESOLVED: commission calculation (was blocking item 4)
+Answered by the project owner directly:
+
+- Commission is **per-agent, per-service-type**, admin-configured, either a
+  **flat PKR amount** (e.g. Amazing Holidays gets 2000 PKR flat per flight
+  ticket, 15,000 PKR flat per Umrah booking) or a **percentage** (e.g. 30%
+  on insurance).
+- Admin can change an agent's rate at any time (relationship improves,
+  target hit, etc.) — but changing it **only affects future bookings**.
+  Already-created bookings keep the commission they were created with.
+
+Implemented:
+- `prisma/schema.prisma`: new `AgentCommissionRate` model — one row per
+  `(agentId, serviceType)` (unique constraint), `rateType: "fixed" |
+  "percentage"`, `value: Int`. Admin upserts this row to set/change a rate;
+  there is no history table because the *booking* itself is the history —
+  see below.
+- `lib/commission.ts`: `calculateCommission(agentId, serviceType, sellPrice)`
+  — looks up the current rate and returns the computed PKR amount. Returns
+  0 (with a console warning) if no rate is configured yet for that
+  agent+serviceType, rather than throwing — don't let a missing rate config
+  block booking creation, but it should be visibly wrong and get noticed.
+- `app/api/agent/bookings/route.ts`: now calls `calculateCommission()` once,
+  at booking-creation time, and stores the result directly on
+  `AgentBooking.commission`. This is a **snapshot** — never recompute it
+  later from a booking's serviceType + current rate, that would retroactively
+  change historical commission whenever admin updates a rate, which is
+  exactly what the owner said should NOT happen.
+
+**Still needed** (admin panel work, not yet built): a UI + API route for
+admin to view/set each agent's `AgentCommissionRate` rows per service type
+(simple upsert on `(agentId, serviceType)`). Follow the same JWT+allow-list
+pattern as the other admin routes.

@@ -165,6 +165,26 @@ model Traveller {
 
 // ── AGENTS ──
 
+// Per-agent, per-service-type commission rate, set by admin. One row per
+// (agent, serviceType) — updating it is an upsert, so admin can change an
+// agent's rate any time (e.g. relationship improves, target hit). This
+// table is only ever the CURRENT rate — see AgentBooking.commission below
+// for why past bookings are unaffected by rate changes.
+model AgentCommissionRate {
+  id          String   @id @default(uuid())
+  agentId     String   @map("agent_id")
+  serviceType String   @map("service_type") // "umrah" | "group_ticket" | "insurance"
+  rateType    String   @map("rate_type")    // "fixed" (flat PKR amount) | "percentage" (of sell_price)
+  value       Int      // fixed: PKR amount, e.g. 2000 or 15000. percentage: whole number, e.g. 30 for 30%
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+
+  @@unique([agentId, serviceType])
+  @@map("agent_commission_rates")
+}
+
 model Agent {
   id           String   @id @default(uuid())
   agentCode    String   @unique @map("agent_code")
@@ -180,7 +200,8 @@ model Agent {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  bookings     AgentBooking[]
+  bookings        AgentBooking[]
+  commissionRates AgentCommissionRate[]
   transactions AgentTransaction[]
   otps         AgentOtp[]
   paymentSlips PaymentSlip[]
@@ -195,6 +216,11 @@ model AgentBooking {
   groupFlightId     String?   @map("group_flight_id")
   status            String    @default("pending") // pending | confirmed | issue_requested | issued | cancelled
   sellPrice         Int       @map("sell_price")
+  // Snapshot of the agent's commission rate AT THE TIME this booking was
+  // created (computed via lib/commission.ts from AgentCommissionRate).
+  // Deliberately NOT recalculated later — if admin changes the agent's
+  // rate afterward, only future bookings use the new rate; this row keeps
+  // whatever was correct when it was made.
   commission        Int       @default(0)
   bookingRef        String    @unique @map("booking_ref")
   expiresAt         DateTime? @map("expires_at")

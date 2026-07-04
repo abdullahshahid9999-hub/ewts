@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAgent, stripAgentWriteOnlyFields } from "@/lib/apiAuth";
+import { calculateCommission } from "@/lib/commission";
 
 const VALID_SERVICE_TYPES = ["umrah", "group_ticket", "insurance"] as const;
 const VALID_STATUSES = ["pending", "confirmed", "issue_requested", "issued", "cancelled"] as const;
@@ -80,16 +81,19 @@ export async function POST(req: NextRequest) {
 
   const groupFlightId = typeof body.groupFlightId === "string" ? body.groupFlightId : undefined;
 
+  // Commission is a SNAPSHOT computed right now from the agent's current
+  // rate for this service type (admin-configured, can change over time —
+  // see lib/commission.ts). Once stored on this row it never changes again,
+  // even if admin updates the agent's rate later.
+  const commission = await calculateCommission(agent.id, serviceType, sellPrice);
+
   const booking = await prisma.agentBooking.create({
     data: {
       agentId: agent.id,
       serviceType,
       groupFlightId,
       sellPrice,
-      // Commission is computed/assigned by business rules elsewhere
-      // (e.g. tier-based rate lookups), never taken verbatim from the
-      // agent's request — left at the schema default here pending that
-      // rule being wired in from the agent's actual commission tier.
+      commission,
       bookingRef: generateBookingRef(),
       status: "pending",
       expiresAt: computeExpiresAt(serviceType),
