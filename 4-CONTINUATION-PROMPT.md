@@ -1,5 +1,32 @@
 # EWTS Rebuild — Continuation Brief (hand this to a new AI session)
 
+## How to work through this brief (read this first)
+The person giving you this prompt is only giving you **this one message** —
+they are not going to keep re-prompting you step by step. Treat this as a
+standing goal, not a single task:
+
+1. Work through the "Remaining work" section **in order, one item at a time**.
+2. For each item: build it, then verify it (run the build/typecheck, re-read
+   your own code for the security rules below), fix anything broken, commit
+   with a clear message, and push.
+3. When one numbered item is genuinely done and verified, **immediately move
+   to the next one** — don't stop and wait to be told "continue." Keep going
+   until the whole "Remaining work" list is complete or you hit something you
+   truly cannot proceed past.
+4. Only stop and ask the person a question when you are **actually blocked**
+   — e.g. you need a credential/secret you don't have, or a genuine business
+   decision that isn't answered anywhere in this file or the four spec files
+   in the repo root. Don't stop to ask permission for things this brief
+   already answers, and don't stop just to report minor progress.
+5. After each meaningful chunk of work, leave a short status note as a commit
+   message and/or a `PROGRESS.md` file in the repo root (create it if it
+   doesn't exist) listing what's done, what's next, and anything you got
+   stuck on — so the human (or the next AI session, if this one runs out of
+   room) can pick up the thread without re-reading all your commits.
+6. When truly everything in "Remaining work" is complete and the build is
+   green, say so clearly and stop — don't invent extra scope beyond what's
+   specified here and in the four spec files.
+
 ## What this project is
 Full rewrite of **East & West Travel Services** (eastwestpk.com) — a Faisalabad,
 Pakistan travel agency (Umrah, tours, group flights, visa, insurance) — from a
