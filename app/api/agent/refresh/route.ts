@@ -19,5 +19,14 @@ export async function POST(req: NextRequest) {
   }
 
   const accessToken = signAccessToken({ sub: agent.id, role: "agent" });
-  return NextResponse.json({ accessToken });
+  return NextResponse.json({
+    accessToken,
+    agent: {
+      id: agent.id,
+      agentCode: agent.agentCode,
+      fullName: agent.fullName,
+      email: agent.email,
+      tier: agent.tier,
+    },
+  });
 }

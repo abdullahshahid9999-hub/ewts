@@ -136,6 +136,48 @@ the CRUD-route pattern across the remaining five content models. I'd
 estimate this is roughly 25-35% of the total remaining work described in
 the brief, concentrated on the security-sensitive backend pieces first.
 
+## Session 3 update
+
+### Build blocker — still unresolved, confirmed again
+Re-ran `npm install && npx prisma generate` — identical `403 Forbidden` on
+`binaries.prisma.sh`. This is a hard sandbox network-allowlist restriction,
+not something retrying or flags fix. **Needs to be run on Render's build
+step or any unrestricted machine.** `npx tsc --noEmit` was run anyway
+without a generated client — it correctly errors on the missing
+`PrismaClient` export and on a handful of implicit-`any` map callbacks in
+the public pages (`app/page.tsx`, `app/tours/page.tsx`, `app/umrah/page.tsx`,
+`app/visa/page.tsx`, `app/group-tickets/page.tsx`, `app/insurance/page.tsx`,
+`app/blog/page.tsx`). These are very likely just fallout from the missing
+Prisma types (once generate succeeds, `findMany()` results should be typed
+and these should resolve on their own) — but **whoever runs the real build
+should check these six spots specifically** in case any genuinely need an
+explicit type annotation.
+
+### Agent portal UI — started (login + dashboard + bookings list done)
+- `lib/agentAuthClient.tsx` — client-side auth context. Access token is kept
+  in React state only, **never** localStorage/sessionStorage. Refresh token
+  lives in the httpOnly cookie the API already sets; a silent refresh runs
+  on page load and `agentFetch()` retries once on a 401 after refreshing.
+- `components/AgentGuard.tsx` — redirects to `/agent/login` if unauthenticated.
+- `app/agent/layout.tsx` — wraps all `/agent/*` pages in the auth provider.
+- `app/agent/login/page.tsx` — login form, calls `/api/agent/login`.
+- `app/agent/dashboard/page.tsx` — welcome screen + nav card to bookings.
+- `app/agent/bookings/page.tsx` — category + status filters as **one**
+  combined query (not two independent fetches) — this is deliberately built
+  to match the API's single where-clause, guarding against the legacy bug
+  the brief calls out.
+- **Bug found and fixed**: `app/api/agent/refresh/route.ts` returned only
+  `{ accessToken }`, not the agent profile — a page reload would silently
+  drop the display name/tier since the client expects the same shape login
+  returns. Fixed to return both, matching the login route.
+
+**Still not built for the agent portal**: booking creation flows
+(umrah/group-ticket/insurance forms), the issue-request UI + OTP entry
+screen, password-reset (pre-login OTP) flow, profile/password-change page,
+document upload. Admin panel UI is entirely untouched this session — still
+just the one packages CRUD route from last session, no UI, no other content
+types wired.
+
 ## RESOLVED: commission calculation (was blocking item 4)
 Answered by the project owner directly:
 
