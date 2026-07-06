@@ -105,10 +105,13 @@ const DEST_CHIPS = [
   "Bali Indonesia", "Family Packages", "Visa Services",
 ];
 
-function PlaceholderImg({ label }: { label: string }) {
+function HeroImg({ src, label }: { src: string; label: string }) {
   return (
-    <div className="relative h-40 rounded-xl bg-gradient-to-br from-[var(--gold-bg)] to-white border border-border flex items-end p-3">
-      <span className="text-xs font-semibold text-text2">{label}</span>
+    <div className="relative h-40 rounded-xl overflow-hidden border border-border flex items-end">
+      <Image src={src} alt={label} fill className="object-cover" />
+      <span className="relative z-10 text-xs font-semibold text-white bg-black/50 px-2 py-1 m-3 rounded">
+        {label}
+      </span>
     </div>
   );
 }
@@ -156,9 +159,9 @@ export default async function Home() {
 
         {/* Hero images */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 relative">
-          <PlaceholderImg label="Makarem Ajyad Makkah" />
-          <PlaceholderImg label="Pullman ZamZam Madinah" />
-          <PlaceholderImg label="Premium Rooms" />
+          <HeroImg src="/images/makarem_1.jpeg" label="Makarem Ajyad Makkah" />
+          <HeroImg src="/images/pullman_1.jpeg" label="Pullman ZamZam Madinah" />
+          <HeroImg src="/images/makarem_2.jpeg" label="Premium Rooms" />
           <div className="absolute -top-3 right-3 bg-white border border-border rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
             4.9★ Customer Rating
           </div>

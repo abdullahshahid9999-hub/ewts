@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { waLink } from "@/lib/whatsapp";
 
 const links = [
@@ -16,7 +17,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-border">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-tight">
+        <Link href="/" className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight">
+          <Image src="/images/logo.jpg" alt="East & West Travel" width={36} height={36} className="rounded-md" />
           East <span className="text-gold italic">&amp;</span> West
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-text2">
