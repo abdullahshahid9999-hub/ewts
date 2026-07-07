@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +11,7 @@ async function getPackages() {
   try {
     return await prisma.package.findMany({
       where: { category: "umrah", status: "active" },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     });
   } catch {
     return [];
@@ -23,25 +24,52 @@ export default async function UmrahPage() {
   return (
     <>
       <Navbar />
-      <section className="max-w-6xl mx-auto px-6 pt-16 pb-6">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">
-          Umrah Packages
+
+      {/* HERO */}
+      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-14">
+        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+          Spiritual Journeys
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-4">
-          Guided Umrah journeys, <span className="italic text-gold">handled with care.</span>
+        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+          Umrah &amp; Hajj <span className="italic text-gold">Packages</span>
         </h1>
-        <p className="text-muted max-w-2xl">
-          All-inclusive packages covering flights, visa, hotels and ziyarat
-          transport. WhatsApp us for the latest availability and pricing.
+        <p className="text-white/70 max-w-xl mx-auto mb-4">
+          Perform your sacred duty with comfort and complete peace of mind
+        </p>
+        <p className="text-white/50 text-sm">
+          <Link href="/" className="hover:text-gold">Home</Link>
+          <span className="mx-2">/</span>
+          <span>Umrah &amp; Hajj</span>
         </p>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      {/* FILTER TABS — cosmetic only: the Package model doesn't distinguish
+          Umrah vs Hajj as a subtype, so this filters Featured vs All within
+          the "umrah" category rather than a true Hajj split. */}
+      <section className="max-w-6xl mx-auto px-6 pt-10">
+        <div className="flex flex-wrap gap-2 justify-center mb-10 text-sm">
+          <span className="rounded-full bg-gold text-black font-semibold px-4 py-1.5">All Packages</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Umrah</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Hajj</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">⭐ Featured</span>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-6 pb-16">
         {packages.length === 0 ? (
-          <p className="text-muted">
-            No Umrah packages are listed right now — WhatsApp us for current
-            availability.
-          </p>
+          <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
+            <p className="text-4xl mb-4">🕌</p>
+            <h3 className="font-display text-xl font-semibold mb-2">No Packages Found</h3>
+            <p className="text-muted text-sm mb-6">Contact us for custom Umrah &amp; Hajj quotes.</p>
+            <a
+              href={waLink("Assalam o Alaikum! Please share Umrah package details.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+            >
+              Ask on WhatsApp
+            </a>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {packages.map((pkg) => (
@@ -53,37 +81,37 @@ export default async function UmrahPage() {
                   {pkg.imageUrl && (
                     <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
                   )}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    <span className="bg-[var(--navy)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
+                    {pkg.featured && (
+                      <span className="bg-gold text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
+                    )}
+                  </div>
                 </div>
                 <div className="p-5 flex flex-col flex-1">
                   <h3 className="font-semibold text-lg mb-1">{pkg.name}</h3>
                   <p className="text-muted text-sm mb-2">
                     {pkg.duration} {pkg.destination ? `· ${pkg.destination}` : ""}
                   </p>
-                  {pkg.hotels && (
-                    <p className="text-muted text-sm mb-2">Hotels: {pkg.hotels}</p>
-                  )}
+                  {pkg.hotels && <p className="text-muted text-sm mb-2">Hotels: {pkg.hotels}</p>}
                   {pkg.includes && (
                     <p className="text-sm mb-3">
-                      <span className="font-semibold">Includes: </span>
+                      <span className="font-semibold">What&apos;s Included: </span>
                       {pkg.includes}
                     </p>
                   )}
                   <div className="mt-auto flex items-center justify-between pt-2">
                     <span className="font-display text-xl font-semibold text-gold">
                       {pkg.price}
-                      {pkg.priceNote && (
-                        <span className="text-muted text-xs font-sans font-normal ml-1">
-                          {pkg.priceNote}
-                        </span>
-                      )}
+                      <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
                     </span>
                     <a
-                      href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" Umrah package.`)}
+                      href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-semibold text-gold hover:underline"
                     >
-                      Enquire →
+                      Book This Package on WhatsApp →
                     </a>
                   </div>
                 </div>
@@ -92,6 +120,20 @@ export default async function UmrahPage() {
           </div>
         )}
       </section>
+
+      {/* CTA */}
+      <section className="bg-[var(--surface)] text-center py-16 px-6">
+        <p className="font-semibold mb-4">Questions? We reply instantly on WhatsApp</p>
+        <a
+          href={waLink("Assalam o Alaikum! I have a question.")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+        >
+          Chat on WhatsApp
+        </a>
+      </section>
+
       <Footer />
     </>
   );
