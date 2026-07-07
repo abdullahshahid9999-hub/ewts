@@ -105,11 +105,11 @@ const DEST_CHIPS = [
   "Bali Indonesia", "Family Packages", "Visa Services",
 ];
 
-function HeroImg({ src, label }: { src: string; label: string }) {
+function HeroImg({ src, label, className = "" }: { src: string; label: string; className?: string }) {
   return (
-    <div className="relative h-40 rounded-xl overflow-hidden border border-border flex items-end">
+    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
       <Image src={src} alt={label} fill className="object-cover" />
-      <span className="relative z-10 text-xs font-semibold text-white bg-black/50 px-2 py-1 m-3 rounded">
+      <span className="absolute bottom-3 left-3 z-10 text-xs font-semibold text-white bg-black/50 px-2.5 py-1 rounded">
         {label}
       </span>
     </div>
@@ -123,70 +123,73 @@ export default async function Home() {
     <>
       <Navbar />
 
-      {/* HERO */}
-      <section className="max-w-6xl mx-auto px-6 pt-14 pb-10">
-        <div className="text-center mb-10">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
-            Faisalabad&apos;s Trusted Travel Partner
-          </p>
-          <h1 className="font-display text-5xl md:text-6xl font-semibold leading-tight mb-6">
-            Your Journey <span className="italic text-gold">Starts Here</span>
-          </h1>
-          <p className="text-muted text-lg max-w-2xl mx-auto mb-8">
-            From the sacred lands of Makkah to the shores of Bali — we craft
-            every journey with care, trust, and 20+ years of experience. No
-            shortcuts. No hidden charges.
-          </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <a
-              href={waLink("Assalam o Alaikum! I'd like to explore your travel services.")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
-            >
-              Explore Services
-            </a>
-            <a
-              href={waLink("Assalam o Alaikum!")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border border-border hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
-            >
-              WhatsApp Us
-            </a>
-          </div>
-        </div>
-
-        {/* Hero images */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 relative">
-          <HeroImg src="/images/makarem_1.jpeg" label="Makarem Ajyad Makkah" />
-          <HeroImg src="/images/pullman_1.jpeg" label="Pullman ZamZam Madinah" />
-          <HeroImg src="/images/makarem_2.jpeg" label="Premium Rooms" />
-          <div className="absolute -top-3 right-3 bg-white border border-border rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
-            4.9★ Customer Rating
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-10 text-center">
-          {HERO_STATS.map((s) => (
-            <div key={s.label}>
-              <div className="font-display text-3xl font-semibold text-gold">{s.value}</div>
-              <div className="text-xs text-muted uppercase tracking-wide">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Destination chip ticker */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          {DEST_CHIPS.map((chip) => (
-            <span
-              key={chip}
-              className="text-xs font-semibold px-4 py-2 rounded-full bg-surface border border-border text-text2"
-            >
-              {chip}
+      {/* HERO — dark navy, two-column (text left, image collage right), matches live site */}
+      <section className="bg-navy text-white">
+        <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 text-gold text-xs font-semibold tracking-wide uppercase bg-white/5 border border-gold/30 rounded-full px-4 py-2 mb-6">
+              📍 Faisalabad&apos;s Trusted Travel Partner
             </span>
-          ))}
+            <h1 className="font-display text-5xl md:text-6xl font-semibold leading-tight mb-6">
+              Your Journey<br />
+              <span className="italic text-gold">Starts Here</span>
+            </h1>
+            <p className="text-white/70 text-lg mb-8 max-w-lg">
+              From the sacred lands of Makkah to the shores of Bali — we craft
+              every journey with care, trust, and 20+ years of experience. No
+              shortcuts. No hidden charges.
+            </p>
+            <div className="flex items-center gap-4 flex-wrap mb-10">
+              <a
+                href={waLink("Assalam o Alaikum! I'd like to explore your travel services.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+              >
+                Explore Services
+              </a>
+              <a
+                href={waLink("Assalam o Alaikum!")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-white/20 hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                WhatsApp Us
+              </a>
+            </div>
+            <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-white/10 pt-6">
+              {HERO_STATS.map((s) => (
+                <div key={s.label}>
+                  <div className="font-display text-2xl font-semibold">{s.value}</div>
+                  <div className="text-xs text-white/50 uppercase tracking-wide">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative grid grid-cols-2 gap-4 h-[420px]">
+            <HeroImg src="/images/makarem_1.jpeg" label="Makarem Ajyad Makkah" className="row-span-2" />
+            <HeroImg src="/images/pullman_1.jpeg" label="Madinah" />
+            <HeroImg src="/images/makarem_2.jpeg" label="Premium Rooms" />
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-left-4 bg-gold text-black rounded-xl px-4 py-3 shadow-lg text-center">
+              <div className="font-display text-lg font-bold leading-none">4.9★</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide">Customer Rating</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Destination chip strip */}
+        <div className="border-t border-white/10 py-5">
+          <div className="max-w-6xl mx-auto px-6 flex flex-wrap gap-3 justify-center">
+            {DEST_CHIPS.map((chip) => (
+              <span
+                key={chip}
+                className="text-xs font-semibold px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80"
+              >
+                {chip}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
