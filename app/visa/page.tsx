@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -17,30 +18,82 @@ async function getVisas() {
   }
 }
 
+const STATS = [
+  { value: "95%", label: "Approval Rate" },
+  { value: "20+", label: "Countries" },
+  { value: "500+", label: "Visas This Year" },
+  { value: "7–15", label: "Working Days" },
+];
+
+const STEPS = [
+  { step: "1", title: "WhatsApp Us", desc: "Click Apply on any visa — we reply within 1 hour" },
+  { step: "2", title: "Submit Documents", desc: "We guide you through exactly what paperwork is needed" },
+  { step: "3", title: "We Process", desc: "We submit and track your application at the embassy" },
+  { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
+];
+
 export default async function VisaPage() {
   const visas = await getVisas();
 
   return (
     <>
       <Navbar />
-      <section className="max-w-6xl mx-auto px-6 pt-16 pb-6">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">
+
+      {/* HERO */}
+      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-10">
+        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
           Visa Services
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-4">
-          Visa processing, <span className="italic text-gold">done right the first time.</span>
+        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+          Visa Assistance <span className="italic text-gold">Made Easy</span>
         </h1>
-        <p className="text-muted max-w-2xl">
-          Tourist, business, work and Umrah visas for dozens of countries.
-          WhatsApp us with your destination for exact requirements.
+        <p className="text-white/70 max-w-xl mx-auto mb-4">
+          95% approval rate — we handle all paperwork for you
+        </p>
+        <p className="text-white/50 text-sm">
+          <Link href="/" className="hover:text-gold">Home</Link>
+          <span className="mx-2">/</span>
+          <span>Visa Services</span>
         </p>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      {/* STATS BAR */}
+      <section className="max-w-4xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        {STATS.map((s) => (
+          <div key={s.label}>
+            <p className="font-display text-3xl font-semibold text-gold">{s.value}</p>
+            <p className="text-muted text-sm mt-1">{s.label}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* FILTER TABS — cosmetic, mirrors VisaService.type values */}
+      <section className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-wrap gap-2 justify-center mb-10 text-sm">
+          <span className="rounded-full bg-gold text-black font-semibold px-4 py-1.5">All Visas</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Tourist</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Umrah</span>
+          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Business</span>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-6 pb-16">
         {visas.length === 0 ? (
-          <p className="text-muted">
-            No visa services are listed right now — WhatsApp us for details.
-          </p>
+          <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
+            <p className="text-4xl mb-4">🛂</p>
+            <h3 className="font-display text-xl font-semibold mb-2">No Visa Services Listed</h3>
+            <p className="text-muted text-sm mb-6">
+              Tell us your destination and we&apos;ll confirm requirements and pricing directly.
+            </p>
+            <a
+              href={waLink("Assalam o Alaikum! I'd like details about visa services.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+            >
+              Ask on WhatsApp
+            </a>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {visas.map((v) => (
@@ -62,30 +115,19 @@ export default async function VisaPage() {
                     {v.country} · {v.type} visa
                   </p>
                   {v.processingTime && (
-                    <p className="text-sm mb-1">
-                      <span className="font-semibold">Processing: </span>
-                      {v.processingTime}
-                    </p>
+                    <p className="text-sm mb-1"><span className="font-semibold">Processing: </span>{v.processingTime}</p>
                   )}
                   {v.validity && (
-                    <p className="text-sm mb-1">
-                      <span className="font-semibold">Validity: </span>
-                      {v.validity}
-                    </p>
+                    <p className="text-sm mb-1"><span className="font-semibold">Validity: </span>{v.validity}</p>
                   )}
                   {v.maxStay && (
-                    <p className="text-sm mb-1">
-                      <span className="font-semibold">Max stay: </span>
-                      {v.maxStay}
-                    </p>
+                    <p className="text-sm mb-1"><span className="font-semibold">Max stay: </span>{v.maxStay}</p>
                   )}
                   {v.requirements && (
                     <p className="text-muted text-xs mb-3 line-clamp-3">{v.requirements}</p>
                   )}
                   <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-display text-xl font-semibold text-gold">
-                      {v.price ?? "Enquire"}
-                    </span>
+                    <span className="font-display text-xl font-semibold text-gold">{v.price ?? "Enquire"}</span>
                     <a
                       href={waLink(`Assalam o Alaikum! I'd like details about the ${v.country} ${v.type} visa.`)}
                       target="_blank"
@@ -101,6 +143,28 @@ export default async function VisaPage() {
           </div>
         )}
       </section>
+
+      {/* HOW IT WORKS */}
+      <section className="bg-[var(--surface)] py-16 px-6">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Process</p>
+          <h2 className="font-display text-3xl font-semibold mb-12 text-center">
+            How It <span className="italic text-gold">Works</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STEPS.map((s) => (
+              <div key={s.step} className="text-center">
+                <div className="w-10 h-10 rounded-full bg-gold text-black font-bold flex items-center justify-center mx-auto mb-3">
+                  {s.step}
+                </div>
+                <h3 className="font-semibold mb-1">{s.title}</h3>
+                <p className="text-muted text-sm">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </>
   );
