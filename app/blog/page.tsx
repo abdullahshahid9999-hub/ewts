@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { waLink } from "@/lib/whatsapp";
 
 export const revalidate = 120;
 
@@ -23,18 +24,43 @@ export default async function BlogIndexPage() {
   return (
     <>
       <Navbar />
-      <section className="max-w-6xl mx-auto px-6 pt-16 pb-6">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">
-          Blog
+
+      {/* HERO */}
+      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-14">
+        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+          Travel Stories &amp; Tips
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-4">
-          Travel guides &amp; <span className="italic text-gold">updates.</span>
+        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+          Our Travel <span className="italic text-gold">Blog</span>
         </h1>
+        <p className="text-white/70 max-w-xl mx-auto mb-4">
+          Destinations, tips, Umrah guides, and travel inspiration — all in one place.
+        </p>
+        <p className="text-white/50 text-sm">
+          <Link href="/" className="hover:text-gold">Home</Link>
+          <span className="mx-2">/</span>
+          <span>Blog</span>
+        </p>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      <section className="max-w-6xl mx-auto px-6 py-16">
         {blogs.length === 0 ? (
-          <p className="text-muted">No articles published yet — check back soon.</p>
+          <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
+            <p className="text-4xl mb-4">📝</p>
+            <h3 className="font-display text-xl font-semibold mb-2">No Articles Published Yet</h3>
+            <p className="text-muted text-sm mb-6">
+              We&apos;re working on travel guides and tips. Check back soon, or WhatsApp us your
+              travel questions directly.
+            </p>
+            <a
+              href={waLink("Assalam o Alaikum! I have a travel question.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+            >
+              WhatsApp Us
+            </a>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {blogs.map((post) => (
