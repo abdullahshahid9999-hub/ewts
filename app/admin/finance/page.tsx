@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
 type AgentBalance = {
@@ -29,7 +30,7 @@ const SERVICE_LABELS: Record<string, string> = {
 };
 
 function pkr(n: number) {
-  return `Rs. ${n.toLocaleString()}`;
+  return `PKR ${n.toLocaleString()}`;
 }
 
 function FinanceInner() {
@@ -51,98 +52,79 @@ function FinanceInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  if (loading) return <div className="p-8 text-muted">Loading finance data…</div>;
-
   return (
-    <div className="max-w-5xl mx-auto p-8 space-y-10">
-      <h1 className="font-display text-3xl font-semibold">
-        Finance <span className="italic text-gold">Overview</span>
-      </h1>
+    <>
+      <div className="adp-ph"><div><h2>Finance <em>Overview</em></h2><p>Revenue, commission, and agent balances</p></div></div>
 
-      {/* TOTALS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-muted mb-1">Total Revenue (sell price)</div>
-          <div className="font-display text-2xl font-semibold">{pkr(totals.totalRevenue)}</div>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-muted mb-1">Total Commission Paid Out</div>
-          <div className="font-display text-2xl font-semibold text-gold">{pkr(totals.totalCommission)}</div>
-        </div>
-      </div>
+      {loading ? (
+        <p className="etd">Loading finance data…</p>
+      ) : (
+        <>
+          <div className="adp-sg" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            <div className="adp-sc">
+              <div className="adp-sc-n">{pkr(totals.totalRevenue)}</div>
+              <div className="adp-sc-l">Total Revenue (sell price)</div>
+            </div>
+            <div className="adp-sc">
+              <div className="adp-sc-n" style={{ color: "var(--a-gold)" }}>{pkr(totals.totalCommission)}</div>
+              <div className="adp-sc-l">Total Commission Paid Out</div>
+            </div>
+          </div>
 
-      {/* SERVICE-WISE BREAKDOWN */}
-      <section>
-        <h2 className="font-display text-xl font-semibold mb-4">Service-wise Breakdown</h2>
-        <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-surface text-left text-xs uppercase text-muted">
-              <tr>
-                <th className="px-4 py-3">Service</th>
-                <th className="px-4 py-3">Bookings</th>
-                <th className="px-4 py-3">Revenue</th>
-                <th className="px-4 py-3">Commission</th>
-              </tr>
-            </thead>
-            <tbody>
-              {serviceBreakdown.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-muted">No confirmed bookings yet.</td></tr>
-              )}
-              {serviceBreakdown.map((s) => (
-                <tr key={s.serviceType} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">{SERVICE_LABELS[s.serviceType] ?? s.serviceType}</td>
-                  <td className="px-4 py-3">{s.bookingCount}</td>
-                  <td className="px-4 py-3">{pkr(s.totalSellPrice)}</td>
-                  <td className="px-4 py-3 text-gold">{pkr(s.totalCommission)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <div className="adp-card">
+            <div className="adp-ch"><h3>Service-wise Breakdown</h3></div>
+            <div className="adp-tw">
+              <table className="adp-table">
+                <thead><tr><th>Service</th><th>Bookings</th><th>Revenue</th><th>Commission</th></tr></thead>
+                <tbody>
+                  {serviceBreakdown.length === 0 && (
+                    <tr><td colSpan={4} className="etd" style={{ textAlign: "center" }}>No confirmed bookings yet.</td></tr>
+                  )}
+                  {serviceBreakdown.map((s) => (
+                    <tr key={s.serviceType}>
+                      <td><strong>{SERVICE_LABELS[s.serviceType] ?? s.serviceType}</strong></td>
+                      <td>{s.bookingCount}</td>
+                      <td>{pkr(s.totalSellPrice)}</td>
+                      <td style={{ color: "var(--a-gold)" }}>{pkr(s.totalCommission)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-      {/* AGENT-WISE BALANCE / OUTSTANDING */}
-      <section>
-        <h2 className="font-display text-xl font-semibold mb-4">Agent Balances &amp; Outstanding</h2>
-        <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-surface text-left text-xs uppercase text-muted">
-              <tr>
-                <th className="px-4 py-3">Agent</th>
-                <th className="px-4 py-3">Tier</th>
-                <th className="px-4 py-3">Balance</th>
-                <th className="px-4 py-3">Credit Limit</th>
-                <th className="px-4 py-3">Outstanding</th>
-                <th className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agentBalances.map((a) => (
-                <tr key={a.id} className="border-t border-border">
-                  <td className="px-4 py-3 font-medium">
-                    {a.fullName} <span className="text-muted text-xs">({a.agentCode})</span>
-                  </td>
-                  <td className="px-4 py-3 capitalize">{a.tier}</td>
-                  <td className={`px-4 py-3 ${a.balance < 0 ? "text-red-600" : ""}`}>{pkr(a.balance)}</td>
-                  <td className="px-4 py-3">{pkr(a.creditLimit)}</td>
-                  <td className="px-4 py-3 font-semibold">
-                    {a.outstanding > 0 ? <span className="text-red-600">{pkr(a.outstanding)}</span> : "—"}
-                  </td>
-                  <td className="px-4 py-3 capitalize">{a.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+          <div className="adp-card">
+            <div className="adp-ch"><h3>Agent Balances &amp; Outstanding</h3></div>
+            <div className="adp-tw">
+              <table className="adp-table">
+                <thead><tr><th>Agent</th><th>Tier</th><th>Balance</th><th>Credit Limit</th><th>Outstanding</th><th>Status</th></tr></thead>
+                <tbody>
+                  {agentBalances.map((a) => (
+                    <tr key={a.id}>
+                      <td><strong>{a.fullName}</strong> <span style={{ color: "var(--a-muted)", fontSize: "11px" }}>({a.agentCode})</span></td>
+                      <td className="capitalize">{a.tier}</td>
+                      <td style={{ color: a.balance < 0 ? "var(--a-red)" : undefined }}>{pkr(a.balance)}</td>
+                      <td>{pkr(a.creditLimit)}</td>
+                      <td>{a.outstanding > 0 ? <span style={{ color: "var(--a-red)", fontWeight: 600 }}>{pkr(a.outstanding)}</span> : "—"}</td>
+                      <td><span className={`adp-pill adp-p-${a.status}`}>{a.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
-export default function FinancePage() {
+export default function AdminFinancePage() {
   return (
     <AdminGuard>
-      <FinanceInner />
+      <AdminShell>
+        <FinanceInner />
+      </AdminShell>
     </AdminGuard>
   );
 }
