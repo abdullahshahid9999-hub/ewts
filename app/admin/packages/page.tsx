@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
@@ -17,15 +18,7 @@ type Package = {
   status: string;
 };
 
-const emptyForm = {
-  category: "umrah",
-  name: "",
-  duration: "",
-  price: "",
-  destination: "",
-  featured: false,
-  status: "active",
-};
+const emptyForm = { category: "umrah", name: "", duration: "", price: "", destination: "", featured: false, status: "active" };
 
 function PackagesInner() {
   const { accessToken, refresh } = useAdminAuth();
@@ -45,21 +38,11 @@ function PackagesInner() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   function startEdit(pkg: Package) {
     setEditingId(pkg.id);
-    setForm({
-      category: pkg.category,
-      name: pkg.name,
-      duration: pkg.duration ?? "",
-      price: pkg.price ?? "",
-      destination: pkg.destination ?? "",
-      featured: pkg.featured,
-      status: pkg.status,
-    });
+    setForm({ category: pkg.category, name: pkg.name, duration: pkg.duration ?? "", price: pkg.price ?? "", destination: pkg.destination ?? "", featured: pkg.featured, status: pkg.status });
     setFile(null);
   }
 
@@ -73,10 +56,7 @@ function PackagesInner() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.name.trim()) {
-      setError("Name is required.");
-      return;
-    }
+    if (!form.name.trim()) { setError("Name is required."); return; }
     setSubmitting(true);
 
     const body = new FormData();
@@ -87,24 +67,13 @@ function PackagesInner() {
     body.set("destination", form.destination);
     body.set("featured", String(form.featured));
     body.set("status", form.status);
-
-    if (file) {
-      // Compress client-side before upload, per brief: ~1280px / JPEG q0.8.
-      const compressed = await compressImage(file);
-      body.set("image", compressed);
-    }
+    if (file) body.set("image", await compressImage(file));
 
     const url = editingId ? `/api/admin/packages/${editingId}` : "/api/admin/packages";
-    const res = await adminFetch(url, accessToken, refresh, {
-      method: editingId ? "PATCH" : "POST",
-      body,
-    });
+    const res = await adminFetch(url, accessToken, refresh, { method: editingId ? "PATCH" : "POST", body });
     const data = await res.json().catch(() => ({}));
     setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "Could not save package.");
-      return;
-    }
+    if (!res.ok) { setError(data.error ?? "Could not save package."); return; }
     resetForm();
     load();
   }
@@ -116,125 +85,101 @@ function PackagesInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Packages</h1>
+    <>
+      <div className="adp-ph">
+        <div><h2>Package <em>Management</em></h2><p>Umrah &amp; tour packages shown on the public site</p></div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-3 rounded-2xl border border-[var(--bdr)] bg-white p-6 sm:grid-cols-2">
-        <select
-          value={form.category}
-          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        >
-          <option value="umrah">Umrah</option>
-          <option value="tours">Tours</option>
-        </select>
-        <input
-          placeholder="Name"
-          required
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Duration (e.g. 10 Days)"
-          value={form.duration}
-          onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Price (e.g. PKR 250,000)"
-          value={form.price}
-          onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Destination"
-          value={form.destination}
-          onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        <select
-          value={form.status}
-          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={form.featured}
-            onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
-          />
-          Featured on homepage
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="text-sm"
-        />
+      <div className="adp-card">
+        <div className="adp-ch"><h3>{editingId ? "Edit Package" : "New Package"}</h3></div>
+        <form onSubmit={handleSubmit} className="adp-fg adp-fr" style={{ padding: "16px 18px" }}>
+          <div>
+            <label>Category</label>
+            <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
+              <option value="umrah">Umrah</option>
+              <option value="tours">Tours</option>
+            </select>
+          </div>
+          <div>
+            <label>Name</label>
+            <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          </div>
+          <div>
+            <label>Duration</label>
+            <input placeholder="e.g. 10 Days" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} />
+          </div>
+          <div>
+            <label>Price</label>
+            <input placeholder="e.g. PKR 250,000" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+          </div>
+          <div>
+            <label>Destination</label>
+            <input value={form.destination} onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))} />
+          </div>
+          <div>
+            <label>Status</label>
+            <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+            <input type="checkbox" checked={form.featured} onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))} style={{ width: "auto" }} />
+            Featured on homepage
+          </div>
+          <div>
+            <label>Image</label>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </div>
 
-        {error && <p className="sm:col-span-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          {error && <p style={{ gridColumn: "1 / -1", color: "var(--a-red)", fontSize: "12px" }}>{error}</p>}
 
-        <div className="sm:col-span-2 flex gap-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {submitting ? "Saving…" : editingId ? "Update package" : "Create package"}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm} className="rounded-lg border border-[var(--bdr)] px-4 py-2 text-sm">
-              Cancel
+          <div style={{ gridColumn: "1 / -1", display: "flex", gap: "8px" }}>
+            <button type="submit" disabled={submitting} className="adp-btn adp-btn-g">
+              {submitting ? "Saving…" : editingId ? "Update Package" : "Create Package"}
             </button>
+            {editingId && <button type="button" onClick={resetForm} className="adp-btn adp-btn-t">Cancel</button>}
+          </div>
+        </form>
+      </div>
+
+      <div className="adp-card">
+        <div className="adp-tw">
+          {loading ? (
+            <p className="etd">Loading…</p>
+          ) : packages.length === 0 ? (
+            <p className="etd">No packages yet.</p>
+          ) : (
+            <table className="adp-table">
+              <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {packages.map((p) => (
+                  <tr key={p.id}>
+                    <td><strong>{p.name}{p.featured ? " ★" : ""}</strong></td>
+                    <td className="capitalize">{p.category}</td>
+                    <td>{p.price ?? "—"}</td>
+                    <td><span className={`adp-pill adp-p-${p.status}`}>{p.status}</span></td>
+                    <td style={{ display: "flex", gap: "6px" }}>
+                      <button onClick={() => startEdit(p)} className="adp-btn adp-btn-s">Edit</button>
+                      <button onClick={() => handleDelete(p.id)} className="adp-btn adp-btn-r">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
-      </form>
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--bdr)] bg-white">
-        {loading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
-        ) : packages.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--muted)]">No packages yet.</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--bdr)] text-xs uppercase text-[var(--muted)]">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {packages.map((p) => (
-                <tr key={p.id} className="border-b border-[var(--bdr)] last:border-0">
-                  <td className="px-4 py-3 font-medium">{p.name}{p.featured ? " ★" : ""}</td>
-                  <td className="px-4 py-3 capitalize">{p.category}</td>
-                  <td className="px-4 py-3">{p.price ?? "—"}</td>
-                  <td className="px-4 py-3 capitalize">{p.status}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button onClick={() => startEdit(p)} className="text-[var(--navy)] underline">Edit</button>
-                    <button onClick={() => handleDelete(p.id)} className="text-red-700 underline">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
-    </div>
+    </>
   );
 }
 
 export default function AdminPackagesPage() {
   return (
     <AdminGuard>
-      <PackagesInner />
+      <AdminShell>
+        <PackagesInner />
+      </AdminShell>
     </AdminGuard>
   );
 }

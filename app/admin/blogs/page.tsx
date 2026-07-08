@@ -2,16 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
-type Blog = {
-  id: string;
-  title: string;
-  slug: string;
-  category: string | null;
-  published: boolean;
-};
+type Blog = { id: string; title: string; slug: string; category: string | null; published: boolean };
 
 const emptyForm = { title: "", slug: "", category: "", excerpt: "", content: "", published: false };
 
@@ -35,20 +30,12 @@ function BlogsInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  function resetForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setFile(null);
-    setError(null);
-  }
+  function resetForm() { setEditingId(null); setForm(emptyForm); setFile(null); setError(null); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.title.trim()) {
-      setError("Title is required.");
-      return;
-    }
+    if (!form.title.trim()) { setError("Title is required."); return; }
     setSubmitting(true);
     const body = new FormData();
     body.set("title", form.title);
@@ -75,72 +62,66 @@ function BlogsInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Blog</h1>
+    <>
+      <div className="adp-ph"><div><h2>Blog <em>Posts</em></h2><p>Articles shown on the public site</p></div></div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-3 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <input placeholder="Title" required value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-        <input placeholder="Slug (optional — derived from title if blank)" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-        <input placeholder="Category" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-        <textarea placeholder="Excerpt" value={form.excerpt} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" rows={2} />
-        <textarea placeholder="Content" value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" rows={6} />
-        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.published} onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))} />
-          Published
-        </label>
+      <div className="adp-card">
+        <div className="adp-ch"><h3>{editingId ? "Edit Post" : "New Post"}</h3></div>
+        <form onSubmit={handleSubmit} className="adp-fg" style={{ padding: "16px 18px", display: "grid", gap: "12px" }}>
+          <input required placeholder="Title" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+          <input placeholder="Slug (optional — derived from title if blank)" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} />
+          <input placeholder="Category" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+          <textarea placeholder="Excerpt" rows={2} value={form.excerpt} onChange={(e) => setForm((f) => ({ ...f, excerpt: e.target.value }))} />
+          <textarea placeholder="Content" rows={6} value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} />
+          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+            <input type="checkbox" checked={form.published} onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))} style={{ width: "auto" }} />
+            Published
+          </label>
 
-        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-        <div className="flex gap-2">
-          <button type="submit" disabled={submitting} className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-            {submitting ? "Saving…" : editingId ? "Update" : "Create"}
-          </button>
-          {editingId && <button type="button" onClick={resetForm} className="rounded-lg border border-[var(--bdr)] px-4 py-2 text-sm">Cancel</button>}
-        </div>
-      </form>
-
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--bdr)] bg-white">
-        {loading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
-        ) : items.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--muted)]">No blog posts yet.</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--bdr)] text-xs uppercase text-[var(--muted)]">
-              <tr><th className="px-4 py-3">Title</th><th className="px-4 py-3">Slug</th><th className="px-4 py-3">Published</th><th className="px-4 py-3"></th></tr>
-            </thead>
-            <tbody>
-              {items.map((b) => (
-                <tr key={b.id} className="border-b border-[var(--bdr)] last:border-0">
-                  <td className="px-4 py-3 font-medium">{b.title}</td>
-                  <td className="px-4 py-3">{b.slug}</td>
-                  <td className="px-4 py-3">{b.published ? "Yes" : "No"}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button
-                      onClick={() => {
-                        setEditingId(b.id);
-                        setForm({ title: b.title, slug: b.slug, category: b.category ?? "", excerpt: "", content: "", published: b.published });
-                        setFile(null);
-                      }}
-                      className="text-[var(--navy)] underline"
-                    >Edit</button>
-                    <button onClick={() => handleDelete(b.id)} className="text-red-700 underline">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+          {error && <p style={{ color: "var(--a-red)", fontSize: "12px" }}>{error}</p>}
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button type="submit" disabled={submitting} className="adp-btn adp-btn-g">{submitting ? "Saving…" : editingId ? "Update" : "Create"}</button>
+            {editingId && <button type="button" onClick={resetForm} className="adp-btn adp-btn-t">Cancel</button>}
+          </div>
+        </form>
       </div>
-    </div>
+
+      <div className="adp-card">
+        <div className="adp-tw">
+          {loading ? <p className="etd">Loading…</p> : items.length === 0 ? <p className="etd">No blog posts yet.</p> : (
+            <table className="adp-table">
+              <thead><tr><th>Title</th><th>Slug</th><th>Published</th><th></th></tr></thead>
+              <tbody>
+                {items.map((b) => (
+                  <tr key={b.id}>
+                    <td><strong>{b.title}</strong></td>
+                    <td>{b.slug}</td>
+                    <td><span className={`adp-pill ${b.published ? "adp-p-published" : "adp-p-pending"}`}>{b.published ? "Yes" : "No"}</span></td>
+                    <td style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        onClick={() => { setEditingId(b.id); setForm({ title: b.title, slug: b.slug, category: b.category ?? "", excerpt: "", content: "", published: b.published }); setFile(null); }}
+                        className="adp-btn adp-btn-s"
+                      >Edit</button>
+                      <button onClick={() => handleDelete(b.id)} className="adp-btn adp-btn-r">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
 export default function AdminBlogsPage() {
   return (
     <AdminGuard>
-      <BlogsInner />
+      <AdminShell>
+        <BlogsInner />
+      </AdminShell>
     </AdminGuard>
   );
 }
