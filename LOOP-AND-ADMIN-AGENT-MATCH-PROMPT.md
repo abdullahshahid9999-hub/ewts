@@ -1,5 +1,15 @@
 # Self-Verify Loop + Match Admin Panel & Agent Portal Exactly
 
+## First step, always (whether this is a continuing session or a brand new one)
+Clone the repo if you haven't already:
+```
+git clone https://<token>@github.com/abdullahshahid9999-hub/ewts.git
+```
+Then **read `PROGRESS.md` in the repo root and skim `git log --oneline -30`**
+before doing anything else. That file + commit history is the full project
+memory — everything below assumes you've done this, regardless of whether
+you're a continuing session or a fresh one with no prior conversation.
+
 ## Part A — Verification status (already checked, don't redo)
 A full `npx tsc --noEmit` was just run against the whole repo. Result: only
 15 errors, and every single one is the expected "Prisma client not
