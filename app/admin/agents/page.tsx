@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
 type CommissionRate = { id: string; serviceType: string; rateType: string; value: number };
@@ -95,74 +96,75 @@ function AgentsInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Agents</h1>
-      {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+    <>
+      <div className="adp-ph"><div><h2>Agent <em>Network</em></h2><p>Agent accounts, credit, and commission rates</p></div></div>
+      {error && <p style={{ color: "var(--a-red)", fontSize: "12px", marginBottom: "12px" }}>{error}</p>}
 
-      <section className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">New Agent</h2>
-        <form onSubmit={createAgent} className="mt-3 grid gap-2 sm:grid-cols-2">
-          <input placeholder="Agent code" value={newAgent.agentCode} onChange={(e) => setNewAgent((f) => ({ ...f, agentCode: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input placeholder="Full name" value={newAgent.fullName} onChange={(e) => setNewAgent((f) => ({ ...f, fullName: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input placeholder="Email" type="email" value={newAgent.email} onChange={(e) => setNewAgent((f) => ({ ...f, email: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input placeholder="Phone" value={newAgent.phone} onChange={(e) => setNewAgent((f) => ({ ...f, phone: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input placeholder="Temporary password (min 8 chars)" type="text" value={newAgent.password} onChange={(e) => setNewAgent((f) => ({ ...f, password: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm sm:col-span-2" />
-          <button type="submit" className="sm:col-span-2 rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white">Create agent</button>
+      <div className="adp-card">
+        <div className="adp-ch"><h3>New Agent</h3></div>
+        <form onSubmit={createAgent} className="adp-fg adp-fr" style={{ padding: "16px 18px" }}>
+          <div><label>Agent Code</label><input value={newAgent.agentCode} onChange={(e) => setNewAgent((f) => ({ ...f, agentCode: e.target.value }))} /></div>
+          <div><label>Full Name</label><input value={newAgent.fullName} onChange={(e) => setNewAgent((f) => ({ ...f, fullName: e.target.value }))} /></div>
+          <div><label>Email</label><input type="email" value={newAgent.email} onChange={(e) => setNewAgent((f) => ({ ...f, email: e.target.value }))} /></div>
+          <div><label>Phone</label><input value={newAgent.phone} onChange={(e) => setNewAgent((f) => ({ ...f, phone: e.target.value }))} /></div>
+          <div style={{ gridColumn: "1 / -1" }}><label>Temporary Password (min 8 chars)</label><input value={newAgent.password} onChange={(e) => setNewAgent((f) => ({ ...f, password: e.target.value }))} /></div>
+          <div style={{ gridColumn: "1 / -1" }}><button type="submit" className="adp-btn adp-btn-g">Create Agent</button></div>
         </form>
-      </section>
+      </div>
 
-      <section className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">Set Commission Rate</h2>
-        <form onSubmit={saveRate} className="mt-3 flex flex-wrap gap-2">
-          <select value={rateForm.agentId} onChange={(e) => setRateForm((f) => ({ ...f, agentId: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+      <div className="adp-card">
+        <div className="adp-ch"><h3>Set Commission Rate</h3></div>
+        <form onSubmit={saveRate} className="adp-fg" style={{ padding: "16px 18px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
+          <select value={rateForm.agentId} onChange={(e) => setRateForm((f) => ({ ...f, agentId: e.target.value }))} style={{ width: "auto" }}>
             <option value="">Select agent…</option>
             {agents.map((a) => <option key={a.id} value={a.id}>{a.agentCode} — {a.fullName}</option>)}
           </select>
-          <select value={rateForm.serviceType} onChange={(e) => setRateForm((f) => ({ ...f, serviceType: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+          <select value={rateForm.serviceType} onChange={(e) => setRateForm((f) => ({ ...f, serviceType: e.target.value }))} style={{ width: "auto" }}>
             <option value="umrah">Umrah</option>
             <option value="group_ticket">Group Ticket</option>
             <option value="insurance">Insurance</option>
           </select>
-          <select value={rateForm.rateType} onChange={(e) => setRateForm((f) => ({ ...f, rateType: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+          <select value={rateForm.rateType} onChange={(e) => setRateForm((f) => ({ ...f, rateType: e.target.value }))} style={{ width: "auto" }}>
             <option value="percentage">Percentage</option>
             <option value="fixed">Fixed (PKR)</option>
           </select>
-          <input type="number" placeholder="Value" value={rateForm.value} onChange={(e) => setRateForm((f) => ({ ...f, value: e.target.value }))} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm w-28" />
-          <button type="submit" className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white">Save rate</button>
+          <input type="number" placeholder="Value" value={rateForm.value} onChange={(e) => setRateForm((f) => ({ ...f, value: e.target.value }))} style={{ width: "100px" }} />
+          <button type="submit" className="adp-btn adp-btn-g">Save Rate</button>
         </form>
-      </section>
+      </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--bdr)] bg-white">
+      <div className="adp-card">
+        <div className="adp-tw">
         {loading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
+          <p className="etd">Loading…</p>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--bdr)] text-xs uppercase text-[var(--muted)]">
+          <table className="adp-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Code</th><th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Balance</th><th className="px-4 py-3">Credit Limit</th>
-                <th className="px-4 py-3">Tier</th><th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Rates</th><th className="px-4 py-3"></th>
+                <th>Code</th><th>Name</th>
+                <th>Balance</th><th>Credit Limit</th>
+                <th>Tier</th><th>Status</th>
+                <th>Rates</th><th></th>
               </tr>
             </thead>
             <tbody>
               {agents.map((a) => (
-                <tr key={a.id} className="border-b border-[var(--bdr)] last:border-0 align-top">
-                  <td className="px-4 py-3 font-medium">{a.agentCode}</td>
-                  <td className="px-4 py-3">{a.fullName}</td>
+                <tr key={a.id}>
+                  <td><strong>{a.agentCode}</strong></td>
+                  <td>{a.fullName}</td>
                   {editingId === a.id ? (
                     <>
-                      <td className="px-4 py-3"><input value={editForm.balance} onChange={(e) => setEditForm((f) => ({ ...f, balance: e.target.value }))} className="w-24 rounded border border-[var(--bdr)] px-2 py-1 text-sm" /></td>
-                      <td className="px-4 py-3"><input value={editForm.creditLimit} onChange={(e) => setEditForm((f) => ({ ...f, creditLimit: e.target.value }))} className="w-24 rounded border border-[var(--bdr)] px-2 py-1 text-sm" /></td>
-                      <td className="px-4 py-3">
-                        <select value={editForm.tier} onChange={(e) => setEditForm((f) => ({ ...f, tier: e.target.value }))} className="rounded border border-[var(--bdr)] px-2 py-1 text-sm">
+                      <td><input value={editForm.balance} onChange={(e) => setEditForm((f) => ({ ...f, balance: e.target.value }))} className="adp-si" style={{ width: "90px" }} /></td>
+                      <td><input value={editForm.creditLimit} onChange={(e) => setEditForm((f) => ({ ...f, creditLimit: e.target.value }))} className="adp-si" style={{ width: "90px" }} /></td>
+                      <td>
+                        <select value={editForm.tier} onChange={(e) => setEditForm((f) => ({ ...f, tier: e.target.value }))} className="adp-ss">
                           <option value="standard">Standard</option>
                           <option value="silver">Silver</option>
                           <option value="gold">Gold</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3">
-                        <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="rounded border border-[var(--bdr)] px-2 py-1 text-sm">
+                      <td>
+                        <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))} className="adp-ss">
                           <option value="active">Active</option>
                           <option value="suspended">Suspended</option>
                         </select>
@@ -170,22 +172,22 @@ function AgentsInner() {
                     </>
                   ) : (
                     <>
-                      <td className="px-4 py-3">PKR {a.balance.toLocaleString()}</td>
-                      <td className="px-4 py-3">PKR {a.creditLimit.toLocaleString()}</td>
-                      <td className="px-4 py-3 capitalize">{a.tier}</td>
-                      <td className="px-4 py-3 capitalize">{a.status}</td>
+                      <td>PKR {a.balance.toLocaleString()}</td>
+                      <td>PKR {a.creditLimit.toLocaleString()}</td>
+                      <td className="capitalize">{a.tier}</td>
+                      <td><span className={`adp-pill adp-p-${a.status}`}>{a.status}</span></td>
                     </>
                   )}
-                  <td className="px-4 py-3 text-xs">
+                  <td style={{ fontSize: "11px" }}>
                     {a.commissionRates.length === 0 ? "—" : a.commissionRates.map((r) => (
                       <div key={r.id}>{r.serviceType}: {r.rateType === "percentage" ? `${r.value}%` : `PKR ${r.value}`}</div>
                     ))}
                   </td>
-                  <td className="px-4 py-3">
+                  <td>
                     {editingId === a.id ? (
-                      <button onClick={() => saveEdit(a.id)} className="text-[var(--navy)] underline">Save</button>
+                      <button onClick={() => saveEdit(a.id)} className="adp-btn adp-btn-s">Save</button>
                     ) : (
-                      <button onClick={() => startEdit(a)} className="text-[var(--navy)] underline">Edit</button>
+                      <button onClick={() => startEdit(a)} className="adp-btn adp-btn-s">Edit</button>
                     )}
                   </td>
                 </tr>
@@ -193,15 +195,18 @@ function AgentsInner() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default function AdminAgentsPage() {
   return (
     <AdminGuard>
-      <AgentsInner />
+      <AdminShell>
+        <AgentsInner />
+      </AdminShell>
     </AdminGuard>
   );
 }

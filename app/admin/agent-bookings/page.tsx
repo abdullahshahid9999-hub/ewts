@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
 type AgentBooking = {
@@ -15,13 +16,13 @@ type AgentBooking = {
 };
 
 const CATEGORIES = [
-  { value: "", label: "All services" },
+  { value: "", label: "All Services" },
   { value: "umrah", label: "Umrah" },
   { value: "group_ticket", label: "Group Tickets" },
   { value: "insurance", label: "Insurance" },
 ];
 const STATUSES = [
-  { value: "", label: "All statuses" },
+  { value: "", label: "All Statuses" },
   { value: "pending", label: "Pending" },
   { value: "confirmed", label: "Confirmed" },
   { value: "issue_requested", label: "Issue Requested" },
@@ -59,63 +60,65 @@ function AgentBookingsInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Agent Bookings</h1>
+    <>
+      <div className="adp-ph"><div><h2>Agent <em>Bookings</em></h2><p>Review and issue bookings placed by agents</p></div></div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="adp-ss">
           {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="adp-ss">
           {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--bdr)] bg-white">
-        {loading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
-        ) : bookings.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--muted)]">No bookings match these filters.</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--bdr)] text-xs uppercase text-[var(--muted)]">
-              <tr>
-                <th className="px-4 py-3">Ref</th><th className="px-4 py-3">Agent</th>
-                <th className="px-4 py-3">Service</th><th className="px-4 py-3">Sell Price</th>
-                <th className="px-4 py-3">Commission</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((b) => (
-                <tr key={b.id} className="border-b border-[var(--bdr)] last:border-0">
-                  <td className="px-4 py-3 font-medium">{b.bookingRef}</td>
-                  <td className="px-4 py-3">{b.agent.agentCode} — {b.agent.fullName}</td>
-                  <td className="px-4 py-3 capitalize">{b.serviceType.replace("_", " ")}</td>
-                  <td className="px-4 py-3">PKR {b.sellPrice.toLocaleString()}</td>
-                  <td className="px-4 py-3">PKR {b.commission.toLocaleString()}</td>
-                  <td className="px-4 py-3 capitalize">{b.status.replace("_", " ")}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    {b.status === "issue_requested" && (
-                      <button onClick={() => updateStatus(b.id, "issued")} className="text-green-700 underline">Mark Issued</button>
-                    )}
-                    {b.status !== "cancelled" && b.status !== "issued" && (
-                      <button onClick={() => updateStatus(b.id, "cancelled")} className="text-red-700 underline">Cancel</button>
-                    )}
-                  </td>
+      <div className="adp-card">
+        <div className="adp-tw">
+          {loading ? (
+            <p className="etd">Loading…</p>
+          ) : bookings.length === 0 ? (
+            <p className="etd">No bookings match these filters.</p>
+          ) : (
+            <table className="adp-table">
+              <thead>
+                <tr>
+                  <th>Ref</th><th>Agent</th><th>Service</th><th>Sell Price</th><th>Commission</th><th>Status</th><th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {bookings.map((b) => (
+                  <tr key={b.id}>
+                    <td><strong>{b.bookingRef}</strong></td>
+                    <td>{b.agent.agentCode} — {b.agent.fullName}</td>
+                    <td className="capitalize">{b.serviceType.replace("_", " ")}</td>
+                    <td>PKR {b.sellPrice.toLocaleString()}</td>
+                    <td>PKR {b.commission.toLocaleString()}</td>
+                    <td><span className={`adp-pill adp-p-${b.status}`}>{b.status.replace("_", " ")}</span></td>
+                    <td style={{ display: "flex", gap: "6px" }}>
+                      {b.status === "issue_requested" && (
+                        <button onClick={() => updateStatus(b.id, "issued")} className="adp-btn adp-btn-s" style={{ color: "var(--a-green)" }}>Mark Issued</button>
+                      )}
+                      {b.status !== "cancelled" && b.status !== "issued" && (
+                        <button onClick={() => updateStatus(b.id, "cancelled")} className="adp-btn adp-btn-r">Cancel</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default function AdminAgentBookingsPage() {
   return (
     <AdminGuard>
-      <AgentBookingsInner />
+      <AdminShell>
+        <AgentBookingsInner />
+      </AdminShell>
     </AdminGuard>
   );
 }

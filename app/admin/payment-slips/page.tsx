@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
 type PaymentSlip = {
@@ -39,53 +40,54 @@ function PaymentSlipsInner() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Payment Slips</h1>
+    <>
+      <div className="adp-ph"><div><h2>Payment <em>Slips</em></h2><p>Approve or reject agent balance top-ups</p></div></div>
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-[var(--bdr)] bg-white">
-        {loading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
-        ) : slips.length === 0 ? (
-          <p className="p-6 text-sm text-[var(--muted)]">No payment slips yet.</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-[var(--bdr)] text-xs uppercase text-[var(--muted)]">
-              <tr>
-                <th className="px-4 py-3">Agent</th><th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Slip</th><th className="px-4 py-3">Status</th><th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {slips.map((s) => (
-                <tr key={s.id} className="border-b border-[var(--bdr)] last:border-0">
-                  <td className="px-4 py-3">{s.agent.agentCode} — {s.agent.fullName}</td>
-                  <td className="px-4 py-3">PKR {s.amount.toLocaleString()}</td>
-                  <td className="px-4 py-3">
-                    {s.slipImageUrl ? <a href={s.slipImageUrl} target="_blank" rel="noreferrer" className="text-[var(--navy)] underline">View</a> : "—"}
-                  </td>
-                  <td className="px-4 py-3 capitalize">{s.status}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    {s.status === "pending" && (
-                      <>
-                        <button onClick={() => review(s.id, "approved")} className="text-green-700 underline">Approve</button>
-                        <button onClick={() => review(s.id, "rejected")} className="text-red-700 underline">Reject</button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className="adp-card">
+        <div className="adp-tw">
+          {loading ? (
+            <p className="etd">Loading…</p>
+          ) : slips.length === 0 ? (
+            <p className="etd">No payment slips yet.</p>
+          ) : (
+            <table className="adp-table">
+              <thead>
+                <tr><th>Agent</th><th>Amount</th><th>Slip</th><th>Status</th><th></th></tr>
+              </thead>
+              <tbody>
+                {slips.map((s) => (
+                  <tr key={s.id}>
+                    <td>{s.agent.agentCode} — {s.agent.fullName}</td>
+                    <td>PKR {s.amount.toLocaleString()}</td>
+                    <td>
+                      {s.slipImageUrl ? <a href={s.slipImageUrl} target="_blank" rel="noreferrer" style={{ color: "var(--a-gold)" }}>View</a> : "—"}
+                    </td>
+                    <td><span className={`adp-pill adp-p-${s.status}`}>{s.status}</span></td>
+                    <td style={{ display: "flex", gap: "6px" }}>
+                      {s.status === "pending" && (
+                        <>
+                          <button onClick={() => review(s.id, "approved")} className="adp-btn adp-btn-s" style={{ color: "var(--a-green)" }}>Approve</button>
+                          <button onClick={() => review(s.id, "rejected")} className="adp-btn adp-btn-r">Reject</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
 export default function AdminPaymentSlipsPage() {
   return (
     <AdminGuard>
-      <PaymentSlipsInner />
+      <AdminShell>
+        <PaymentSlipsInner />
+      </AdminShell>
     </AdminGuard>
   );
 }
