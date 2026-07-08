@@ -304,6 +304,51 @@ fabricated.
 - Real blog posts still need to be written/imported by the owner — the
   `/blog` and `/blog/[slug]` pages are ready to display them the moment
   rows exist in the `Blog` table.
+## Session 5 — Admin/agent visual match (LOOP-AND-ADMIN-AGENT-MATCH-PROMPT.md)
+
+Legacy repo (`eastwestpk`, public, no token needed) has `agent/dashboard.html`,
+`agent/login.html`, `admin/dashboard.html` as the approved visual reference.
+Ported the exact CSS (shadows, gradients, spacing) rather than approximating.
+
+**Done:**
+- `app/agent/portal.css` + `app/admin/portal.css` — exact tokens from the
+  reference. Confirmed the two panels use genuinely different palettes on
+  purpose (agent: dark navy gradient + gold-glow balance panel; admin:
+  light gray + muted gold `#B8923A` + DM Sans) — not an inconsistency to fix.
+- Agent portal: sidebar (real balance/credit data, tier pill), topbar,
+  shell, dashboard, bookings (tab-bar status filter + category select,
+  matches the "no legacy AND-filter bug" requirement from the original
+  brief even though the visual reference itself only had a status filter),
+  profile, and a full split-panel login page using the real
+  `makarem_1.jpeg` background from `public/images/`.
+- Admin panel: sidebar/topbar/shell, dashboard, login, and all 8 CRUD/
+  review pages (packages, visa-services, group-flights, blogs, insurance,
+  agents, agent-bookings, payment-slips) converted to `adp-*` classes.
+- Login/refresh API routes for agents now return `balance`/`creditLimit`
+  (needed for the sidebar balance panel — they didn't before).
+
+**Deviations, stated plainly:**
+- Part B (headless-browser fetch of `/visa`, `/blog`) — I don't have a
+  headless-browser tool, only plain HTTP fetch. Could not execute this
+  part of the brief; it needs a different tool than what's available here.
+- Agent login's "Reset Password" is a link to the separate
+  `/agent/forgot-password` route, not an in-page tab swap like the
+  reference. Visual card/tab styling matches; the interaction model is
+  simplified because our app already has that flow as its own page.
+- No dedicated `admin/login.html` exists in the legacy repo to match
+  against, so the admin login page reuses the admin panel's own card
+  style (light theme, muted gold) rather than guessing at an unreferenced
+  design.
+- Given the volume (9 admin pages), forms mostly use the `.adp-fg`
+  input styling via inline `style` props rather than pre-built utility
+  classes in every single field — functionally identical, but if a future
+  pass wants to clean this into proper Tailwind/CSS classes instead of
+  inline styles, that's a legitimate refactor, not a bug.
+- Have NOT visually verified any of this in a real browser — no dev
+  server was run. Every change passed `tsc --noEmit` clean, which confirms
+  the code compiles, not that it renders correctly. First real visual QA
+  needs to happen once `npm run build` succeeds somewhere unblocked.
+
 ## Where this leaves the whole project
 
 Items 1 (build verify — blocked on sandbox network, needs re-run
