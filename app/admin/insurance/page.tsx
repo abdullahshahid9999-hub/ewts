@@ -6,7 +6,7 @@ import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
-type Rate = { id: string; pricePkr: number; coverageDetails: string | null };
+type Rate = { id: string; pricePkr: number; coverageDetails: string | null; destination: string | null; durationDays: number | null };
 type Plan = { id: string; name: string; description: string | null; rates: Rate[] };
 type Company = { id: string; name: string; logoUrl: string | null; description: string | null; plans: Plan[] };
 
@@ -23,6 +23,8 @@ function InsuranceInner() {
   const [rateePlanId, setRatePlanId] = useState("");
   const [ratePrice, setRatePrice] = useState("");
   const [rateCoverage, setRateCoverage] = useState("");
+  const [rateDestination, setRateDestination] = useState("");
+  const [rateDurationDays, setRateDurationDays] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,11 +81,17 @@ function InsuranceInner() {
     if (!rateePlanId || !Number.isFinite(price) || price <= 0) { setError("Select a plan and enter a valid price."); return; }
     const res = await adminFetch("/api/admin/insurance-rates", accessToken, refresh, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId: rateePlanId, pricePkr: price, coverageDetails: rateCoverage }),
+      body: JSON.stringify({
+        planId: rateePlanId,
+        pricePkr: price,
+        coverageDetails: rateCoverage,
+        destination: rateDestination || null,
+        durationDays: rateDurationDays ? Number(rateDurationDays) : null,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not add rate."); return; }
-    setRatePrice(""); setRateCoverage(""); load();
+    setRatePrice(""); setRateCoverage(""); setRateDestination(""); setRateDurationDays(""); load();
   }
 
   async function deleteRate(id: string) {
@@ -147,6 +155,8 @@ function InsuranceInner() {
           </select>
           <input type="number" placeholder="Price (PKR)" value={ratePrice} onChange={(e) => setRatePrice(e.target.value)} style={{ width: "120px" }} />
           <input placeholder="Coverage details" value={rateCoverage} onChange={(e) => setRateCoverage(e.target.value)} style={{ width: "auto" }} />
+          <input placeholder="Destination (e.g. Worldwide, Schengen)" value={rateDestination} onChange={(e) => setRateDestination(e.target.value)} style={{ width: "auto" }} />
+          <input type="number" placeholder="Duration (days)" value={rateDurationDays} onChange={(e) => setRateDurationDays(e.target.value)} style={{ width: "120px" }} />
           <button type="submit" className="adp-btn adp-btn-g">Add Rate</button>
         </form>
         <div className="adp-tw">

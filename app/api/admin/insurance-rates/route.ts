@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
       planId,
       pricePkr,
       coverageDetails: typeof body?.coverageDetails === "string" ? body.coverageDetails : undefined,
+      destination: typeof body?.destination === "string" && body.destination ? body.destination : undefined,
+      durationDays: Number.isFinite(Number(body?.durationDays)) && body?.durationDays ? Number(body.durationDays) : undefined,
     },
   });
 

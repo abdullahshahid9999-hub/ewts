@@ -54,10 +54,11 @@ export default function ContactPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // No contact-form backend/inbox exists in this rebuild — the site is
-    // WhatsApp-first by design, so the inquiry is composed into a WhatsApp
-    // message instead of stored server-side. Everything the live site's
-    // form field asks for is preserved in the message text.
+    // WhatsApp stays the primary, instant path — but also notify the
+    // business by email in the background so there's a record even if the
+    // visitor never actually sends the WhatsApp message (e.g. no WhatsApp
+    // installed, or they close the tab). Non-blocking: WhatsApp opens
+    // immediately regardless of whether the email send succeeds.
     const lines = [
       "Assalam o Alaikum! New inquiry from the website:",
       `Name: ${fullName}`,
@@ -69,6 +70,19 @@ export default function ContactPage() {
       `Message: ${message}`,
       `Preferred contact method: ${contactMethod}`,
     ].filter(Boolean);
+
+    fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: fullName,
+        email,
+        phone,
+        message: lines.join("\n"),
+      }),
+    }).catch(() => {
+      // Silent — WhatsApp is the primary path and still works even if this fails.
+    });
 
     window.open(waLink(lines.join("\n")), "_blank", "noopener,noreferrer");
     setSent(true);

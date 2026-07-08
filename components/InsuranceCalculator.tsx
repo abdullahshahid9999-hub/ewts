@@ -8,8 +8,28 @@ const DESTINATIONS = [
   { group: "Europe / West", items: ["Schengen States (26 countries)", "United Kingdom", "USA / Canada / Australia", "Worldwide (All countries)"] },
 ];
 
-const DURATIONS = ["7 Days", "10 Days", "14 Days", "21 Days", "30 Days", "45 Days", "60 Days", "90 Days", "6 Months", "1 Year (Multi-trip)"];
+const DURATIONS: { label: string; days: number }[] = [
+  { label: "7 Days", days: 7 },
+  { label: "10 Days", days: 10 },
+  { label: "14 Days", days: 14 },
+  { label: "21 Days", days: 21 },
+  { label: "30 Days", days: 30 },
+  { label: "45 Days", days: 45 },
+  { label: "60 Days", days: 60 },
+  { label: "90 Days", days: 90 },
+  { label: "6 Months", days: 180 },
+  { label: "1 Year (Multi-trip)", days: 365 },
+];
 const AGE_BANDS = ["18 – 35 years", "36 – 60 years", "61+ years"];
+
+type QuoteRate = {
+  id: string;
+  pricePkr: number;
+  coverageDetails: string | null;
+  destination: string | null;
+  durationDays: number | null;
+  plan: { name: string; company: { name: string; logoUrl: string | null } };
+};
 
 export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () => void }) {
   const [destination, setDestination] = useState("");
@@ -19,9 +39,23 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
   const [departureDate, setDepartureDate] = useState("");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rates, setRates] = useState<QuoteRate[] | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    const durationDays = DURATIONS.find((d) => d.label === duration)?.days || 0;
+    try {
+      const res = await fetch(
+        `/api/insurance/quote?destination=${encodeURIComponent(destination)}&durationDays=${durationDays}`
+      );
+      const data = await res.json();
+      setRates(data.rates ?? []);
+    } catch {
+      setRates([]);
+    }
+    setLoading(false);
     setSubmitted(true);
     onViewPlans();
   }
@@ -37,10 +71,28 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
           <p className="text-sm mb-1"><span className="font-semibold">Duration:</span> {duration || "—"}</p>
           <p className="text-sm mb-1"><span className="font-semibold">Travellers:</span> {travellers}, {ageBand}</p>
           {departureDate && <p className="text-sm mb-3"><span className="font-semibold">Departure:</span> {departureDate}</p>}
-          <p className="text-muted text-xs mb-3">
-            Our current plan list isn&apos;t filtered by destination/duration yet — showing all
-            active plans below. WhatsApp us your trip details above for an exact quote.
-          </p>
+
+          {loading ? (
+            <p className="text-muted text-sm">Finding matching plans…</p>
+          ) : rates && rates.length > 0 ? (
+            <div className="space-y-2 mb-3">
+              {rates.map((r) => (
+                <div key={r.id} className="border border-border rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-sm">{r.plan.company.name} — {r.plan.name}</div>
+                    {r.coverageDetails && <div className="text-xs text-muted">{r.coverageDetails}</div>}
+                  </div>
+                  <div className="font-display text-gold font-semibold">Rs. {r.pricePkr.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted text-xs mb-3">
+              No exact match found for these details yet — WhatsApp us your trip
+              details above for a custom quote.
+            </p>
+          )}
+
           <button onClick={() => setSubmitted(false)} className="text-sm font-semibold text-gold hover:underline">
             Edit Details
           </button>
@@ -62,7 +114,7 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
             <label className="block text-sm font-medium mb-1">Travel Duration *</label>
             <select required value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm">
               <option value="">— Select duration —</option>
-              {DURATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+              {DURATIONS.map((d) => <option key={d.label} value={d.label}>{d.label}</option>)}
             </select>
           </div>
           <div>
@@ -83,8 +135,8 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
             <label className="block text-sm font-medium mb-1">Email (optional)</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
           </div>
-          <button type="submit" className="w-full bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors">
-            VIEW PLANS
+          <button type="submit" disabled={loading} className="w-full bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-60">
+            {loading ? "Searching…" : "VIEW PLANS"}
           </button>
           <p className="text-muted text-xs text-center">Your info is secure and never shared</p>
         </form>
@@ -92,3 +144,4 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
     </div>
   );
 }
+

@@ -113,6 +113,15 @@ model InsuranceRate {
   planId          String   @map("plan_id")
   pricePkr        Int      @map("price_pkr")
   coverageDetails String?  @map("coverage_details")
+  // Added so the public /insurance quote calculator can actually filter
+  // by destination/duration instead of just listing everything by price.
+  // destination: a region/country string, e.g. "Worldwide", "Schengen",
+  // "USA/Canada", "Asia" — kept as free text (admin-entered) rather than a
+  // fixed enum, since insurance companies define their own region buckets.
+  // durationDays: the trip length this specific rate covers, e.g. 7, 15,
+  // 30, 90 — the calculator matches the closest rate >= requested duration.
+  destination     String?
+  durationDays    Int?     @map("duration_days")
   createdAt       DateTime @default(now()) @map("created_at")
 
   plan InsurancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
