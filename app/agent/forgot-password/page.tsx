@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import "../portal.css";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -51,8 +52,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--bdr)] bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+      <div className="w-full max-w-sm ap-login-card p-8">
         <h1 className="font-display text-2xl text-[var(--navy)]">Reset Password</h1>
 
         {step === "identify" ? (
