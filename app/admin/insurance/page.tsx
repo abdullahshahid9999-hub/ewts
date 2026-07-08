@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
@@ -17,10 +18,8 @@ function InsuranceInner() {
 
   const [companyName, setCompanyName] = useState("");
   const [companyFile, setCompanyFile] = useState<File | null>(null);
-
   const [planCompanyId, setPlanCompanyId] = useState("");
   const [planName, setPlanName] = useState("");
-
   const [rateePlanId, setRatePlanId] = useState("");
   const [ratePrice, setRatePrice] = useState("");
   const [rateCoverage, setRateCoverage] = useState("");
@@ -45,9 +44,7 @@ function InsuranceInner() {
     const res = await adminFetch("/api/admin/insurance-companies", accessToken, refresh, { method: "POST", body });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not add company."); return; }
-    setCompanyName("");
-    setCompanyFile(null);
-    load();
+    setCompanyName(""); setCompanyFile(null); load();
   }
 
   async function deleteCompany(id: string) {
@@ -61,14 +58,12 @@ function InsuranceInner() {
     setError(null);
     if (!planCompanyId || !planName.trim()) { setError("Select a company and enter a plan name."); return; }
     const res = await adminFetch("/api/admin/insurance-plans", accessToken, refresh, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ companyId: planCompanyId, name: planName }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not add plan."); return; }
-    setPlanName("");
-    load();
+    setPlanName(""); load();
   }
 
   async function deletePlan(id: string) {
@@ -83,15 +78,12 @@ function InsuranceInner() {
     const price = Number(ratePrice);
     if (!rateePlanId || !Number.isFinite(price) || price <= 0) { setError("Select a plan and enter a valid price."); return; }
     const res = await adminFetch("/api/admin/insurance-rates", accessToken, refresh, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId: rateePlanId, pricePkr: price, coverageDetails: rateCoverage }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { setError(data.error ?? "Could not add rate."); return; }
-    setRatePrice("");
-    setRateCoverage("");
-    load();
+    setRatePrice(""); setRateCoverage(""); load();
   }
 
   async function deleteRate(id: string) {
@@ -103,80 +95,85 @@ function InsuranceInner() {
   const allPlans = companies.flatMap((c) => c.plans.map((p) => ({ ...p, companyName: c.name })));
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Insurance</h1>
-      {error && <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+    <>
+      <div className="adp-ph"><div><h2>Insurance <em>Plans</em></h2><p>Companies, plans, and rates shown on the public site</p></div></div>
+      {error && <p style={{ color: "var(--a-red)", fontSize: "12px", marginBottom: "12px" }}>{error}</p>}
 
-      {/* Companies */}
-      <section className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">Companies</h2>
-        <form onSubmit={addCompany} className="mt-3 flex flex-wrap gap-2">
-          <input placeholder="Company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input type="file" accept="image/*" onChange={(e) => setCompanyFile(e.target.files?.[0] ?? null)} className="text-sm" />
-          <button type="submit" className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white">Add company</button>
+      <div className="adp-card">
+        <div className="adp-ch"><h3>Companies</h3></div>
+        <form onSubmit={addCompany} className="adp-fg" style={{ padding: "16px 18px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
+          <input placeholder="Company name" value={companyName} onChange={(e) => setCompanyName(e.target.value)} style={{ width: "auto" }} />
+          <input type="file" accept="image/*" onChange={(e) => setCompanyFile(e.target.files?.[0] ?? null)} style={{ width: "auto" }} />
+          <button type="submit" className="adp-btn adp-btn-g">Add Company</button>
         </form>
-        <ul className="mt-4 divide-y divide-[var(--bdr)]">
-          {companies.map((c) => (
-            <li key={c.id} className="flex items-center justify-between py-2 text-sm">
-              <span>{c.name} <span className="text-[var(--muted)]">({c.plans.length} plans)</span></span>
-              <button onClick={() => deleteCompany(c.id)} className="text-red-700 underline">Delete</button>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="adp-tw">
+          <table className="adp-table">
+            <tbody>
+              {companies.map((c) => (
+                <tr key={c.id}><td><strong>{c.name}</strong> ({c.plans.length} plans)</td><td style={{ textAlign: "right" }}><button onClick={() => deleteCompany(c.id)} className="adp-btn adp-btn-r">Delete</button></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Plans */}
-      <section className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">Plans</h2>
-        <form onSubmit={addPlan} className="mt-3 flex flex-wrap gap-2">
-          <select value={planCompanyId} onChange={(e) => setPlanCompanyId(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+      <div className="adp-card">
+        <div className="adp-ch"><h3>Plans</h3></div>
+        <form onSubmit={addPlan} className="adp-fg" style={{ padding: "16px 18px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
+          <select value={planCompanyId} onChange={(e) => setPlanCompanyId(e.target.value)} style={{ width: "auto" }}>
             <option value="">Select company…</option>
             {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input placeholder="Plan name" value={planName} onChange={(e) => setPlanName(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <button type="submit" className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white">Add plan</button>
+          <input placeholder="Plan name" value={planName} onChange={(e) => setPlanName(e.target.value)} style={{ width: "auto" }} />
+          <button type="submit" className="adp-btn adp-btn-g">Add Plan</button>
         </form>
-        <ul className="mt-4 divide-y divide-[var(--bdr)]">
-          {allPlans.map((p) => (
-            <li key={p.id} className="flex items-center justify-between py-2 text-sm">
-              <span>{p.name} <span className="text-[var(--muted)]">— {p.companyName} ({p.rates.length} rates)</span></span>
-              <button onClick={() => deletePlan(p.id)} className="text-red-700 underline">Delete</button>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <div className="adp-tw">
+          <table className="adp-table">
+            <tbody>
+              {allPlans.map((p) => (
+                <tr key={p.id}><td><strong>{p.name}</strong> — {p.companyName} ({p.rates.length} rates)</td><td style={{ textAlign: "right" }}><button onClick={() => deletePlan(p.id)} className="adp-btn adp-btn-r">Delete</button></td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Rates */}
-      <section className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">Rates</h2>
-        <form onSubmit={addRate} className="mt-3 flex flex-wrap gap-2">
-          <select value={rateePlanId} onChange={(e) => setRatePlanId(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm">
+      <div className="adp-card">
+        <div className="adp-ch"><h3>Rates</h3></div>
+        <form onSubmit={addRate} className="adp-fg" style={{ padding: "16px 18px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
+          <select value={rateePlanId} onChange={(e) => setRatePlanId(e.target.value)} style={{ width: "auto" }}>
             <option value="">Select plan…</option>
             {allPlans.map((p) => <option key={p.id} value={p.id}>{p.companyName} — {p.name}</option>)}
           </select>
-          <input type="number" placeholder="Price (PKR)" value={ratePrice} onChange={(e) => setRatePrice(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <input placeholder="Coverage details" value={rateCoverage} onChange={(e) => setRateCoverage(e.target.value)} className="rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm" />
-          <button type="submit" className="rounded-lg bg-[var(--navy)] px-4 py-2 text-sm font-medium text-white">Add rate</button>
+          <input type="number" placeholder="Price (PKR)" value={ratePrice} onChange={(e) => setRatePrice(e.target.value)} style={{ width: "120px" }} />
+          <input placeholder="Coverage details" value={rateCoverage} onChange={(e) => setRateCoverage(e.target.value)} style={{ width: "auto" }} />
+          <button type="submit" className="adp-btn adp-btn-g">Add Rate</button>
         </form>
-        <ul className="mt-4 divide-y divide-[var(--bdr)]">
-          {allPlans.flatMap((p) => p.rates.map((r) => (
-            <li key={r.id} className="flex items-center justify-between py-2 text-sm">
-              <span>{p.companyName} — {p.name}: PKR {r.pricePkr.toLocaleString()} {r.coverageDetails ? `(${r.coverageDetails})` : ""}</span>
-              <button onClick={() => deleteRate(r.id)} className="text-red-700 underline">Delete</button>
-            </li>
-          )))}
-        </ul>
-      </section>
+        <div className="adp-tw">
+          <table className="adp-table">
+            <tbody>
+              {allPlans.flatMap((p) => p.rates.map((r) => (
+                <tr key={r.id}>
+                  <td>{p.companyName} — {p.name}: <strong>PKR {r.pricePkr.toLocaleString()}</strong> {r.coverageDetails ? `(${r.coverageDetails})` : ""}</td>
+                  <td style={{ textAlign: "right" }}><button onClick={() => deleteRate(r.id)} className="adp-btn adp-btn-r">Delete</button></td>
+                </tr>
+              )))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading…</p>}
-    </div>
+      {loading && <p className="etd">Loading…</p>}
+    </>
   );
 }
 
 export default function AdminInsurancePage() {
   return (
     <AdminGuard>
-      <InsuranceInner />
+      <AdminShell>
+        <InsuranceInner />
+      </AdminShell>
     </AdminGuard>
   );
 }
