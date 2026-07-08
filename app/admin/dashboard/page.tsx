@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import AdminGuard from "@/components/AdminGuard";
+import AdminShell from "@/components/AdminShell";
 import { useAdminAuth } from "@/lib/adminAuthClient";
 
 const SECTIONS = [
@@ -13,47 +14,49 @@ const SECTIONS = [
   { href: "/admin/agents", title: "Agents", desc: "Agent accounts, commission rates" },
   { href: "/admin/agent-bookings", title: "Agent Bookings", desc: "Review & issue bookings" },
   { href: "/admin/payment-slips", title: "Payment Slips", desc: "Approve/reject agent payments" },
-  { href: "/admin/finance", title: "Finance", desc: "Agent balances & service-wise revenue" },
 ];
 
 function DashboardInner() {
-  const { admin, logout } = useAdminAuth();
+  const { admin } = useAdminAuth();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="adp-ph">
         <div>
-          <h1 className="font-display text-2xl text-[var(--navy)]">Admin Panel</h1>
-          <p className="text-sm text-[var(--muted)]">{admin?.email}</p>
+          <h2>Welcome, <em>{admin?.email ?? "Admin"}</em></h2>
+          <p>Manage packages, visas, flights, insurance, agents and content</p>
         </div>
-        <button
-          onClick={logout}
-          className="rounded-lg border border-[var(--bdr)] px-4 py-2 text-sm text-[var(--text)] hover:border-[var(--gold)]"
-        >
-          Sign out
-        </button>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((s) => (
-          <Link
-            key={s.href}
-            href={s.href}
-            className="rounded-2xl border border-[var(--bdr)] bg-white p-6 shadow-sm transition hover:border-[var(--gold)]"
-          >
-            <h2 className="font-display text-lg text-[var(--navy)]">{s.title}</h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{s.desc}</p>
+      <div className="adp-sg" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        {SECTIONS.slice(0, 4).map((s) => (
+          <Link key={s.href} href={s.href} className="adp-sc" style={{ display: "block" }}>
+            <div className="adp-sc-n" style={{ fontSize: "15px" }}>{s.title}</div>
+            <div className="adp-sc-l">{s.desc}</div>
           </Link>
         ))}
       </div>
-    </div>
+
+      <div className="adp-card">
+        <div className="adp-ch"><h3>All Sections</h3></div>
+        <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "10px" }}>
+          {SECTIONS.map((s) => (
+            <Link key={s.href} href={s.href} className="adp-btn adp-btn-t" style={{ justifyContent: "flex-start" }}>
+              {s.title}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
 export default function AdminDashboardPage() {
   return (
     <AdminGuard>
-      <DashboardInner />
+      <AdminShell>
+        <DashboardInner />
+      </AdminShell>
     </AdminGuard>
   );
 }
