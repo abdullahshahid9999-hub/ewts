@@ -349,6 +349,29 @@ Ported the exact CSS (shadows, gradients, spacing) rather than approximating.
   the code compiles, not that it renders correctly. First real visual QA
   needs to happen once `npm run build` succeeds somewhere unblocked.
 
+## Session 5, continued — orphan sweep
+
+Found `/admin/finance` existed (built by a prior concurrent session) but
+was never added to the sidebar nav or dashboard section list, and still
+used old pre-restyle styling — effectively unreachable and visually
+inconsistent. Reviewed its API route (`/api/admin/finance`) before
+touching anything: `requireAdmin`-gated, read-only, scope is exactly two
+things (service-wise revenue/commission breakdown, agent balance/
+outstanding list) with no invented metrics. Left the logic untouched,
+restyled the page, added it to nav + dashboard.
+
+Then swept `app/admin/*`, `app/agent/*`, and `app/api/admin/*` directory
+listings against each other to confirm no other route is missing a page
+or a page is missing from navigation. Nothing else found. Full `tsc
+--noEmit` clean across the whole tree as of this commit.
+
+**Everything actionable without a credential, a tool I don't have, or an
+owner decision is now done.** What's left (build verification on an
+unblocked machine, real browser visual QA, deploy, contact-form backend
+decision, insurance schema decision, real photos/blog content from the
+owner) is exactly the same list from the last two closeouts — restating
+it here would just be padding.
+
 ## Where this leaves the whole project
 
 Items 1 (build verify — blocked on sandbox network, needs re-run
