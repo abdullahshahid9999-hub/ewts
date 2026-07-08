@@ -217,7 +217,95 @@ actual domain cutover — none of which are things an AI session can do
 without a human at the keyboard for the account/credential steps. This is
 a "stop and hand back" item, not a "keep going" item.
 
+## Session 4 — Page-matching pass (MATCH-ALL-PAGES-PROMPT.md)
+
+**First finding, corrected before doing anything else**: the brief that kicked
+off this pass claimed the home page had already been matched to the live
+site and could be used as the reference pattern. That was false at the time
+— checked, the home page was still a generic template with no images, no
+stats, no testimonials, no FAQ. Flagged it. A concurrent session then fixed
+exactly that (home page rebuild, real images, Prisma pin) while this session
+continued — merged cleanly, verified the testimonial text matches
+independently-fetched live content word-for-word, so that work is real, not
+fabricated.
+
+### Pages matched — checklist
+- [x] `/about` — full rebuild: hero, stats, partner logos, "Beyond Travel"
+  section, What We Do, 20-years timeline, services grid, team, certs,
+  awards, final CTA. Word-for-word copy from the live page.
+- [x] `/contact` — office hours table, 4 WhatsApp numbers, inquiry form
+  (see note below), map embed, social links.
+- [x] `/umrah` — hero, filter tabs, empty-state card, package card layout.
+- [x] `/tours` — hero, filter tabs, empty-state, package cards.
+- [x] `/visa` — hero, stats bar, how-it-works steps; listing/empty-state
+  kept from before (see note below).
+- [x] `/group-tickets` — hero, category section, features strip, "Book Your
+  Seat" modal.
+- [x] `/insurance` — hero, badges, quote calculator; listing kept/extended
+  (see note below).
+- [x] `/blog` — hero, breadcrumb, empty-state (post cards kept from before —
+  live listing is client-rendered, nothing to extract).
+- [x] `/blog/[slug]` — template only, see note below.
+
+### Honest notes — things I could not verify or had to deviate on
+1. **Contact form has no backend.** No email service or inquiry-storage
+   route exists in this rebuild. The form composes a WhatsApp message and
+   opens `wa.me` instead of submitting anywhere. This matches the site's
+   WhatsApp-first architecture but is NOT the same as the live site, which
+   likely emails the inquiry somewhere. If the owner wants actual form
+   submissions captured (e.g. to a database table or email), that's new
+   backend work, not something I inferred from the brief.
+2. **`/visa` listing markup wasn't fetchable.** The live page's plan cards
+   are rendered by client-side JS with no static fallback in the HTML I
+   could fetch. I kept the existing DB-driven listing/empty-state rather
+   than guess at a card layout I never actually saw.
+3. **`/insurance` calculator does not filter results.** The live site's
+   calculator implies matching by destination + duration + traveler age,
+   but `InsuranceRate` in the schema has no such fields — it's just
+   `planId` + `pricePkr`. I built the calculator UI with all the live
+   site's input fields, but on submit it just reveals the full active plan
+   list and says so in the UI, rather than faking a filter that doesn't
+   work. If real per-destination pricing is wanted, the schema needs new
+   columns on `InsuranceRate` (destination, duration, ageBand at minimum)
+   — that's a real scope decision for the owner, not something to guess at.
+4. **No real blog post was fetchable.** `blog.html`'s post list is loaded
+   by `loadBlogs()` client-side JS with no static content in the page
+   source, and a site search turned up nothing indexed. The `[slug]`
+   template therefore follows the same visual pattern as the other rebuilt
+   pages (navy breadcrumb header, WhatsApp CTA) rather than copying real
+   post content — because there was no real post content available to copy.
+5. **Login/account links intentionally excluded**, on `/tours` and
+   `/blog` specifically — both live pages have leftover "My Account" /
+   "Book Now" / "Customer Login" markup from the old Supabase-auth legacy
+   site. This rebuild's architecture is deliberately WhatsApp-first with no
+   public-site accounts (see the original continuation brief). Reproducing
+   those links would point at pages that don't exist in this rebuild and
+   contradict an already-made architecture decision — so they're left out
+   on purpose, not missed.
+6. **Live site itself is inconsistent** — footer says "Est. 2003", About
+   page says "Founded 2004." Different pages also use two different
+   nav/footer templates (compare the homepage nav to the tours/blog page
+   nav) — the live site appears to be mid-migration on its own end. I went
+   with "2004" / "20+ years" since that's what the About page (the more
+   detailed, presumably more current source) says, and used the newer
+   nav/footer pattern (no login links) consistently, per point 5.
+7. **Images**: partner logos on `/about` are hotlinked from Wikimedia
+   Commons (stable public CDN, not the live site's own assets) since no
+   real partner-logo files exist in this repo. Office photo and team
+   headshots on `/about` use styled placeholder blocks with the real
+   caption/name text, per the brief's instructions — these need real
+   photos from the owner to look finished.
+
+### Not done
+- No new backend for the contact form (see note 1).
+- No schema changes for insurance rate filtering (see note 3) — flagging,
+  not building, since this changes the data model and wasn't asked for
+  explicitly.
+- Real blog posts still need to be written/imported by the owner — the
+  `/blog` and `/blog/[slug]` pages are ready to display them the moment
+  rows exist in the `Blog` table.
 ## Where this leaves the whole project
+
 Items 1 (build verify — blocked on sandbox network, needs re-run
 elsewhere), 3 (agent portal), 4 (admin panel), and 5 (R2) are functionally
 complete pending a real `prisma generate` + build pass. Item 2 (public
