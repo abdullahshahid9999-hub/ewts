@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
       fullName: agent.fullName,
       email: agent.email,
       tier: agent.tier,
+      balance: agent.balance,
+      creditLimit: agent.creditLimit,
     },
   });
 

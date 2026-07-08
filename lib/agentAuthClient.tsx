@@ -8,6 +8,8 @@ type Agent = {
   fullName: string;
   email: string;
   tier: string;
+  balance: number;
+  creditLimit: number;
 };
 
 type AgentAuthContextValue = {

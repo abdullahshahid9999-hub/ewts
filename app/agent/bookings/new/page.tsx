@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
+import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 
 type GroupFlight = {
@@ -132,7 +133,9 @@ function NewBookingInner() {
 export default function NewBookingPage() {
   return (
     <AgentGuard>
-      <NewBookingInner />
+      <AgentShell>
+        <NewBookingInner />
+      </AgentShell>
     </AgentGuard>
   );
 }

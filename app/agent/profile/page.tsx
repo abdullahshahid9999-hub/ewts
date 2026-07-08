@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AgentGuard from "@/components/AgentGuard";
+import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 
 type Profile = {
@@ -44,73 +45,67 @@ function ProfileInner() {
     });
     const data = await res.json().catch(() => ({}));
     setSubmitting(false);
-    if (!res.ok) {
-      setPwError(data.error ?? "Could not change password.");
-      return;
-    }
+    if (!res.ok) { setPwError(data.error ?? "Could not change password."); return; }
     setPwSuccess("Password updated.");
     setCurrentPassword("");
     setNewPassword("");
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="font-display text-2xl text-[var(--navy)]">Profile</h1>
+    <>
+      <div className="ap-ph">
+        <div>
+          <h2>My <span>Profile</span></h2>
+          <p>Account details &amp; security</p>
+        </div>
+      </div>
 
       {profile && (
-        <div className="mt-6 rounded-2xl border border-[var(--bdr)] bg-white p-6 text-sm">
-          <dl className="space-y-2">
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Agent code</dt><dd>{profile.agentCode}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Name</dt><dd>{profile.fullName}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Email</dt><dd>{profile.email}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Phone</dt><dd>{profile.phone ?? "—"}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Tier</dt><dd className="capitalize">{profile.tier}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Balance</dt><dd>PKR {profile.balance.toLocaleString()}</dd></div>
-            <div className="flex justify-between"><dt className="text-[var(--muted)]">Credit limit</dt><dd>PKR {profile.creditLimit.toLocaleString()}</dd></div>
-          </dl>
-          <p className="mt-3 text-xs text-[var(--muted)]">
-            Balance, credit limit, and tier are set by the office and can't be changed here.
+        <div className="ap-card">
+          <div className="ap-ch"><h3>Account Details</h3></div>
+          <div style={{ padding: "16px 18px" }} className="text-sm space-y-2">
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Agent code</span><strong>{profile.agentCode}</strong></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Name</span><span>{profile.fullName}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Email</span><span>{profile.email}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Phone</span><span>{profile.phone ?? "—"}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Tier</span><span className="capitalize">{profile.tier}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Balance</span><span>PKR {profile.balance.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--muted)]">Credit limit</span><span>PKR {profile.creditLimit.toLocaleString()}</span></div>
+          </div>
+          <p style={{ padding: "0 18px 16px" }} className="text-xs text-[var(--muted)]">
+            Balance, credit limit, and tier are set by the office and can&apos;t be changed here.
           </p>
         </div>
       )}
 
-      <form onSubmit={handlePasswordChange} className="mt-6 space-y-4 rounded-2xl border border-[var(--bdr)] bg-white p-6">
-        <h2 className="font-display text-lg text-[var(--navy)]">Change Password</h2>
-        <input
-          type="password"
-          required
-          placeholder="Current password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        <input
-          type="password"
-          required
-          minLength={8}
-          placeholder="New password (min 8 characters)"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-        />
-        {pwError && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{pwError}</p>}
-        {pwSuccess && <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{pwSuccess}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-lg bg-[var(--navy)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {submitting ? "Updating…" : "Update password"}
-        </button>
-      </form>
-    </div>
+      <div className="ap-card">
+        <div className="ap-ch"><h3>Change Password</h3></div>
+        <form onSubmit={handlePasswordChange} style={{ padding: "16px 18px" }} className="space-y-3">
+          <div className="ap-field">
+            <label>Current Password</label>
+            <input type="password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+          </div>
+          <div className="ap-field">
+            <label>New Password</label>
+            <input type="password" required minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          </div>
+          {pwError && <p className="text-sm text-red-700">{pwError}</p>}
+          {pwSuccess && <p className="text-sm" style={{ color: "var(--green)" }}>{pwSuccess}</p>}
+          <button type="submit" disabled={submitting} className="ap-btn ap-btn-gold">
+            {submitting ? "Updating…" : "Update Password"}
+          </button>
+        </form>
+      </div>
+    </>
   );
 }
 
 export default function AgentProfilePage() {
   return (
     <AgentGuard>
-      <ProfileInner />
+      <AgentShell>
+        <ProfileInner />
+      </AgentShell>
     </AgentGuard>
   );
 }

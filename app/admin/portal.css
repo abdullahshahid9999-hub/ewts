@@ -1,0 +1,179 @@
+/* Admin panel visual system — ported from the approved legacy reference
+   (eastwestpk/admin/dashboard.html). This is a DELIBERATELY distinct
+   palette from the public site / agent portal: muted gold (#B8923A, not
+   the site's #D4A843), light gray surfaces, DM Sans. Scoped under
+   .adp-body so these local --gold/--bg overrides never leak into pages
+   outside the admin panel. */
+
+.adp-body {
+  --a-bg: #F4F5F7;
+  --a-surface: #FFFFFF;
+  --a-raised: #FAFAFB;
+  --a-border: #E7E8EC;
+  --a-border2: #D8DAE0;
+  --a-text: #1C1E26;
+  --a-muted: #6B7280;
+  --a-dim: #9CA3AF;
+  --a-gold: #B8923A;
+  --a-gold-hi: #D4AF5A;
+  --a-gold-bg: rgba(184, 146, 58, 0.08);
+  --a-gold-bd: rgba(184, 146, 58, 0.28);
+  --a-green: #16A34A;
+  --a-green-bg: rgba(22, 163, 74, 0.08);
+  --a-red: #DC2626;
+  --a-red-bg: rgba(220, 38, 38, 0.08);
+  --a-blue: #2563EB;
+  --a-r: 8px;
+  font-family: 'DM Sans', 'Plus Jakarta Sans', sans-serif;
+  background: var(--a-bg);
+  color: var(--a-text);
+  min-height: 100vh;
+}
+.adp-body h1, .adp-body h2, .adp-body h3, .adp-body h4 {
+  font-family: 'DM Sans', 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* SIDEBAR — light, bordered, distinct from the agent portal's dark gradient */
+.adp-sb {
+  width: 216px;
+  background: var(--a-surface);
+  border-right: 1px solid var(--a-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 200;
+  overflow-y: auto;
+}
+.adp-sb-brand { padding: 16px 14px; border-bottom: 1px solid var(--a-border); display: flex; align-items: center; gap: 9px; }
+.adp-sb-brand-txt { font-size: 13px; font-weight: 700; color: var(--a-text); letter-spacing: -0.01em; }
+.adp-sb-brand-txt span { color: var(--a-gold); }
+.adp-sb-lbl { padding: 14px 14px 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--a-dim); }
+.adp-sb-nav { padding: 4px 8px; flex: 1; }
+.adp-sbn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--a-muted);
+  transition: color .12s, background .12s;
+  margin-bottom: 1px;
+  cursor: pointer;
+  border: none;
+  border-left: 2px solid transparent;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.adp-sbn:hover { color: var(--a-text); background: rgba(0, 0, 0, 0.045); }
+.adp-sbn.active { color: var(--a-gold); background: var(--a-gold-bg); font-weight: 600; border-left-color: var(--a-gold); }
+.adp-sb-footer { padding: 10px 8px; border-top: 1px solid var(--a-border); }
+.adp-sb-out {
+  width: 100%; background: none; border: 1px solid var(--a-border2); color: var(--a-muted);
+  padding: 7px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px; transition: all .12s;
+}
+.adp-sb-out:hover { border-color: var(--a-red); color: var(--a-red); }
+
+/* MAIN */
+.adp-main { margin-left: 216px; flex: 1; padding: 70px 26px 22px; min-height: 100vh; background: var(--a-bg); }
+
+/* TOPBAR */
+.adp-tbar {
+  position: fixed; top: 0; left: 216px; right: 0; height: 52px;
+  background: var(--a-surface); border-bottom: 1px solid var(--a-border);
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 20px; z-index: 90;
+}
+.adp-tbar-acct {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 7px;
+  border: 1px solid var(--a-border2); background: var(--a-raised); cursor: pointer; transition: all .12s;
+}
+.adp-tbar-acct:hover { border-color: var(--a-gold-bd); }
+.adp-tbar-acct span { font-size: 12px; font-weight: 600; color: var(--a-text); }
+.adp-tbar-out {
+  width: 32px; height: 32px; border-radius: 7px; border: 1px solid var(--a-border2); background: var(--a-raised);
+  color: var(--a-muted); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: all .12s; font-size: 12px;
+}
+.adp-tbar-out:hover { border-color: var(--a-red); color: var(--a-red); }
+
+/* PAGE HEADER */
+.adp-ph { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--a-border); }
+.adp-ph h2 { font-size: 21px; font-weight: 700; color: var(--a-text); letter-spacing: -0.02em; }
+.adp-ph h2 em { color: var(--a-gold); font-style: normal; }
+.adp-ph p { font-size: 11.5px; color: var(--a-muted); margin-top: 4px; }
+
+/* STAT GRID */
+.adp-sg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.adp-sc {
+  background: var(--a-surface); border: 1px solid var(--a-border); border-radius: var(--a-r);
+  padding: 15px 16px; transition: border-color .2s, transform .15s, box-shadow .2s;
+}
+.adp-sc:hover { border-color: var(--a-border2); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(20, 22, 30, 0.05); }
+.adp-sc-n { font-size: 23px; color: var(--a-text); font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+.adp-sc-l { font-size: 11px; color: var(--a-muted); margin-top: 5px; }
+
+/* CARD */
+.adp-card { background: var(--a-surface); border: 1px solid var(--a-border); border-radius: var(--a-r); overflow: hidden; margin-bottom: 14px; }
+.adp-ch { padding: 13px 16px; border-bottom: 1px solid var(--a-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.adp-ch h3 { font-size: 12.5px; font-weight: 700; color: var(--a-text); letter-spacing: 0.01em; }
+
+/* TABLE */
+.adp-tw { overflow-x: auto; }
+.adp-table { width: 100%; border-collapse: collapse; }
+.adp-table thead th {
+  padding: 9px 14px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--a-muted); text-align: left; background: rgba(0, 0, 0, 0.025); border-bottom: 1px solid var(--a-border); white-space: nowrap;
+}
+.adp-table tbody tr { border-bottom: 1px solid var(--a-border); transition: background .12s; }
+.adp-table tbody tr:hover { background: rgba(184, 146, 58, 0.035); }
+.adp-table tbody tr:last-child { border-bottom: none; }
+.adp-table tbody td { padding: 10px 14px; font-size: 12px; color: var(--a-muted); vertical-align: middle; }
+.adp-table tbody td strong { color: var(--a-text); font-weight: 600; }
+
+/* PILLS */
+.adp-pill { padding: 2px 7px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; }
+.adp-p-pending { background: var(--a-gold-bg); color: var(--a-gold); border: 1px solid var(--a-gold-bd); }
+.adp-p-active, .adp-p-confirmed, .adp-p-published, .adp-p-issued, .adp-p-approved { background: var(--a-green-bg); color: var(--a-green); border: 1px solid rgba(34, 197, 94, 0.18); }
+.adp-p-inactive, .adp-p-cancelled, .adp-p-rejected { background: var(--a-red-bg); color: var(--a-red); border: 1px solid rgba(239, 68, 68, 0.15); }
+.adp-p-issue_requested { background: rgba(96, 165, 250, 0.15); color: #60A5FA; border: 1px solid rgba(96, 165, 250, 0.3); }
+
+/* BUTTONS */
+.adp-btn { padding: 7px 13px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .12s; border: none; letter-spacing: 0.01em; }
+.adp-btn-g { background: var(--a-gold); color: #000; }
+.adp-btn-g:hover { background: var(--a-gold-hi); }
+.adp-btn-t { background: none; border: 1px solid var(--a-border2); color: var(--a-muted); }
+.adp-btn-t:hover { color: var(--a-text); border-color: var(--a-muted); }
+.adp-btn-s { background: rgba(0, 0, 0, 0.04); border: 1px solid var(--a-border2); color: var(--a-muted); padding: 5px 8px; border-radius: 4px; font-size: 11px; }
+.adp-btn-s:hover { color: var(--a-text); border-color: var(--a-border2); }
+.adp-btn-r { background: none; border: 1px solid rgba(239, 68, 68, 0.18); color: rgba(239, 68, 68, 0.55); padding: 5px 8px; border-radius: 4px; font-size: 11px; }
+.adp-btn-r:hover { background: var(--a-red-bg); color: var(--a-red); border-color: var(--a-red); }
+
+/* INPUTS */
+.adp-si, .adp-ss {
+  background: var(--a-raised); border: 1px solid var(--a-border2); border-radius: 5px;
+  padding: 6px 10px; font-size: 12px; color: var(--a-text); outline: none; transition: border-color .12s;
+}
+.adp-si:focus, .adp-ss:focus { border-color: var(--a-gold); }
+
+/* FORM FIELDS (modal-style, reused inline on full pages too) */
+.adp-fg label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--a-muted); margin-bottom: 5px; }
+.adp-fg input, .adp-fg select, .adp-fg textarea {
+  width: 100%; background: var(--a-raised); border: 1px solid var(--a-border2); border-radius: 5px;
+  padding: 8px 10px; font-size: 13px; color: var(--a-text); outline: none; transition: border-color .12s;
+}
+.adp-fg input:focus, .adp-fg select:focus, .adp-fg textarea:focus { border-color: var(--a-gold); }
+.adp-fr { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+@media (max-width: 900px) {
+  .adp-main { margin-left: 0; padding: 64px 14px 14px; }
+  .adp-sb { transform: translateX(-100%); transition: transform .25s ease; box-shadow: 0 0 32px rgba(0, 0, 0, 0.25); }
+  .adp-sb.open { transform: translateX(0); }
+  .adp-sg { grid-template-columns: 1fr 1fr; }
+}

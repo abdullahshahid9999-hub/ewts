@@ -12,6 +12,17 @@
   --text2: #3D3D5C;
   --muted: #7A7A95;
   --bdr: #E4DFD4;
+  --bdr2: #D0C8BC;
+  --navy2: #0D1E35;
+  --gold-bd: rgba(212, 168, 67, 0.2);
+  --green: #16A34A;
+  --green-bg: #F0FDF4;
+  --green-bd: #BBF7D0;
+  --red: #DC2626;
+  --red-bg: #FEF2F2;
+  --red-bd: #FECACA;
+  --blue: #2563EB;
+  --blue-bg: #EFF6FF;
 }
 
 @theme inline {

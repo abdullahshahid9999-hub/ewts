@@ -2,63 +2,69 @@
 
 import Link from "next/link";
 import AgentGuard from "@/components/AgentGuard";
+import AgentShell from "@/components/AgentShell";
 import { useAgentAuth } from "@/lib/agentAuthClient";
 
 function DashboardInner() {
-  const { agent, logout } = useAgentAuth();
+  const { agent } = useAgentAuth();
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="ap-ph">
         <div>
-          <h1 className="font-display text-2xl text-[var(--navy)]">
-            Welcome, {agent?.fullName}
-          </h1>
-          <p className="text-sm text-[var(--muted)]">
-            Agent code {agent?.agentCode} · Tier {agent?.tier}
-          </p>
+          <h2>Welcome back, <span>{agent?.fullName ?? "Agent"}</span></h2>
+          <p>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
         </div>
-        <button
-          onClick={logout}
-          className="rounded-lg border border-[var(--bdr)] px-4 py-2 text-sm text-[var(--text)] hover:border-[var(--gold)]"
+        <a
+          href="https://wa.me/923336515349"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ap-btn"
+          style={{ background: "var(--green)", color: "#fff" }}
         >
-          Sign out
-        </button>
+          Contact East &amp; West
+        </a>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        <Link
-          href="/agent/bookings"
-          className="rounded-2xl border border-[var(--bdr)] bg-white p-6 shadow-sm transition hover:border-[var(--gold)]"
-        >
-          <h2 className="font-display text-lg text-[var(--navy)]">My Bookings</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            View and manage Umrah, group ticket, and insurance bookings.
-          </p>
-        </Link>
-        <Link
-          href="/agent/profile"
-          className="rounded-2xl border border-[var(--bdr)] bg-white p-6 shadow-sm transition hover:border-[var(--gold)]"
-        >
-          <h2 className="font-display text-lg text-[var(--navy)]">Profile</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            View your details and change your password.
-          </p>
-        </Link>
+      <div className="ap-sg">
+        <div className="ap-sc">
+          <div className="ap-sc-n">{agent ? `PKR ${Number(agent.balance).toLocaleString()}` : "—"}</div>
+          <div className="ap-sc-l">Account Balance</div>
+        </div>
+        <div className="ap-sc">
+          <div className="ap-sc-n">{agent ? `PKR ${Number(agent.creditLimit).toLocaleString()}` : "—"}</div>
+          <div className="ap-sc-l">Credit Limit</div>
+        </div>
+        <div className="ap-sc">
+          <div className="ap-sc-n">{agent?.tier ?? "—"}</div>
+          <div className="ap-sc-l">Agent Tier</div>
+        </div>
+        <div className="ap-sc">
+          <div className="ap-sc-n">{agent?.agentCode ?? "—"}</div>
+          <div className="ap-sc-l">Agent Code</div>
+        </div>
       </div>
 
-      <p className="mt-6 text-xs text-[var(--muted)]">
-        Balance, credit limit, and tier are managed by the office — contact
-        admin for changes.
-      </p>
-    </div>
+      <div className="ap-card">
+        <div className="ap-ch">
+          <h3>Quick Links</h3>
+        </div>
+        <div style={{ padding: "16px 18px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <Link href="/agent/bookings/new" className="ap-btn ap-btn-gold">New Booking</Link>
+          <Link href="/agent/bookings" className="ap-btn ap-btn-ghost">My Bookings</Link>
+          <Link href="/agent/profile" className="ap-btn ap-btn-ghost">My Profile</Link>
+        </div>
+      </div>
+    </>
   );
 }
 
 export default function AgentDashboardPage() {
   return (
     <AgentGuard>
-      <DashboardInner />
+      <AgentShell>
+        <DashboardInner />
+      </AgentShell>
     </AgentGuard>
   );
 }
