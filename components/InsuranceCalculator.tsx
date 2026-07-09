@@ -31,7 +31,7 @@ type QuoteRate = {
   plan: { name: string; company: { name: string; logoUrl: string | null } };
 };
 
-export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () => void }) {
+export default function InsuranceCalculator({ onViewPlans }: { onViewPlans?: () => void }) {
   const [destination, setDestination] = useState("");
   const [duration, setDuration] = useState("");
   const [travellers, setTravellers] = useState("1");
@@ -57,7 +57,7 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans: () =
     }
     setLoading(false);
     setSubmitted(true);
-    onViewPlans();
+    onViewPlans?.();
   }
 
   return (

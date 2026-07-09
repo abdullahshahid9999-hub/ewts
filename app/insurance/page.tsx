@@ -57,7 +57,7 @@ export default async function InsurancePage() {
 
       {/* QUOTE CALCULATOR */}
       <section className="max-w-6xl mx-auto px-6 py-14">
-        <InsuranceCalculator onViewPlans={() => {}} />
+        <InsuranceCalculator />
       </section>
 
       {/* AVAILABLE PLANS */}
