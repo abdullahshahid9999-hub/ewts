@@ -416,3 +416,13 @@ Implemented:
 admin to view/set each agent's `AgentCommissionRate` rows per service type
 (simple upsert on `(agentId, serviceType)`). Follow the same JWT+allow-list
 pattern as the other admin routes.
+
+## Fixed: R2 uploads failing (env var name mismatch)
+`lib/r2.ts` read `R2_PUBLIC_BASE_URL` but Render has `R2_PUBLIC_URL` set —
+every image upload across the admin panel was silently failing. Fixed at
+the source (lib/r2.ts), so all 10 routes calling uploadToR2 are fixed.
+Only `app/api/admin/packages/route.ts`'s create handler got an explicit
+try/catch with a specific error message. Good small follow-up: add the same
+try/catch to the other 9 (blogs, visa-services, group-flights,
+insurance-companies — both their POST and [id] PATCH routes) so upload
+failures are never a silent generic 500 again.
