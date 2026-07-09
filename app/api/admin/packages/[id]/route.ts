@@ -20,8 +20,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   let imageUrl: string | undefined;
   const file = form.get("image");
   if (file instanceof File) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    imageUrl = await uploadToR2({ buffer, contentType: file.type, folder: "packages" });
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      imageUrl = await uploadToR2({ buffer, contentType: file.type, folder: "packages" });
+    } catch (e) {
+      console.error("Package image upload failed:", e);
+      return NextResponse.json(
+        { error: e instanceof Error ? `Image upload failed: ${e.message}` : "Image upload failed." },
+        { status: 500 }
+      );
+    }
+  }
+
+  let itinerary: unknown;
+  const itineraryRaw = form.get("itinerary");
+  if (typeof itineraryRaw === "string" && itineraryRaw.length > 0) {
+    try {
+      itinerary = JSON.parse(itineraryRaw);
+    } catch {
+      return NextResponse.json({ error: "Itinerary is not valid JSON." }, { status: 400 });
+    }
+  }
+
+  const requestedSlug = str("slug");
+  if (requestedSlug && requestedSlug !== existing.slug) {
+    const clash = await prisma.package.findUnique({ where: { slug: requestedSlug } });
+    if (clash) return NextResponse.json({ error: "A package with this slug already exists." }, { status: 409 });
   }
 
   const pkg = await prisma.package.update({
@@ -29,10 +53,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: {
       category: str("category"),
       name: str("name"),
+      slug: requestedSlug,
       duration: str("duration"),
       price: str("price"),
       priceNote: str("priceNote"),
       destination: str("destination"),
+      departureCity: str("departureCity"),
+      tier: str("tier"),
       depDate: str("depDate"),
       retDate: str("retDate"),
       airline: str("airline"),
@@ -40,6 +67,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       hotels: str("hotels"),
       includes: str("includes"),
       excludes: str("excludes"),
+      itinerary: itineraryRaw !== null ? (itinerary as never) : undefined,
       imageUrl,
       featured: form.has("featured") ? form.get("featured") === "true" : undefined,
       status: str("status"),

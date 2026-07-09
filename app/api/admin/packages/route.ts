@@ -52,14 +52,33 @@ export async function POST(req: NextRequest) {
     return typeof v === "string" && v.length > 0 ? v : undefined;
   };
 
+  let itinerary: unknown;
+  const itineraryRaw = form.get("itinerary");
+  if (typeof itineraryRaw === "string" && itineraryRaw.length > 0) {
+    try {
+      itinerary = JSON.parse(itineraryRaw);
+    } catch {
+      return NextResponse.json({ error: "Itinerary is not valid JSON." }, { status: 400 });
+    }
+  }
+
+  const requestedSlug = str("slug");
+  if (requestedSlug) {
+    const clash = await prisma.package.findUnique({ where: { slug: requestedSlug } });
+    if (clash) return NextResponse.json({ error: "A package with this slug already exists." }, { status: 409 });
+  }
+
   const pkg = await prisma.package.create({
     data: {
       category,
       name,
+      slug: requestedSlug,
       duration: str("duration"),
       price: str("price"),
       priceNote: str("priceNote"),
       destination: str("destination"),
+      departureCity: str("departureCity"),
+      tier: str("tier"),
       depDate: str("depDate"),
       retDate: str("retDate"),
       airline: str("airline"),
@@ -67,6 +86,7 @@ export async function POST(req: NextRequest) {
       hotels: str("hotels"),
       includes: str("includes"),
       excludes: str("excludes"),
+      itinerary: itinerary as never,
       imageUrl,
       featured: form.get("featured") === "true",
       status: str("status") ?? "active",
