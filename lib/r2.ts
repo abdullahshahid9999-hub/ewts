@@ -10,8 +10,8 @@ import crypto from "crypto";
  *
  * Required env vars:
  *   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
- *   R2_BUCKET_NAME, R2_PUBLIC_BASE_URL (public CDN/custom domain the
- *   bucket is served from, e.g. https://media.eastwestpk.com)
+ *   R2_BUCKET_NAME, R2_PUBLIC_URL (public CDN/custom domain the
+ *   bucket is served from, e.g. https://pub-xxxx.r2.dev)
  */
 
 function getClient() {
@@ -49,9 +49,9 @@ export async function uploadToR2(params: {
   }
 
   const bucket = process.env.R2_BUCKET_NAME;
-  const publicBase = process.env.R2_PUBLIC_BASE_URL;
+  const publicBase = process.env.R2_PUBLIC_URL;
   if (!bucket || !publicBase) {
-    throw new Error("R2_BUCKET_NAME / R2_PUBLIC_BASE_URL are not configured.");
+    throw new Error("R2_BUCKET_NAME / R2_PUBLIC_URL are not configured.");
   }
 
   const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";

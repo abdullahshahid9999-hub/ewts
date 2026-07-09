@@ -35,8 +35,16 @@ export async function POST(req: NextRequest) {
   let imageUrl: string | undefined;
   const file = form.get("image");
   if (file instanceof File) {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    imageUrl = await uploadToR2({ buffer, contentType: file.type, folder: "packages" });
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      imageUrl = await uploadToR2({ buffer, contentType: file.type, folder: "packages" });
+    } catch (e) {
+      console.error("Package image upload failed:", e);
+      return NextResponse.json(
+        { error: e instanceof Error ? `Image upload failed: ${e.message}` : "Image upload failed." },
+        { status: 500 }
+      );
+    }
   }
 
   const str = (key: string) => {
