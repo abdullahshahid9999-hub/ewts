@@ -372,6 +372,50 @@ decision, insurance schema decision, real photos/blog content from the
 owner) is exactly the same list from the last two closeouts — restating
 it here would just be padding.
 
+## Package Detail Page (room-type selector + live booking calculator) — complete
+
+Built on top of the schema/booking API another session already laid down
+(`Package.slug/departureCity/tier/itinerary`, `PackageRoomType`, `Booking`,
+`/api/bookings`) — reviewed it before extending, it was solid, no rework.
+
+**Built:**
+- Admin: `/api/admin/packages` create/update routes now accept slug (with
+  uniqueness check), departureCity, tier, itinerary (JSON, validated).
+  Also fixed the PATCH route's image upload having no try/catch (this was
+  already flagged as a follow-up from a previous session's R2 fix note —
+  picked it up while in the same file).
+- Admin: new room-type CRUD — `/api/admin/packages/[id]/room-types`
+  (POST) and `/api/admin/packages/[id]/room-types/[roomTypeId]` (PATCH/
+  DELETE), same requireAdmin pattern as everything else.
+- `components/PackageBookingWidget.tsx` — room-type cards, live adult/
+  infant counters clamped to that room type's limits, live price
+  breakdown, booking form, WhatsApp fallback. Explicit "no payment taken
+  yet" messaging on success per the brief.
+- `components/PackageDetailView.tsx` — shared render (header, image,
+  includes/excludes, itinerary timeline) used by both
+  `app/umrah/[slug]/page.tsx` and `app/tours/[slug]/page.tsx`.
+- Listing cards (home Featured, `/umrah`, `/tours`) now link to the detail
+  page when a package has a slug, falling back to the existing WhatsApp-
+  enquiry link when it doesn't — so nothing breaks for packages created
+  before this feature existed.
+- Admin packages form: slug field with a "Generate from name" button,
+  departureCity, tier dropdown, includes/excludes textareas, a repeatable
+  itinerary-step editor (title + newline bullets + comma-separated image
+  URLs), and `PackageRoomTypesManager` — appears once a package is being
+  edited (room types need a real packageId), full add/edit/delete.
+
+**Question for the owner, not guessed at (per the brief's explicit
+instruction):** infants are currently free in the price calculation —
+there's no infant rate field anywhere in the schema. If Umrah/tour infant
+pricing should be a real number, that needs a schema field
+(`PackageRoomType.pricePerInfantPkr` or similar) plus updates to the
+booking API's price computation and the calculator's display. Not built
+speculatively.
+
+**Not verified:** same standing caveat as every other feature in this
+project — `tsc --noEmit` clean, never run against the live database or in
+a real browser.
+
 ## Where this leaves the whole project
 
 Items 1 (build verify — blocked on sandbox network, needs re-run
