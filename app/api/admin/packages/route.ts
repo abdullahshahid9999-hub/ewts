@@ -6,7 +6,10 @@ import { uploadToR2 } from "@/lib/r2";
 // GET is intentionally open (packages are public content, matching the
 // public site's read-only queries) — only writes require admin auth.
 export async function GET() {
-  const packages = await prisma.package.findMany({ orderBy: { createdAt: "desc" } });
+  const packages = await prisma.package.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { roomTypes: { orderBy: { sortOrder: "asc" } } },
+  });
   return NextResponse.json({ packages });
 }
 
