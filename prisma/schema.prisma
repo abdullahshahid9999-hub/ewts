@@ -17,27 +17,56 @@ datasource db {
 // ── PUBLIC CONTENT ──
 
 model Package {
-  id          String   @id @default(uuid())
-  category    String   // "umrah" | "tours"
-  name        String
-  duration    String?
-  price       String?
-  priceNote   String?  @map("price_note")
-  destination String?
-  depDate     String?  @map("dep_date")
-  retDate     String?  @map("ret_date")
-  airline     String?
-  route       String?
-  hotels      String?
-  includes    String?
-  excludes    String?
-  imageUrl    String?  @map("image_url")
-  featured    Boolean  @default(false)
-  status      String   @default("active") // active | inactive
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid())
+  category      String   // "umrah" | "tours"
+  name          String
+  slug          String?  @unique // for /umrah/[slug] detail pages — nullable so existing rows don't break, backfill via admin edit
+  duration      String?
+  price         String?  // legacy display price (listing cards) — actual bookable prices now live on PackageRoomType
+  priceNote     String?  @map("price_note")
+  destination   String?
+  departureCity String?  @map("departure_city")
+  tier          String?  // e.g. "SILVER", "GOLD", "PLATINUM" — admin free text, shown as a badge
+  depDate       String?  @map("dep_date")
+  retDate       String?  @map("ret_date")
+  airline       String?
+  route         String?
+  hotels        String?
+  includes      String?  // newline-separated list, rendered as a checkmark list on the detail page
+  excludes      String?  // newline-separated list, rendered as an x-mark list
+  // Itinerary as JSON: array of { title: string, details: string[], images?: string[] } —
+  // matches the numbered step layout (Outbound Flight, Hotel in Madinah, Ziyarat, etc.)
+  itinerary     Json?
+  imageUrl      String?  @map("image_url")
+  featured      Boolean  @default(false)
+  status        String   @default("active") // active | inactive
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  roomTypes PackageRoomType[]
+  bookings  Booking[]
 
   @@map("packages")
+}
+
+// Per-package room pricing — this is what makes the detail page's "Select
+// Room Type" calculator work (Quadruple/Triple/Double, each with its own
+// per-person price and occupancy limits, same pattern as the reference
+// site: usmantravels.com/packages/.../  — Triple/Double often require a
+// minimum adult count since the room is shared).
+model PackageRoomType {
+  id                String  @id @default(uuid())
+  packageId         String  @map("package_id")
+  roomType          String  // "Quadruple Room" | "Triple Room" | "Double Room" | custom
+  pricePerPersonPkr Int     @map("price_per_person_pkr")
+  maxAdults         Int     @map("max_adults")
+  maxInfants        Int     @default(0) @map("max_infants")
+  minAdultsRequired Int?    @map("min_adults_required") // e.g. Triple Room needs >=3 adults booked together
+  sortOrder         Int     @default(0) @map("sort_order")
+
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@map("package_room_types")
 }
 
 model GroupFlight {
@@ -150,12 +179,22 @@ model Booking {
   id           String   @id @default(uuid())
   bookingRef   String   @unique @map("booking_ref")
   customerName String?  @map("customer_name")
+  phone        String?
+  email        String?
   service      String?
-  status       String   @default("pending")
+  // Package-booking specific fields — null for other booking types (visa,
+  // group ticket direct bookings, etc. that also use this table).
+  packageId       String? @map("package_id")
+  roomTypeLabel   String? @map("room_type_label") // snapshot of the room type name at booking time (e.g. "Triple Room") — don't rely on live PackageRoomType, admin might change/delete it later
+  adults          Int?    @default(1)
+  infants         Int?    @default(0)
+  totalPricePkr   Int?    @map("total_price_pkr") // snapshot of the computed total at booking time, same immutability reasoning as agent commission — price display can change later, this booking's price shouldn't retroactively
+  status       String   @default("pending") // pending | confirmed | cancelled — payment status is a SEPARATE concern, added later per the owner's own pipeline plan
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   travellers Traveller[]
+  package    Package?    @relation(fields: [packageId], references: [id])
 
   @@map("bookings")
 }
