@@ -7,6 +7,7 @@ type RoomType = {
   id: string;
   roomType: string;
   pricePerPersonPkr: number;
+  pricePerInfantPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
@@ -33,7 +34,10 @@ export default function PackageBookingWidget({
 
   const selected = roomTypes.find((r) => r.id === selectedId) ?? null;
 
-  const total = useMemo(() => (selected ? adults * selected.pricePerPersonPkr : 0), [selected, adults]);
+  const total = useMemo(
+    () => (selected ? adults * selected.pricePerPersonPkr + infants * selected.pricePerInfantPkr : 0),
+    [selected, adults, infants]
+  );
 
   const minInvalid = !!(selected?.minAdultsRequired && adults < selected.minAdultsRequired);
   const canSubmit = !!selected && !minInvalid && customerName.trim() && phone.trim() && !submitting;
@@ -129,6 +133,11 @@ export default function PackageBookingWidget({
               Up to {rt.maxAdults} adult{rt.maxAdults === 1 ? "" : "s"}
               {rt.maxInfants > 0 ? `, ${rt.maxInfants} infant${rt.maxInfants === 1 ? "" : "s"}` : ""}
             </p>
+            {rt.maxInfants > 0 && rt.pricePerInfantPkr > 0 && (
+              <p className="text-muted text-xs">
+                Infant rate: Rs. {rt.pricePerInfantPkr.toLocaleString()} flat
+              </p>
+            )}
             {rt.minAdultsRequired && (
               <p className="text-muted text-xs mt-1">Requires at least {rt.minAdultsRequired} adults.</p>
             )}
@@ -168,6 +177,12 @@ export default function PackageBookingWidget({
               <span>Adults ({adults} × Rs. {selected.pricePerPersonPkr.toLocaleString()})</span>
               <span>Rs. {(adults * selected.pricePerPersonPkr).toLocaleString()}</span>
             </div>
+            {infants > 0 && (
+              <div className="flex justify-between mb-1">
+                <span>Infants ({infants} × Rs. {selected.pricePerInfantPkr.toLocaleString()})</span>
+                <span>Rs. {(infants * selected.pricePerInfantPkr).toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between font-display text-lg font-semibold pt-2 border-t border-border mt-2">
               <span>Total</span>
               <span className="text-gold">Rs. {total.toLocaleString()}</span>

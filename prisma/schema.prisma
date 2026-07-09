@@ -59,6 +59,10 @@ model PackageRoomType {
   packageId         String  @map("package_id")
   roomType          String  // "Quadruple Room" | "Triple Room" | "Double Room" | custom
   pricePerPersonPkr Int     @map("price_per_person_pkr")
+  // Fixed flat rate per infant (owner's decision: flat PKR amount, not a
+  // % of adult price). Nullable/0 = free, so existing room types without
+  // this set don't suddenly start charging for infants unexpectedly.
+  pricePerInfantPkr Int     @default(0) @map("price_per_infant_pkr")
   maxAdults         Int     @map("max_adults")
   maxInfants        Int     @default(0) @map("max_infants")
   minAdultsRequired Int?    @map("min_adults_required") // e.g. Triple Room needs >=3 adults booked together

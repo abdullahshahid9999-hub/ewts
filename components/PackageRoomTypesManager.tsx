@@ -7,12 +7,13 @@ type RoomType = {
   id: string;
   roomType: string;
   pricePerPersonPkr: number;
+  pricePerInfantPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
 };
 
-const emptyRt = { roomType: "", pricePerPersonPkr: "", maxAdults: "2", maxInfants: "0", minAdultsRequired: "" };
+const emptyRt = { roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", maxAdults: "2", maxInfants: "0", minAdultsRequired: "" };
 
 export default function PackageRoomTypesManager({
   packageId,
@@ -37,6 +38,7 @@ export default function PackageRoomTypesManager({
     setForm({
       roomType: rt.roomType,
       pricePerPersonPkr: String(rt.pricePerPersonPkr),
+      pricePerInfantPkr: String(rt.pricePerInfantPkr),
       maxAdults: String(rt.maxAdults),
       maxInfants: String(rt.maxInfants),
       minAdultsRequired: rt.minAdultsRequired != null ? String(rt.minAdultsRequired) : "",
@@ -61,6 +63,7 @@ export default function PackageRoomTypesManager({
     const payload = {
       roomType: form.roomType,
       pricePerPersonPkr: Number(form.pricePerPersonPkr),
+      pricePerInfantPkr: Number(form.pricePerInfantPkr || 0),
       maxAdults: Number(form.maxAdults),
       maxInfants: Number(form.maxInfants || 0),
       minAdultsRequired: form.minAdultsRequired ? Number(form.minAdultsRequired) : null,
@@ -93,15 +96,16 @@ export default function PackageRoomTypesManager({
 
       <div className="adp-tw">
         <table className="adp-table">
-          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Max Adults</th><th>Max Infants</th><th>Min Adults</th><th></th></tr></thead>
+          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Price/Infant</th><th>Max Adults</th><th>Max Infants</th><th>Min Adults</th><th></th></tr></thead>
           <tbody>
             {roomTypes.length === 0 && (
-              <tr><td colSpan={6} className="etd" style={{ textAlign: "center" }}>No room types yet — add one below.</td></tr>
+              <tr><td colSpan={7} className="etd" style={{ textAlign: "center" }}>No room types yet — add one below.</td></tr>
             )}
             {roomTypes.map((rt) => (
               <tr key={rt.id}>
                 <td><strong>{rt.roomType}</strong></td>
                 <td>Rs. {rt.pricePerPersonPkr.toLocaleString()}</td>
+                <td>Rs. {rt.pricePerInfantPkr.toLocaleString()}</td>
                 <td>{rt.maxAdults}</td>
                 <td>{rt.maxInfants}</td>
                 <td>{rt.minAdultsRequired ?? "—"}</td>
@@ -118,6 +122,7 @@ export default function PackageRoomTypesManager({
       <form onSubmit={handleSubmit} className="adp-fg adp-fr" style={{ padding: "16px 18px", borderTop: "1px solid var(--a-border)" }}>
         <div><label>Room Type Name</label><input placeholder="e.g. Triple Room" value={form.roomType} onChange={(e) => setForm((f) => ({ ...f, roomType: e.target.value }))} /></div>
         <div><label>Price / Person (PKR)</label><input type="number" value={form.pricePerPersonPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerPersonPkr: e.target.value }))} /></div>
+        <div><label>Price / Infant (PKR, flat)</label><input type="number" value={form.pricePerInfantPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerInfantPkr: e.target.value }))} /></div>
         <div><label>Max Adults</label><input type="number" value={form.maxAdults} onChange={(e) => setForm((f) => ({ ...f, maxAdults: e.target.value }))} /></div>
         <div><label>Max Infants</label><input type="number" value={form.maxInfants} onChange={(e) => setForm((f) => ({ ...f, maxInfants: e.target.value }))} /></div>
         <div><label>Min Adults Required (optional)</label><input type="number" placeholder="e.g. 3 for shared rooms" value={form.minAdultsRequired} onChange={(e) => setForm((f) => ({ ...f, minAdultsRequired: e.target.value }))} /></div>

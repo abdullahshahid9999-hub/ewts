@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   // Server-side price computation — the only source of truth for what
   // this booking actually costs, regardless of what the client displayed.
-  const totalPricePkr = adults * rt.pricePerPersonPkr; // infants priced separately only if/when the business defines an infant rate; currently free, matching "not included" style reference pricing until specified otherwise
+  const totalPricePkr = adults * rt.pricePerPersonPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant, admin-configurable per room type
 
   const booking = await prisma.booking.create({
     data: {

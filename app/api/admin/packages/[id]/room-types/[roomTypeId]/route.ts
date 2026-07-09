@@ -23,6 +23,11 @@ export async function PATCH(
     if (!Number.isFinite(n) || n <= 0) return NextResponse.json({ error: "pricePerPersonPkr must be positive." }, { status: 400 });
     data.pricePerPersonPkr = n;
   }
+  if (body?.pricePerInfantPkr !== undefined) {
+    const n = Number(body.pricePerInfantPkr);
+    if (!Number.isFinite(n) || n < 0) return NextResponse.json({ error: "pricePerInfantPkr must be zero or positive." }, { status: 400 });
+    data.pricePerInfantPkr = n;
+  }
   if (body?.maxAdults !== undefined) {
     const n = Number(body.maxAdults);
     if (!Number.isFinite(n) || n < 1) return NextResponse.json({ error: "maxAdults must be at least 1." }, { status: 400 });
