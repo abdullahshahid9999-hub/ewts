@@ -105,14 +105,20 @@ export default async function UmrahPage() {
                       {pkg.price}
                       <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
                     </span>
-                    <a
-                      href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-gold hover:underline"
-                    >
-                      Book This Package on WhatsApp →
-                    </a>
+                    {pkg.slug ? (
+                      <Link href={`/umrah/${pkg.slug}`} className="text-sm font-semibold text-gold hover:underline">
+                        View Details →
+                      </Link>
+                    ) : (
+                      <a
+                        href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-gold hover:underline"
+                      >
+                        Book This Package on WhatsApp →
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

@@ -237,14 +237,20 @@ export default async function Home() {
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="font-display text-xl font-semibold text-gold">{pkg.price}</span>
-                    <a
-                      href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-gold hover:underline"
-                    >
-                      Enquire →
-                    </a>
+                    {pkg.slug ? (
+                      <Link href={`/${pkg.category}/${pkg.slug}`} className="text-sm font-semibold text-gold hover:underline">
+                        View Details →
+                      </Link>
+                    ) : (
+                      <a
+                        href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-gold hover:underline"
+                      >
+                        Enquire →
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

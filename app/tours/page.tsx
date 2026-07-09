@@ -104,14 +104,20 @@ export default async function ToursPage() {
                         <span className="text-muted text-xs font-sans font-normal ml-1">{pkg.priceNote}</span>
                       )}
                     </span>
-                    <a
-                      href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-gold hover:underline"
-                    >
-                      Enquire on WhatsApp →
-                    </a>
+                    {pkg.slug ? (
+                      <Link href={`/tours/${pkg.slug}`} className="text-sm font-semibold text-gold hover:underline">
+                        View Details →
+                      </Link>
+                    ) : (
+                      <a
+                        href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-gold hover:underline"
+                      >
+                        Enquire on WhatsApp →
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
