@@ -12,11 +12,24 @@ export const dynamic = "force-dynamic";
 // GET is intentionally open (packages are public content, matching the
 // public site's read-only queries) — only writes require admin auth.
 export async function GET() {
-  const packages = await prisma.package.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { roomTypes: { orderBy: { sortOrder: "asc" } } },
-  });
-  return NextResponse.json({ packages });
+  try {
+    const packages = await prisma.package.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { roomTypes: { orderBy: { sortOrder: "asc" } } },
+    });
+    return NextResponse.json({ packages });
+  } catch (e) {
+    // Without this, any DB error (e.g. a table the admin query joins
+    // against — like package_room_types — missing because a migration
+    // wasn't run) causes a bare 500, and the frontend's `data.packages ?? []`
+    // fallback silently shows an empty list with zero indication anything
+    // is wrong. Surface it instead.
+    console.error("GET /api/admin/packages failed:", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? `Could not load packages: ${e.message}` : "Could not load packages." },
+      { status: 500 }
+    );
+  }
 }
 
 /**

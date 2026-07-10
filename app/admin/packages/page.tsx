@@ -71,6 +71,12 @@ function PackagesInner() {
     setLoading(true);
     const res = await fetch("/api/admin/packages");
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error ?? "Could not load packages.");
+      setPackages([]);
+      setLoading(false);
+      return;
+    }
     setPackages(data.packages ?? []);
     setLoading(false);
   }, []);

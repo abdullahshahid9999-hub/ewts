@@ -37,6 +37,12 @@ function AgentsInner() {
     setLoading(true);
     const res = await adminFetch("/api/admin/agents", accessToken, refresh);
     const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data.error ?? "Could not load agents.");
+      setAgents([]);
+      setLoading(false);
+      return;
+    }
     setAgents(data.agents ?? []);
     setLoading(false);
   }, [accessToken, refresh]);

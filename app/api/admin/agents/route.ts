@@ -13,14 +13,22 @@ export async function GET(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const agents = await prisma.agent.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { commissionRates: true },
-  });
+  try {
+    const agents = await prisma.agent.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { commissionRates: true },
+    });
 
-  // passwordHash is never sent to the client, even to admins.
-  const sanitized = agents.map(({ passwordHash, ...rest }) => rest);
-  return NextResponse.json({ agents: sanitized });
+    // passwordHash is never sent to the client, even to admins.
+    const sanitized = agents.map(({ passwordHash, ...rest }) => rest);
+    return NextResponse.json({ agents: sanitized });
+  } catch (e) {
+    console.error("GET /api/admin/agents failed:", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? `Could not load agents: ${e.message}` : "Could not load agents." },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
