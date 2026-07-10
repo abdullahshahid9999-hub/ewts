@@ -28,10 +28,12 @@ export async function POST(req: NextRequest) {
   const customerName = typeof body?.customerName === "string" ? body.customerName.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
   const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const passport = typeof body?.passport === "string" ? body.passport.trim() : "";
+  const specialRequests = typeof body?.specialRequests === "string" ? body.specialRequests.trim() : "";
 
-  if (!packageId || !roomType || !customerName || !phone) {
+  if (!packageId || !roomType || !customerName || !phone || !email) {
     return NextResponse.json(
-      { error: "Package, room type, name, and phone are required." },
+      { error: "Package, room type, name, phone, and email are required." },
       { status: 400 }
     );
   }
@@ -71,6 +73,8 @@ export async function POST(req: NextRequest) {
       customerName,
       phone,
       email: email || undefined,
+      passport: passport || undefined,
+      specialRequests: specialRequests || undefined,
       service: pkg.category,
       packageId: pkg.id,
       roomTypeLabel: rt.roomType,
@@ -96,6 +100,8 @@ export async function POST(req: NextRequest) {
         <p><strong>Customer:</strong> ${customerName}</p>
         <p><strong>Phone:</strong> ${phone}</p>
         ${email ? `<p><strong>Email:</strong> ${email}</p>` : ""}
+        ${passport ? `<p><strong>CNIC/Passport:</strong> ${passport}</p>` : ""}
+        ${specialRequests ? `<p><strong>Special Requests:</strong> ${specialRequests}</p>` : ""}
         <p><em>No payment has been collected yet — this is a booking request only.</em></p>
       `,
     }).catch((e) => console.error("Booking notification email failed:", e));

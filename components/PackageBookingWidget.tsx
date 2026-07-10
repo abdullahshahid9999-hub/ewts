@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { waLink } from "@/lib/whatsapp";
 
 type RoomType = {
@@ -25,12 +26,6 @@ export default function PackageBookingWidget({
   const [selectedId, setSelectedId] = useState<string | null>(roomTypes[0]?.id ?? null);
   const [adults, setAdults] = useState(1);
   const [infants, setInfants] = useState(0);
-  const [customerName, setCustomerName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<{ ref: string } | null>(null);
 
   const selected = roomTypes.find((r) => r.id === selectedId) ?? null;
 
@@ -40,14 +35,12 @@ export default function PackageBookingWidget({
   );
 
   const minInvalid = !!(selected?.minAdultsRequired && adults < selected.minAdultsRequired);
-  const canSubmit = !!selected && !minInvalid && customerName.trim() && phone.trim() && !submitting;
+  const canProceed = !!selected && !minInvalid;
 
   function selectRoomType(rt: RoomType) {
     setSelectedId(rt.id);
     setAdults((a) => Math.min(Math.max(a, 1), rt.maxAdults));
     setInfants((i) => Math.min(i, rt.maxInfants));
-    setConfirmation(null);
-    setError(null);
   }
 
   function adjustAdults(delta: number) {
@@ -60,34 +53,9 @@ export default function PackageBookingWidget({
     setInfants((i) => Math.min(Math.max(i + delta, 0), selected.maxInfants));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selected) return;
-    setError(null);
-    setSubmitting(true);
-
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        packageId,
-        roomType: selected.roomType,
-        adults,
-        infants,
-        customerName,
-        phone,
-        email: email || undefined,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setSubmitting(false);
-
-    if (!res.ok) {
-      setError(data.error ?? "Could not submit booking. Please try again.");
-      return;
-    }
-    setConfirmation({ ref: data.booking.bookingRef });
-  }
+  const bookingFormHref = selected
+    ? `/booking-form?packageId=${encodeURIComponent(packageId)}&roomType=${encodeURIComponent(selected.roomType)}&adults=${adults}&infants=${infants}`
+    : "#";
 
   const whatsappMessage = selected
     ? `Assalam o Alaikum! I'm interested in "${packageName}" — ${selected.roomType}, ${adults} adult(s)${infants ? `, ${infants} infant(s)` : ""}.`
@@ -158,7 +126,12 @@ export default function PackageBookingWidget({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Infants <span className="text-muted text-xs">(free)</span></span>
+              <span className="text-sm">
+                Infants{" "}
+                <span className="text-muted text-xs">
+                  {selected.pricePerInfantPkr > 0 ? `(Rs. ${selected.pricePerInfantPkr.toLocaleString()} each)` : "(free)"}
+                </span>
+              </span>
               <div className="flex items-center gap-3">
                 <button type="button" onClick={() => adjustInfants(-1)} className="w-8 h-8 rounded-full border border-border font-bold">−</button>
                 <span className="w-6 text-center font-semibold">{infants}</span>
@@ -189,58 +162,33 @@ export default function PackageBookingWidget({
             </div>
           </div>
 
-          {confirmation ? (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
-              <p className="font-semibold text-green-800 mb-1">Booking request received!</p>
-              <p className="text-sm text-green-800 mb-2">Ref: {confirmation.ref}</p>
-              <p className="text-sm text-green-800">
-                No payment has been taken yet. We&apos;ll contact you on WhatsApp/phone to confirm and discuss payment.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                required
-                placeholder="Full Name *"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-              />
-              <input
-                required
-                placeholder="Phone *"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-              />
-              <input
-                type="email"
-                placeholder="Email (optional)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-              />
-
-              {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-              <div className="flex gap-2 flex-wrap">
+          {selected && (
+            <div className="flex gap-2 flex-wrap">
+              {canProceed ? (
+                <Link
+                  href={bookingFormHref}
+                  className="flex-1 text-center bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                >
+                  Book Now
+                </Link>
+              ) : (
                 <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="flex-1 bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="button"
+                  disabled
+                  className="flex-1 bg-gold text-black font-bold px-6 py-3 rounded-lg shadow-md opacity-50 cursor-not-allowed"
                 >
-                  {submitting ? "Submitting…" : "Book Now"}
+                  Book Now
                 </button>
-                <a
-                  href={waLink(whatsappMessage)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 text-center border border-border hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
-                >
-                  WhatsApp Instead
-                </a>
-              </div>
-            </form>
+              )}
+              <a
+                href={waLink(whatsappMessage)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 text-center border border-border hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                WhatsApp Instead
+              </a>
+            </div>
           )}
         </>
       )}
