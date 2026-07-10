@@ -37,10 +37,23 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await hashPassword(password);
 
-  const agent = await prisma.agent.create({
-    data: { agentCode, fullName, email, phone, passwordHash },
-  });
-
-  const { passwordHash: _hash, ...safeAgent } = agent;
-  return NextResponse.json({ agent: safeAgent }, { status: 201 });
+  try {
+    const agent = await prisma.agent.create({
+      data: { agentCode, fullName, email, phone, passwordHash },
+    });
+    const { passwordHash: _hash, ...safeAgent } = agent;
+    return NextResponse.json({ agent: safeAgent }, { status: 201 });
+  } catch (e: unknown) {
+    // Prisma unique constraint violation (P2002) — agentCode or email
+    // already exists. Without this catch, the request just 500s with no
+    // useful message and the admin sees "Could not create agent" with no
+    // idea why.
+    const err = e as { code?: string; meta?: { target?: string[] } };
+    if (err?.code === "P2002") {
+      const field = err.meta?.target?.[0] ?? "agentCode/email";
+      return NextResponse.json({ error: `An agent with this ${field} already exists.` }, { status: 409 });
+    }
+    console.error("Agent creation failed:", e);
+    return NextResponse.json({ error: "Could not create agent. Please try again." }, { status: 500 });
+  }
 }
