@@ -57,7 +57,7 @@ model Package {
 model PackageRoomType {
   id                String  @id @default(uuid())
   packageId         String  @map("package_id")
-  roomType          String  // "Quadruple Room" | "Triple Room" | "Double Room" | custom
+  roomType          String  @map("room_type") // "Quadruple Room" | "Triple Room" | "Double Room" | custom
   pricePerPersonPkr Int     @map("price_per_person_pkr")
   // Fixed flat rate per infant (owner's decision: flat PKR amount, not a
   // % of adult price). Nullable/0 = free, so existing room types without
