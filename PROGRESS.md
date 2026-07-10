@@ -416,6 +416,52 @@ speculatively.
 project — `tsc --noEmit` clean, never run against the live database or in
 a real browser.
 
+## Split booking into two pages (detail → booking-form → confirmation) — complete
+
+Built on top of another session's infant-pricing decision (owner chose a
+flat PKR rate per infant, admin-configurable per room type — this resolved
+the open question from the previous closeout, no rework needed there).
+
+**Built:**
+- `components/PackageBookingWidget.tsx` simplified: removed the inline
+  name/phone/email form and direct `/api/bookings` POST. "Book Now" is now
+  a `Link` to `/booking-form?packageId=...&roomType=...&adults=...&infants=...`,
+  disabled until a valid room type + traveller count is selected (same
+  `minAdultsRequired`/`maxAdults`/`maxInfants` validation as before). Also
+  fixed a stale "(free)" infant label that predated the infant-pricing
+  change — it now shows the real per-infant rate when one is set.
+- `app/booking-form/page.tsx` — Server Component. Re-fetches the package
+  and room type from the database using the URL's `packageId`/`roomType`;
+  never trusts the URL for pricing, only for which room type was picked.
+  Clamps adults/infants to that room type's real limits server-side.
+  Missing/invalid params (no packageId, unknown roomType) show a friendly
+  "please pick a package first" message with a link to `/umrah`, not a
+  crash or blank page.
+- `components/BookingFormClient.tsx` — two-column layout: personal info
+  (name, email, phone — all required — plus optional CNIC/passport and
+  special requests) on the left, read-only booking summary (image, room
+  type, price breakdown, total, a link back to the package page to change
+  selections) on the right. Submits to `/api/bookings`, redirects to
+  `/booking-confirmation` with the ref/package/roomType/total as query
+  params on success, shows the real server error on failure.
+- `app/booking-confirmation/page.tsx` — new. Shows the booking ref and
+  summary, explicit **"No payment has been taken yet"** messaging, and a
+  WhatsApp button prefilled with the booking ref.
+- `prisma/schema.prisma` + `/api/bookings`: added optional `passport` and
+  `specialRequests` fields to `Booking`, wired into the create call and
+  the admin notification email. Also made `email` a required field
+  server-side now (it's required on the new form's left column) — this
+  changes prior behavior slightly (email used to be optional), flagging
+  that explicitly in case anything else was relying on email-optional
+  bookings.
+- Caught my own bug before committing: the summary's "go back to package"
+  link was built from `pkg.id`, but detail pages route by `slug`, not id —
+  fixed to use slug with a category-listing fallback if a package has no
+  slug yet.
+
+**Not verified:** same standing caveat — `tsc --noEmit` clean, not run in
+a browser or against the live database.
+
 ## Where this leaves the whole project
 
 Items 1 (build verify — blocked on sandbox network, needs re-run

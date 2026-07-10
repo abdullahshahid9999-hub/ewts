@@ -192,6 +192,8 @@ model Booking {
   roomTypeLabel   String? @map("room_type_label") // snapshot of the room type name at booking time (e.g. "Triple Room") — don't rely on live PackageRoomType, admin might change/delete it later
   adults          Int?    @default(1)
   infants         Int?    @default(0)
+  passport        String? // CNIC/Passport, optional, useful for travel docs
+  specialRequests String? @map("special_requests")
   totalPricePkr   Int?    @map("total_price_pkr") // snapshot of the computed total at booking time, same immutability reasoning as agent commission — price display can change later, this booking's price shouldn't retroactively
   status       String   @default("pending") // pending | confirmed | cancelled — payment status is a SEPARATE concern, added later per the owner's own pipeline plan
   createdAt    DateTime @default(now()) @map("created_at")
