@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
 import { uploadToR2 } from "@/lib/r2";
 
+// Route Handlers are cached by Next.js by default — without this, admin
+// panel list pages can keep showing stale data after a create/update
+// even though the write succeeded (the classic 'it saved but doesn't
+// show up' symptom). Force this route to always run fresh.
+export const dynamic = "force-dynamic";
+
 // GET is intentionally open (packages are public content, matching the
 // public site's read-only queries) — only writes require admin auth.
 export async function GET() {

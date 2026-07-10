@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { requireAgent, stripAgentWriteOnlyFields } from "@/lib/apiAuth";
 import { calculateCommission } from "@/lib/commission";
 
+// Route Handlers are cached by Next.js by default — without this, admin
+// panel list pages can keep showing stale data after a create/update
+// even though the write succeeded (the classic 'it saved but doesn't
+// show up' symptom). Force this route to always run fresh.
+export const dynamic = "force-dynamic";
+
 const VALID_SERVICE_TYPES = ["umrah", "group_ticket", "insurance"] as const;
 const VALID_STATUSES = ["pending", "confirmed", "issue_requested", "issued", "cancelled"] as const;
 

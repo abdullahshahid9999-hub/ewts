@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 // Public, read-only. The quote calculator on /insurance calls this to
 // actually filter rates instead of just listing everything.
 //

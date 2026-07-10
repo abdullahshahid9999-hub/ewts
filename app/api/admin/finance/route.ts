@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
 
+// Route Handlers are cached by Next.js by default — without this, admin
+// panel list pages can keep showing stale data after a create/update
+// even though the write succeeded (the classic 'it saved but doesn't
+// show up' symptom). Force this route to always run fresh.
+export const dynamic = "force-dynamic";
+
 // Read-only reporting endpoint. Two things the owner specifically asked
 // for (nothing more was specified, so nothing more is built here):
 //   1. Agent-wise balance / outstanding list

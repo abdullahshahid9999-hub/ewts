@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
 
+// Route Handlers are cached by Next.js by default — without this, admin
+// panel list pages can keep showing stale data after a create/update
+// even though the write succeeded (the classic 'it saved but doesn't
+// show up' symptom). Force this route to always run fresh.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const insurancePlans = await prisma.insurancePlan.findMany({
     orderBy: { createdAt: "desc" },
