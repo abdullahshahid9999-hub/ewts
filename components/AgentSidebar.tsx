@@ -5,12 +5,41 @@ import { usePathname } from "next/navigation";
 import { useAgentAuth } from "@/lib/agentAuthClient";
 
 const NAV = [
-  { section: "Main", items: [{ href: "/agent/dashboard", icon: "🏠", label: "Dashboard" }] },
+  {
+    section: "Main",
+    items: [{ href: "/agent/dashboard", icon: "🏠", label: "Dashboard" }],
+  },
+  {
+    section: "My Bookings",
+    items: [
+      { href: "/agent/bookings?service=umrah", icon: "🕌", label: "Umrah Packages" },
+      { href: "/agent/bookings?service=group_ticket", icon: "✈️", label: "Group Flights" },
+      { href: "/agent/bookings?service=insurance", icon: "🛡️", label: "Insurance" },
+      { href: "/agent/bookings?service=world_tour", icon: "🌍", label: "World Tour" },
+      { href: "/agent/bookings?service=visa_services", icon: "📄", label: "Visa Services" },
+    ],
+  },
+  {
+    section: "New Booking",
+    items: [
+      { href: "/agent/bookings/new?service=umrah", icon: "🕌", label: "Umrah Packages" },
+      { href: "/agent/bookings/new?service=group_ticket", icon: "✈️", label: "Group Flights" },
+      { href: "/agent/bookings/new?service=insurance", icon: "🛡️", label: "Insurance" },
+      { href: "/agent/bookings/new?service=world_tour", icon: "🌍", label: "World Tour" },
+      { href: "/agent/bookings/new?service=visa_services", icon: "📄", label: "Visa Services" },
+    ],
+  },
   {
     section: "Finance",
-    items: [{ href: "/agent/bookings", icon: "📋", label: "My Bookings" }],
+    items: [
+      { href: "/agent/topup", icon: "💳", label: "Topup" },
+      { href: "/agent/bank-accounts", icon: "🏦", label: "Bank Accounts" },
+    ],
   },
-  { section: "Account", items: [{ href: "/agent/profile", icon: "👤", label: "My Profile" }] },
+  {
+    section: "Account",
+    items: [{ href: "/agent/profile", icon: "👤", label: "My Profile" }],
+  },
 ];
 
 function tierClass(tier: string) {
@@ -24,6 +53,11 @@ function tierClass(tier: string) {
 export default function AgentSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { agent, logout } = useAgentAuth();
   const pathname = usePathname();
+
+  function isActive(href: string) {
+    const [hrefPath] = href.split("?");
+    return pathname === hrefPath || pathname === href;
+  }
 
   const balance = agent ? Number(agent.balance ?? 0) : 0;
   const creditLimit = agent ? Number(agent.creditLimit ?? 0) : 0;
@@ -56,7 +90,7 @@ export default function AgentSidebar({ open, onClose }: { open: boolean; onClose
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`ap-sbn ${pathname === item.href ? "active" : ""}`}
+                className={`ap-sbn ${isActive(item.href) ? "active" : ""}`}
               >
                 <span>{item.icon}</span> {item.label}
               </Link>
