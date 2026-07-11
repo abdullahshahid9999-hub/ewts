@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   const packageId = typeof body?.packageId === "string" ? body.packageId : "";
   const roomType = typeof body?.roomType === "string" ? body.roomType : "";
   const adults = Number(body?.adults) || 1;
+  const children = Number(body?.children) || 0;
   const infants = Number(body?.infants) || 0;
   const customerName = typeof body?.customerName === "string" ? body.customerName.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   // Server-side price computation — the only source of truth for what
   // this booking actually costs, regardless of what the client displayed.
-  const totalPricePkr = adults * rt.pricePerPersonPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant, admin-configurable per room type
+  const totalPricePkr = adults * rt.pricePerPersonPkr + children * rt.pricePerChildPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant/child, admin-configurable per room type
 
   const booking = await prisma.booking.create({
     data: {
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       packageId: pkg.id,
       roomTypeLabel: rt.roomType,
       adults,
+      children,
       infants,
       totalPricePkr,
       status: "pending",
@@ -95,7 +97,7 @@ export async function POST(req: NextRequest) {
         <p><strong>Booking Ref:</strong> ${booking.bookingRef}</p>
         <p><strong>Package:</strong> ${pkg.name}</p>
         <p><strong>Room Type:</strong> ${rt.roomType}</p>
-        <p><strong>Adults:</strong> ${adults} &nbsp; <strong>Infants:</strong> ${infants}</p>
+        <p><strong>Adults:</strong> ${adults} &nbsp; <strong>Children:</strong> ${children} &nbsp; <strong>Infants:</strong> ${infants}</p>
         <p><strong>Total:</strong> Rs. ${totalPricePkr.toLocaleString()}</p>
         <p><strong>Customer:</strong> ${customerName}</p>
         <p><strong>Phone:</strong> ${phone}</p>

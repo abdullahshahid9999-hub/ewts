@@ -42,6 +42,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  let flightSectors: unknown;
+  const sectorsRaw = form.get("flightSectors");
+  if (typeof sectorsRaw === "string" && sectorsRaw.length > 0) {
+    try {
+      flightSectors = JSON.parse(sectorsRaw);
+    } catch {
+      return NextResponse.json({ error: "Flight sectors is not valid JSON." }, { status: 400 });
+    }
+  }
+
   const requestedSlug = str("slug");
   if (requestedSlug && requestedSlug !== existing.slug) {
     const clash = await prisma.package.findUnique({ where: { slug: requestedSlug } });
@@ -68,6 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       includes: str("includes"),
       excludes: str("excludes"),
       itinerary: itineraryRaw !== null ? (itinerary as never) : undefined,
+      flightSectors: sectorsRaw !== null ? (flightSectors as never) : undefined,
       imageUrl,
       featured: form.has("featured") ? form.get("featured") === "true" : undefined,
       status: str("status"),

@@ -84,6 +84,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let flightSectors: unknown;
+  const sectorsRaw = form.get("flightSectors");
+  if (typeof sectorsRaw === "string" && sectorsRaw.length > 0) {
+    try {
+      flightSectors = JSON.parse(sectorsRaw);
+    } catch {
+      return NextResponse.json({ error: "Flight sectors is not valid JSON." }, { status: 400 });
+    }
+  }
+
   const requestedSlug = str("slug");
   if (requestedSlug) {
     const clash = await prisma.package.findUnique({ where: { slug: requestedSlug } });
@@ -109,6 +119,7 @@ export async function POST(req: NextRequest) {
       includes: str("includes"),
       excludes: str("excludes"),
       itinerary: itinerary as never,
+      flightSectors: flightSectors as never,
       imageUrl,
       featured: form.get("featured") === "true",
       status: str("status") ?? "active",

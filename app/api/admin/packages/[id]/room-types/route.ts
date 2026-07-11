@@ -14,6 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const roomType = typeof body?.roomType === "string" ? body.roomType.trim() : "";
   const pricePerPersonPkr = Number(body?.pricePerPersonPkr);
   const pricePerInfantPkr = body?.pricePerInfantPkr !== undefined ? Number(body.pricePerInfantPkr) : 0;
+  const pricePerChildPkr = body?.pricePerChildPkr !== undefined ? Number(body.pricePerChildPkr) : 0;
   const maxAdults = Number(body?.maxAdults);
   const maxInfants = body?.maxInfants !== undefined ? Number(body.maxInfants) : 0;
   const minAdultsRequired = body?.minAdultsRequired !== undefined && body.minAdultsRequired !== null && body.minAdultsRequired !== ""
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       roomType,
       pricePerPersonPkr,
       pricePerInfantPkr: Number.isFinite(pricePerInfantPkr) ? pricePerInfantPkr : 0,
+      pricePerChildPkr: Number.isFinite(pricePerChildPkr) ? pricePerChildPkr : 0,
       maxAdults,
       maxInfants: Number.isFinite(maxInfants) ? maxInfants : 0,
       minAdultsRequired: minAdultsRequired !== undefined && Number.isFinite(minAdultsRequired) ? minAdultsRequired : undefined,
