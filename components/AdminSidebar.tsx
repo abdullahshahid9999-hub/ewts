@@ -27,8 +27,14 @@ const NAV = [
     items: [
       { href: "/admin/agents", icon: "🧑‍💼", label: "Agents" },
       { href: "/admin/agent-bookings", icon: "📋", label: "Agent Bookings" },
-      { href: "/admin/payment-slips", icon: "💳", label: "Payment Slips" },
       { href: "/admin/finance", icon: "💰", label: "Finance" },
+    ],
+  },
+  {
+    section: "Finance & Topup",
+    items: [
+      { href: "/admin/payment-slips", icon: "💳", label: "Payment Slips" },
+      { href: "/admin/bank-accounts", icon: "🏦", label: "Bank Accounts" },
     ],
   },
 ];
