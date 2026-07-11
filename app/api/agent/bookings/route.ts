@@ -41,6 +41,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category"); // one of VALID_SERVICE_TYPES, or "all"/null
   const status = searchParams.get("status"); // one of VALID_STATUSES, or "all"/null
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
 
   // Build ONE combined where-clause object rather than two separate
   // filter functions — the legacy bug was two filters silently
@@ -54,14 +56,46 @@ export async function GET(req: NextRequest) {
     where.status = status;
   }
 
+  // Optional date-range scope (used by the dashboard's "bookings in this
+  // period" summary — see finance/sales-dashboard brief). "to" is a
+  // calendar date, treated as inclusive of the whole day.
+  const from = fromParam ? new Date(fromParam) : null;
+  const to = toParam ? new Date(toParam) : null;
+  const toExclusive = to ? new Date(to.getTime() + 24 * 60 * 60 * 1000) : null;
+  if ((from && !isNaN(from.getTime())) || (toExclusive && !isNaN(toExclusive.getTime()))) {
+    where.createdAt = {
+      ...(from && !isNaN(from.getTime()) ? { gte: from } : {}),
+      ...(toExclusive && !isNaN(toExclusive.getTime()) ? { lt: toExclusive } : {}),
+    };
+  }
+
   const bookings = await prisma.agentBooking.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: { groupFlight: true },
   });
 
-  return NextResponse.json({ bookings });
+  // Lightweight summary of the currently-filtered set, mainly for the
+  // dashboard's date-range "amount owed from these bookings" card — this
+  // is bookings-in-range, NOT a recomputation of the agent's balance
+  // (balance is a cumulative running total, see admin finance route for
+  // the same caveat spelled out in more detail).
+  const summary = bookings.reduce(
+    (acc, b) => {
+      acc.count += 1;
+      acc.totalSellPrice += b.sellPrice;
+      acc.totalCommission += b.commission;
+      return acc;
+    },
+    { count: 0, totalSellPrice: 0, totalCommission: 0 }
+  );
+
+  return NextResponse.json({
+    bookings,
+    summary: { ...summary, net: summary.totalSellPrice - summary.totalCommission },
+  });
 }
+
 
 export async function POST(req: NextRequest) {
   const agent = await requireAgent(req);
