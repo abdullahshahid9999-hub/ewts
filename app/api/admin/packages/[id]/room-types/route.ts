@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
+import { syncPackageDisplayPrice } from "@/lib/packagePrice";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin(req);
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     },
   });
+
+  // Keep the listing-card price in sync with the lowest room price
+  // whenever the room basis division changes — see lib/packagePrice.ts.
+  await syncPackageDisplayPrice(packageId);
 
   return NextResponse.json({ roomType: created }, { status: 201 });
 }

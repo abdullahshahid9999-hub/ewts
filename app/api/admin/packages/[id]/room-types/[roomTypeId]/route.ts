@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
+import { syncPackageDisplayPrice } from "@/lib/packagePrice";
 
 export async function PATCH(
   req: NextRequest,
@@ -51,6 +52,11 @@ export async function PATCH(
   }
 
   const roomType = await prisma.packageRoomType.update({ where: { id: roomTypeId }, data });
+
+  // Keep the listing-card price in sync with the lowest room price
+  // whenever the room basis division changes — see lib/packagePrice.ts.
+  await syncPackageDisplayPrice(packageId);
+
   return NextResponse.json({ roomType });
 }
 
@@ -68,5 +74,10 @@ export async function DELETE(
   }
 
   await prisma.packageRoomType.delete({ where: { id: roomTypeId } });
+
+  // Keep the listing-card price in sync with the lowest room price
+  // whenever the room basis division changes — see lib/packagePrice.ts.
+  await syncPackageDisplayPrice(packageId);
+
   return NextResponse.json({ ok: true });
 }
