@@ -621,3 +621,39 @@ caveat as everything else in this file.
 - No new Prisma migrations — everything here reads existing columns
   (`AgentBooking.createdAt`, `Agent.balance`) with new query params, no
   schema changes needed.
+
+## Room Basis Division at Package Creation + Auto-Derived Display Price
+
+Owner's ask: let room basis (Quad/Triple/Double/...) be set up while
+*creating* a package, not only after, and make the listing-card "Price"
+field track whichever room basis is lowest (normally Quad) instead of
+being freely typed.
+
+- `lib/packagePrice.ts` -- `computeDisplayPrice()` (pure) and
+  `syncPackageDisplayPrice()` (recomputes + persists `Package.price` from
+  current `PackageRoomType` rows). Picks the actual lowest price rather
+  than assuming Quad is always cheapest, in case a package is set up
+  unusually.
+- `POST /api/admin/packages` accepts an optional `roomTypes` array (same
+  shape the room-types sub-route already took) and creates the package +
+  room types together in one `$transaction`. Price is derived server-side
+  from whatever room types were submitted; only falls back to a manually
+  submitted price string if none were given (so an in-progress package
+  with no room basis yet doesn't end up with a blank listing price).
+- The room-type create/update/delete routes (`/api/admin/packages/[id]/
+  room-types` and `.../[roomTypeId]`) all call `syncPackageDisplayPrice`
+  after their write, so the derived price stays correct for the whole
+  life of the package, not just at creation.
+- Admin UI: New Package form gained an inline "Room Basis Division"
+  section (repeatable rows, `<datalist>` presets for Quad/Triple/Double/
+  Single, add/remove) submitted alongside package creation. The old
+  free-text Price input is now read-only and shows the live-computed
+  value as rows are filled in. Once a package exists, the existing Room
+  Types & Pricing manager (unchanged) takes over for further edits.
+
+Not touched: booking/commission calculation, the room-types sub-routes'
+existing validation, PATCH `/api/admin/packages/[id]`'s general fields.
+`npx tsc --noEmit` shows only the same pre-existing "implicit any from
+missing generated PrismaClient" class of errors documented at the top of
+this file (sandbox still can't reach `binaries.prisma.sh`) -- nothing
+structurally new. Needs a real build to confirm clean.
