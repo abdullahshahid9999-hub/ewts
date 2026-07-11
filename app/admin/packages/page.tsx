@@ -246,8 +246,12 @@ function PackagesInner() {
             <input placeholder="e.g. 10 Days" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} />
           </div>
           <div>
-            <label>Price (listing display)</label>
+            <label>Price (listing display only — not the real bookable price)</label>
             <input placeholder="e.g. PKR 250,000" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+            <p style={{ fontSize: "10.5px", color: "var(--a-dim)", marginTop: "4px" }}>
+              This text just shows on the package card. Actual bookable prices per room type are
+              set in <strong>Room Types &amp; Pricing</strong> below (save the package first).
+            </p>
           </div>
           <div>
             <label>Destination</label>
@@ -383,8 +387,9 @@ function PackagesInner() {
         </form>
       </div>
 
-      {/* ROOM TYPES — only once a package exists to attach them to */}
-      {editingPackage && (
+      {/* ROOM TYPES — always visible so it's never a mystery that pricing
+          lives here, not in the "Price (listing display)" field above. */}
+      {editingPackage ? (
         <PackageRoomTypesManager
           packageId={editingPackage.id}
           roomTypes={editingPackage.roomTypes}
@@ -392,6 +397,15 @@ function PackagesInner() {
           refresh={refresh}
           onChange={load}
         />
+      ) : (
+        <div className="adp-card">
+          <div className="adp-ch"><h3>Room Types &amp; Pricing</h3></div>
+          <p style={{ padding: "16px 18px", fontSize: "12.5px", color: "var(--a-muted)" }}>
+            Click <strong>Create Package</strong> above first — room types (Double/Triple/Quad,
+            per-person, per-child, per-infant pricing) attach to a saved package and will appear
+            here right after you create it.
+          </p>
+        </div>
       )}
 
       <div className="adp-card">
