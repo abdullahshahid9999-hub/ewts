@@ -87,48 +87,45 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
 export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
   const [bookingFlight, setBookingFlight] = useState<Flight | null>(null);
 
-  // Group into one table per airline + route, matching the reference
-  // layout (one ticket-style table per flight/route combination).
+  // Group by DESTINATION (route) first — so multiple airlines serving the
+  // same route sit under one clearly-labeled section instead of looking
+  // like unrelated, disconnected blocks.
   const groups = new Map<string, Flight[]>();
   for (const f of flights) {
-    const key = `${f.airline}|${f.route}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(f);
+    if (!groups.has(f.route)) groups.set(f.route, []);
+    groups.get(f.route)!.push(f);
   }
 
   return (
     <>
-      <section className="max-w-6xl mx-auto px-6 pb-16 space-y-10">
+      <section className="max-w-6xl mx-auto px-6 pb-16 space-y-12">
         {flights.length === 0 ? (
           <p className="text-muted text-center">
             No group flights are listed right now — WhatsApp us for current availability.
           </p>
         ) : (
-          Array.from(groups.entries()).map(([key, group]) => {
-            const first = group[0];
-            return (
-              <div key={key} className="rounded-2xl overflow-hidden border border-border shadow-sm">
-                {/* Airline + route header */}
-                <div className="bg-white flex items-center justify-center gap-4 py-4 px-4 border-b border-border">
-                  {first.airlineLogoUrl && (
-                    <div className="relative w-10 h-10 shrink-0">
-                      <Image src={first.airlineLogoUrl} alt={first.airline} fill className="object-contain" />
-                    </div>
-                  )}
-                  <span className="font-display font-semibold text-lg">{first.airline}</span>
-                  <span className="text-muted">✈</span>
-                  <span className="font-display font-semibold text-lg tracking-wide">{first.route}</span>
-                </div>
+          Array.from(groups.entries()).map(([route, group]) => (
+            <div key={route}>
+              {/* Destination heading — the single source of truth for
+                  "these flights all go to the same place," so it's never
+                  ambiguous even with several airlines listed below it. */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="h-px flex-1 bg-border" />
+                <h2 className="font-display text-2xl font-semibold text-center whitespace-nowrap">
+                  {route.replace("-", " → ")}
+                </h2>
+                <span className="h-px flex-1 bg-border" />
+              </div>
 
-                {/* Ticket table */}
+              <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-white">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[720px]">
+                  <table className="w-full text-sm min-w-[760px]">
                     <thead>
-                      <tr className="bg-[var(--navy)] text-white text-xs uppercase tracking-wide">
+                      <tr className="bg-gold text-black text-xs uppercase tracking-wide">
+                        <th className="px-4 py-3 text-left">Airline</th>
                         <th className="px-4 py-3 text-left">Flight</th>
                         <th className="px-4 py-3 text-left">Date</th>
                         <th className="px-4 py-3 text-left">Time</th>
-                        <th className="px-4 py-3 text-left">Destination</th>
                         <th className="px-4 py-3 text-left">Bag</th>
                         <th className="px-4 py-3 text-left">Meal</th>
                         <th className="px-4 py-3 text-left">Fare</th>
@@ -139,24 +136,37 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                       {group.map((f, i) => (
                         <tr
                           key={f.id}
-                          className={`text-white ${i % 2 === 0 ? "bg-[#0d2136]" : "bg-[#0a1a2b]"}`}
+                          className={`${i % 2 === 0 ? "bg-white" : "bg-[var(--surface)]"} border-t border-border`}
                         >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-12 h-12 shrink-0 rounded-lg bg-white border border-border p-1.5">
+                                {f.airlineLogoUrl ? (
+                                  <Image src={f.airlineLogoUrl} alt={f.airline} fill className="object-contain p-0.5" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[9px] text-muted font-semibold text-center leading-tight">
+                                    {f.airline}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="font-semibold whitespace-nowrap">{f.airline}</span>
+                            </div>
+                          </td>
                           <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.flightNo ?? "—"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">✈ {f.depDate ?? "—"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-muted">{f.depDate ?? "—"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-muted">
                             {f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">{f.route.replace("-", "→").replace(" to ", "→")}</td>
-                          <td className="px-4 py-3 whitespace-nowrap">🧳 {f.baggage ?? "—"}</td>
-                          <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-400" : "text-green-400"}`}>
+                          <td className="px-4 py-3 whitespace-nowrap text-muted">{f.baggage ?? "—"}</td>
+                          <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-500" : "text-green-600"}`}>
                             {f.meal ?? "—"}
                           </td>
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.price}</td>
+                          <td className="px-4 py-3 font-display font-semibold text-gold whitespace-nowrap">{f.price}</td>
                           <td className="px-4 py-3">
                             <button
                               onClick={() => setBookingFlight(f)}
                               disabled={f.seats <= 0}
-                              className="border border-gold text-gold hover:bg-gold hover:text-black font-semibold text-xs px-4 py-1.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                              className="bg-[var(--navy)] hover:bg-gold hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {f.seats > 0 ? "Book Now" : "Sold Out"}
                             </button>
@@ -167,8 +177,8 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                   </table>
                 </div>
               </div>
-            );
-          })
+            </div>
+          ))
         )}
       </section>
 
