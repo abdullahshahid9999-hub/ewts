@@ -1,9 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
-import { useAdminAuth } from "@/lib/adminAuthClient";
+import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
+
+type DashboardStats = {
+  totalAgents: number;
+  pendingAgentBookings: number;
+  totalActiveListings: number;
+  listingsBreakdown: { packages: number; groupFlights: number; visaServices: number };
+  revenueThisMonth: number;
+  totalPayable: number;
+};
+
+function pkr(n: number) {
+  return `PKR ${n.toLocaleString()}`;
+}
 
 const SECTIONS = [
   { href: "/admin/packages", title: "Packages", desc: "Umrah & tour packages" },
@@ -18,7 +32,34 @@ const SECTIONS = [
 ];
 
 function DashboardInner() {
-  const { admin } = useAdminAuth();
+  const { admin, accessToken, refresh } = useAdminAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await adminFetch("/api/admin/dashboard-stats", accessToken, refresh);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setStats(data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, refresh]);
+
+  const cards = [
+    { label: "Total Agents", value: stats?.totalAgents },
+    { label: "Pending Bookings", value: stats?.pendingAgentBookings },
+    { label: "Active Listings", value: stats?.totalActiveListings },
+    { label: "Revenue This Month", value: stats ? pkr(stats.revenueThisMonth) : undefined },
+    { label: "Total Payable (Owed by Agents)", value: stats ? pkr(stats.totalPayable) : undefined },
+  ];
 
   return (
     <>
@@ -27,6 +68,17 @@ function DashboardInner() {
           <h2>Welcome, <em>{admin?.email ?? "Admin"}</em></h2>
           <p>Manage packages, visas, flights, insurance, agents and content</p>
         </div>
+      </div>
+
+      <div className="adp-sg" style={{ gridTemplateColumns: "repeat(5, 1fr)", marginBottom: "16px" }}>
+        {cards.map((c) => (
+          <div key={c.label} className="adp-sc" style={{ display: "block" }}>
+            <div className="adp-sc-n" style={{ fontSize: "20px" }}>
+              {loading ? "…" : c.value ?? "—"}
+            </div>
+            <div className="adp-sc-l">{c.label}</div>
+          </div>
+        ))}
       </div>
 
       <div className="adp-sg" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>

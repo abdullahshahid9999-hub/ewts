@@ -339,7 +339,22 @@ model PaymentSlip {
 }
 
 // Admin-configured bank accounts shown to agents on the Topup page.
-model BankAccount {\n  id          String   @id @default(uuid())\n  bankName    String   @map(\"bank_name\")\n  accountTitle String  @map(\"account_title\")\n  accountNumber String @map(\"account_number\")\n  iban        String?\n  branchCode  String?  @map(\"branch_code\")\n  sortOrder   Int      @default(0) @map(\"sort_order\")\n  isActive    Boolean  @default(true) @map(\"is_active\")\n  createdAt   DateTime @default(now()) @map(\"created_at\")\n  updatedAt   DateTime @updatedAt @map(\"updated_at\")\n\n  @@map(\"bank_accounts\")\n}\n\n// ── ADMIN USERS ──
+model BankAccount {
+  id            String   @id @default(uuid())
+  bankName      String   @map("bank_name")
+  accountTitle  String   @map("account_title")
+  accountNumber String   @map("account_number")
+  iban          String?
+  branchCode    String?  @map("branch_code")
+  sortOrder     Int      @default(0) @map("sort_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("bank_accounts")
+}
+
+// ── ADMIN USERS ──
 // Separate from Agent — admins are internal staff, gated additionally by
 // the ADMIN_EMAILS allow-list at the application layer (see admin panel
 // brief's security section), not just by having a row in this table.
