@@ -657,3 +657,7 @@ existing validation, PATCH `/api/admin/packages/[id]`'s general fields.
 missing generated PrismaClient" class of errors documented at the top of
 this file (sandbox still can't reach `binaries.prisma.sh`) -- nothing
 structurally new. Needs a real build to confirm clean.
+
+## Agent sidebar nav + New Booking UI rebuild (July 2026)
+
+Root cause: `AgentSidebar.tsx` only had three nav items (Dashboard, My Bookings, My Profile) — the full structure the owner specified was simply never built into the NAV array. Separately, the `/agent/bookings/new` page was a bare single-step form with no service-selection UI. Fixed by: expanding the NAV array to include My Bookings (5 service sub-items), New Booking (5 service sub-items), Finance (Topup + Bank Accounts), and My Profile; rewriting the new booking page as a two-step flow (card-grid service selector → styled details form using existing `ap-card`/`ap-field`/`ap-btn-gold` portal classes); creating placeholder pages for `/agent/topup` and `/agent/bank-accounts`; and updating `/agent/bookings` to read the `?service=` URL param for initial filter and adding `world_tour`/`visa_services` to the CATEGORIES list. `npx tsc --noEmit` clean. No DB changes required.
