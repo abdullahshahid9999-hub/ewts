@@ -4,6 +4,28 @@
 Clone repo (token given separately), read last ~30 lines of `PROGRESS.md`
 only. Do not run a general audit — this is one focused task with 3 parts.
 
+## ⚠️ Read this before Part 2 — a conflicting fix already exists
+A prior session already added a seat decrement, but at the WRONG time:
+`app/api/agent/bookings/route.ts` currently decrements `GroupFlight.seats`
+at booking **creation** (POST), inside a `prisma.$transaction`, with a
+sold-out check and a matching seat-restore in
+`app/api/admin/agent-bookings/[id]/route.ts` on cancellation. Part 2 below
+wants the decrement to happen at **issue** time instead. Before writing
+any new decrement logic:
+1. Remove the creation-time decrement block from
+   `app/api/agent/bookings/route.ts` (the `prisma.$transaction` wrapping
+   `groupFlight.updateMany` + `agentBooking.create`) — replace it with a
+   plain create, but keep a sold-out check (`seats > 0`) as a read-only
+   guard so agents can't select an already-sold-out flight, just don't
+   decrement yet.
+2. Remove the matching seat-restore-on-cancel block from
+   `app/api/admin/agent-bookings/[id]/route.ts` (the `releasesSeat` logic)
+   — it will be wrong once decrement moves to issue-time, since a
+   cancelled booking that was never issued never touched seats.
+3. Then build the issue-time decrement per Part 2/3 below.
+Skipping this cleanup means seats double-decrement (once at create, once
+at issue) — confirm both old blocks are gone before testing.
+
 ## Part 1 — Admin Dashboard shows real numbers
 `app/admin/dashboard/page.tsx` currently just links to sections, no live
 data. Add a stats row at the top: total agents, total pending agent-bookings
@@ -14,10 +36,12 @@ issued AgentBooking.sellPrice), total payable owed by all agents combined
 `GET /api/admin/dashboard-stats` route (admin-gated, one query per stat,
 straightforward Prisma counts/aggregates — don't overengineer this).
 
-## Part 2 — Selling a group flight ticket must decrement seats
-Right now, `GroupFlight.seats` never changes when an agent books one.
+## Part 2 — Selling a group flight ticket must decrement seats (at ISSUE, not creation — see warning above)
+`GroupFlight.seats` currently changes at the wrong time (booking creation,
+see the warning above) — move it to ISSUE.
 Fix: when an `AgentBooking` with `serviceType = 'group_ticket'` and a
 `groupFlightId` is ISSUED (status changes to `'issued'` — find wherever
+
 that status transition happens, likely an admin "issue" action route),
 decrement that flight's `seats` by 1 (or by a passenger-count field if one
 exists — check the booking creation flow for how many seats one booking
