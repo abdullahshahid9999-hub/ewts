@@ -549,3 +549,75 @@ The 3 ALTER TABLE statements from the last session are still not run. Owner does
 - Or install a free GUI client (TablePlus, Beekeeper Studio, pgAdmin) on whatever laptop is at hand right now and paste in the DATABASE_URL from `.env`.
 - Or if Node is available: `npx pg` or similar one-off script using the same connection string.
 Until this runs, saving a package with flight sectors or a room type with a child price will fail.
+
+## Sales Dashboard — Date-wise Money Owed/Receivable (Admin + Agent)
+
+Build blocker note still applies (see top of file) — `npx prisma generate`
+still 403s on `binaries.prisma.sh` in this sandbox. Ran `npx tsc --noEmit`
+without a generated client anyway: no new error categories beyond the
+existing "implicit any from missing PrismaClient types" class already
+documented above — same six-ish spots per touched file, nothing new. Needs
+a real build (Render or unrestricted machine) to confirm clean, same
+caveat as everything else in this file.
+
+### Backend
+- `GET /api/admin/finance` now accepts `?from=&to=` (yyyy-mm-dd). `to` is
+  treated as inclusive of the whole day. Filters `AgentBooking.createdAt`
+  for the service-wise breakdown and a new per-agent range-activity query.
+  Returns `totals.totalReceivable` (sum of outstanding balances,
+  balance < 0) and, per agent, `rangeBookingCount/rangeSellPrice/
+  rangeCommission/rangeNet` for the selected window.
+  **Deliberate design call**: `Agent.balance` is a cumulative running
+  total (debited in `performIssue()`, credited by approved payment slips)
+  — it has no date axis, so it can't be recomputed "as of" a past date
+  from `AgentBooking` rows alone. `totalReceivable` and each agent's
+  `balance`/`outstanding` are therefore always the *current, real-time*
+  numbers regardless of the date filter — this matches the brief's own
+  wording ("total money the business is owed right now"). The date filter
+  instead scopes a separate "activity in this range" figure
+  (rangeSellPrice/rangeCommission/rangeNet), shown alongside the
+  always-current balance columns so the two aren't confused for each
+  other. Flagging this now in case the intent was actually a historical
+  balance reconstruction — that would need a different data model (e.g.
+  linking PaymentSlip credits to specific bookings) and wasn't something
+  I wanted to fake.
+- `GET /api/agent/bookings` now also accepts `?from=&to=` (same semantics)
+  and returns a `summary: { count, totalSellPrice, totalCommission, net }`
+  alongside the existing `bookings` array, scoped to `requireAgent(req).id`
+  same as before — no cross-agent leakage.
+
+### Admin UI (`/admin/finance`)
+- New "Total Receivable — Right Now" headline card above everything else,
+  gold-tinted, large type, spans full width — explicitly labeled as
+  real-time/not-date-filtered so it doesn't read as contradicting the
+  filter row below it.
+- Date-range filter row: Today / This Week / This Month / All Time preset
+  buttons + custom from/to date inputs (`adp-si`), local-time based.
+  Selecting a preset re-queries `/api/admin/finance` with `from`/`to`;
+  typing a custom date clears the active preset highlight.
+- Service-wise breakdown table unchanged in shape, now genuinely scoped
+  to the selected range (was already querying via the API, no client
+  change needed beyond passing the new params).
+- Agent Balances table gained two columns: "Booked in Range" (count +
+  sell price) and "Net in Range" — existing Balance/Outstanding columns
+  are unchanged and still show the current real figures.
+
+### Agent UI (`/agent/dashboard`)
+- New "Amount Payable" headline card (red when > 0, green "settled" when
+  0) directly under the welcome header — pulls from the existing
+  `agent.balance` already in the auth context, no new fetch needed for
+  this number.
+- New "My Bookings — By Date Range" card: same preset/custom date-range
+  filter pattern as admin, calls `/api/agent/bookings?from=&to=` and
+  shows the returned `summary` (count / total sell price / net) in three
+  small stat tiles. Scoped to the logged-in agent only via
+  `requireAgent(req).id` server-side — not client-trusted.
+- Left `/agent/profile` alone — the brief said dashboard *or* profile,
+  and the Amount Payable card reads better as the first thing an agent
+  sees on login rather than one more line on the profile page.
+
+### Not touched
+- Balance/commission calculation logic — unchanged, per "Don't do".
+- No new Prisma migrations — everything here reads existing columns
+  (`AgentBooking.createdAt`, `Agent.balance`) with new query params, no
+  schema changes needed.
