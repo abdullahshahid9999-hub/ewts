@@ -93,18 +93,59 @@ export async function POST(req: NextRequest) {
   // even if admin updates the agent's rate later.
   const commission = await calculateCommission(agent.id, serviceType, sellPrice);
 
-  const booking = await prisma.agentBooking.create({
-    data: {
-      agentId: agent.id,
-      serviceType,
-      groupFlightId,
-      sellPrice,
-      commission,
-      bookingRef: generateBookingRef(),
-      status: "pending",
-      expiresAt: computeExpiresAt(serviceType),
-    },
-  });
+  let booking;
+  if (serviceType === "group_ticket") {
+    if (!groupFlightId) {
+      return NextResponse.json({ error: "groupFlightId is required for group ticket bookings." }, { status: 400 });
+    }
+
+    // Atomically decrement seats and create the booking together. The
+    // conditional `seats: { gt: 0 }` in the update's where-clause means
+    // this update affects zero rows if someone else just took the last
+    // seat between the check and this call — we detect that via count
+    // and bail out, instead of silently overselling.
+    booking = await prisma.$transaction(async (tx) => {
+      const updateResult = await tx.groupFlight.updateMany({
+        where: { id: groupFlightId, seats: { gt: 0 } },
+        data: { seats: { decrement: 1 } },
+      });
+      if (updateResult.count === 0) {
+        throw new Error("SOLD_OUT");
+      }
+      return tx.agentBooking.create({
+        data: {
+          agentId: agent.id,
+          serviceType,
+          groupFlightId,
+          sellPrice,
+          commission,
+          bookingRef: generateBookingRef(),
+          status: "pending",
+          expiresAt: computeExpiresAt(serviceType),
+        },
+      });
+    }).catch((e) => {
+      if (e instanceof Error && e.message === "SOLD_OUT") return null;
+      throw e;
+    });
+
+    if (!booking) {
+      return NextResponse.json({ error: "This flight is sold out — no seats remaining." }, { status: 409 });
+    }
+  } else {
+    booking = await prisma.agentBooking.create({
+      data: {
+        agentId: agent.id,
+        serviceType,
+        groupFlightId,
+        sellPrice,
+        commission,
+        bookingRef: generateBookingRef(),
+        status: "pending",
+        expiresAt: computeExpiresAt(serviceType),
+      },
+    });
+  }
 
   return NextResponse.json({ booking }, { status: 201 });
 }
