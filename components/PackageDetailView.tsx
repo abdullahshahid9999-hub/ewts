@@ -16,6 +16,7 @@ type PackageWithRoomTypes = {
   includes: string | null;
   excludes: string | null;
   itinerary: unknown;
+  flightSectors: unknown;
   imageUrl: string | null;
   roomTypes: {
     id: string;
@@ -42,6 +43,15 @@ function parseList(text: string | null): string[] {
   return text.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+type FlightSector = { type: string; city: string; date: string; time: string };
+
+function parseSectors(raw: unknown): FlightSector[] {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.filter(
+    (s): s is FlightSector => s && typeof s === "object" && typeof (s as FlightSector).city === "string"
+  );
+}
+
 function parseItinerary(raw: unknown): ItineraryStep[] {
   if (!raw || !Array.isArray(raw)) return [];
   return raw.filter(
@@ -54,6 +64,7 @@ export default function PackageDetailView({ pkg }: { pkg: PackageWithRoomTypes }
   const includes = parseList(pkg.includes);
   const excludes = parseList(pkg.excludes);
   const itinerary = parseItinerary(pkg.itinerary);
+  const sectors = parseSectors(pkg.flightSectors);
   const backHref = pkg.category === "umrah" ? "/umrah" : "/tours";
 
   return (
@@ -127,7 +138,25 @@ export default function PackageDetailView({ pkg }: { pkg: PackageWithRoomTypes }
           </div>
         )}
 
-        {/* ITINERARY */}
+        {/* FLIGHT SECTORS */}
+        {sectors.length > 0 && (
+          <div className="mb-12">
+            <h2 className="font-display text-xl font-semibold mb-4">Flight Details</h2>
+            <div className="flex flex-wrap gap-3">
+              {sectors.map((sec, i) => (
+                <div key={i} className="bg-surface border border-border rounded-xl px-4 py-3 text-sm">
+                  <p className="text-xs font-semibold text-gold uppercase mb-1">{sec.type}</p>
+                  <p className="font-semibold">{sec.city}</p>
+                  <p className="text-muted text-xs">
+                    {sec.date}{sec.time ? ` · ${sec.time}` : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+                {/* ITINERARY */}
         {itinerary.length > 0 && (
           <div className="mb-12">
             <h2 className="font-display text-xl font-semibold mb-6">Itinerary</h2>

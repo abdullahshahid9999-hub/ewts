@@ -19,6 +19,7 @@ type RoomType = {
 };
 
 type ItineraryStep = { title: string; details: string; images: string };
+type FlightSector = { type: "Departure" | "Arrival" | "Sector"; city: string; date: string; time: string };
 
 type Package = {
   id: string;
@@ -33,6 +34,7 @@ type Package = {
   includes: string | null;
   excludes: string | null;
   itinerary: unknown;
+  flightSectors: unknown;
   imageUrl: string | null;
   featured: boolean;
   status: string;
@@ -46,6 +48,16 @@ const emptyForm = {
 
 function slugify(text: string) {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+const defaultSectors: FlightSector[] = [
+  { type: "Departure", city: "", date: "", time: "" },
+  { type: "Arrival", city: "", date: "", time: "" },
+];
+
+function sectorsFromPackage(pkg: Package): FlightSector[] {
+  if (!Array.isArray(pkg.flightSectors) || pkg.flightSectors.length === 0) return defaultSectors;
+  return pkg.flightSectors as FlightSector[];
 }
 
 function itineraryFromPackage(pkg: Package): ItineraryStep[] {
@@ -65,6 +77,7 @@ function PackagesInner() {
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState<File | null>(null);
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
+  const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -93,6 +106,7 @@ function PackagesInner() {
       featured: pkg.featured, status: pkg.status,
     });
     setItinerary(itineraryFromPackage(pkg));
+    setFlightSectors(sectorsFromPackage(pkg));
     setFile(null);
   }
 
@@ -100,6 +114,7 @@ function PackagesInner() {
     setEditingId(null);
     setForm(emptyForm);
     setItinerary([]);
+    setFlightSectors(defaultSectors);
     setFile(null);
     setError(null);
   }
@@ -114,6 +129,22 @@ function PackagesInner() {
 
   function removeItineraryStep(i: number) {
     setItinerary((s) => s.filter((_, idx) => idx !== i));
+  }
+
+  function addSector() {
+    setFlightSectors((s) => [...s, { type: "Sector", city: "", date: "", time: "" }]);
+  }
+
+  function updateSector(i: number, patch: Partial<FlightSector>) {
+    setFlightSectors((s) => s.map((sec, idx) => (idx === i ? { ...sec, ...patch } : sec)));
+  }
+
+  function removeSector(i: number) {
+    // Minimum 1 Departure + 1 Arrival required — "-" is disabled on those
+    // two rows (index 0 and 1 in the default layout), only rows added via
+    // "+" beyond that can be removed.
+    if (flightSectors[i]?.type === "Departure" || flightSectors[i]?.type === "Arrival") return;
+    setFlightSectors((s) => s.filter((_, idx) => idx !== i));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -145,6 +176,9 @@ function PackagesInner() {
         images: s.images.split(",").map((u) => u.trim()).filter(Boolean),
       }));
     if (itineraryPayload.length > 0) body.set("itinerary", JSON.stringify(itineraryPayload));
+
+    const sectorsPayload = flightSectors.filter((sec) => sec.city.trim() && sec.date);
+    if (sectorsPayload.length > 0) body.set("flightSectors", JSON.stringify(sectorsPayload));
 
     const url = editingId ? `/api/admin/packages/${editingId}` : "/api/admin/packages";
     const res = await adminFetch(url, accessToken, refresh, { method: editingId ? "PATCH" : "POST", body });
@@ -256,7 +290,54 @@ function PackagesInner() {
             <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </div>
 
-          {/* ITINERARY EDITOR */}
+          {/* FLIGHT SECTORS — minimum 1 Departure + 1 Arrival, "-" disabled on those two */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Flight Sectors (city, date &amp; time)</label>
+            <div style={{ display: "grid", gap: "8px" }}>
+              {flightSectors.map((sec, i) => {
+                const locked = sec.type === "Departure" || sec.type === "Arrival";
+                return (
+                  <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <span style={{ width: "80px", fontSize: "11px", fontWeight: 700, color: "var(--a-muted)" }}>
+                      {sec.type}
+                    </span>
+                    <input
+                      placeholder="City (e.g. LYP)"
+                      value={sec.city}
+                      onChange={(e) => updateSector(i, { city: e.target.value })}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      type="date"
+                      value={sec.date}
+                      onChange={(e) => updateSector(i, { date: e.target.value })}
+                      style={{ width: "150px" }}
+                    />
+                    <input
+                      type="time"
+                      value={sec.time}
+                      onChange={(e) => updateSector(i, { time: e.target.value })}
+                      style={{ width: "110px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSector(i)}
+                      disabled={locked}
+                      className="adp-btn adp-btn-r"
+                      style={{ opacity: locked ? 0.35 : 1, cursor: locked ? "not-allowed" : "pointer" }}
+                    >
+                      −
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button type="button" onClick={addSector} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
+              + Add Sector
+            </button>
+          </div>
+
+                    {/* ITINERARY EDITOR */}
           <div style={{ gridColumn: "1 / -1" }}>
             <label>Itinerary Steps</label>
             <div style={{ display: "grid", gap: "10px" }}>
