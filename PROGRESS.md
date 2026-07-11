@@ -657,3 +657,11 @@ existing validation, PATCH `/api/admin/packages/[id]`'s general fields.
 missing generated PrismaClient" class of errors documented at the top of
 this file (sandbox still can't reach `binaries.prisma.sh`) -- nothing
 structurally new. Needs a real build to confirm clean.
+
+## Agent sidebar nav + New Booking UI rebuild (July 2026)
+
+Root cause: `AgentSidebar.tsx` only had three nav items (Dashboard, My Bookings, My Profile) — the full structure the owner specified was simply never built into the NAV array. Separately, the `/agent/bookings/new` page was a bare single-step form with no service-selection UI. Fixed by: expanding the NAV array to include My Bookings (5 service sub-items), New Booking (5 service sub-items), Finance (Topup + Bank Accounts), and My Profile; rewriting the new booking page as a two-step flow (card-grid service selector → styled details form using existing `ap-card`/`ap-field`/`ap-btn-gold` portal classes); creating placeholder pages for `/agent/topup` and `/agent/bank-accounts`; and updating `/agent/bookings` to read the `?service=` URL param for initial filter and adding `world_tour`/`visa_services` to the CATEGORIES list. `npx tsc --noEmit` clean. No DB changes required.
+
+## Full Topup System (July 2026)
+
+Built the complete agent topup flow end-to-end. Agent side: `/agent/topup` is a real two-panel page — left shows live bank account cards fetched from the DB, right is a form to enter amount + upload a payment slip photo (uploaded to R2 `payments/` folder) with submission history table below. `/agent/bank-accounts` is a standalone card grid of the same data. Admin side: new `/admin/bank-accounts` page gives full CRUD over the bank accounts agents see (add, edit, hide/show, delete, sort order). `/admin/payment-slips` upgraded with filter tabs (pending/approved/rejected/all), pending count badge, reject-with-note modal so admin can give agents a reason, and date/time column. New `BankAccount` model added to Prisma schema (`bank_accounts` table — owner must run the SQL below). New API routes: `POST/GET /api/agent/topup`, `GET /api/agent/bank-accounts`, `GET /api/agent/transactions`, `GET/POST /api/admin/bank-accounts`, `PATCH/DELETE /api/admin/bank-accounts/[id]`. `npx tsc --noEmit` clean.

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
@@ -11,6 +12,8 @@ const CATEGORIES = [
   { value: "umrah", label: "Umrah" },
   { value: "group_ticket", label: "Group Tickets" },
   { value: "insurance", label: "Insurance" },
+  { value: "world_tour", label: "World Tour" },
+  { value: "visa_services", label: "Visa Services" },
 ];
 
 const STATUS_TABS = [
@@ -114,7 +117,9 @@ function IssueRequestModal({ bookingId, onClose, onDone }: { bookingId: string; 
 
 function BookingsInner() {
   const { accessToken, refresh } = useAgentAuth();
-  const [category, setCategory] = useState("all");
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get("service") ?? "all";
+  const [category, setCategory] = useState(initialCategory);
   const [status, setStatus] = useState("all");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,7 +227,9 @@ export default function AgentBookingsPage() {
   return (
     <AgentGuard>
       <AgentShell>
-        <BookingsInner />
+        <Suspense fallback={<div style={{ padding: 40, color: "var(--muted)", fontSize: 13 }}>Loading…</div>}>
+          <BookingsInner />
+        </Suspense>
       </AgentShell>
     </AgentGuard>
   );
