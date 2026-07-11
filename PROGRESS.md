@@ -533,3 +533,19 @@ ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
 ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
 ```
 Until these run, saving a package with sectors or a room type with a child price will fail — same class of issue as the earlier `price_per_infant_pkr` miss.
+
+## Fixed: group ticket seats never decremented (real inventory bug)
+Confirmed and fixed — creating a group_ticket AgentBooking never touched GroupFlight.seats anywhere in the code. Now atomic (transaction + conditional decrement, sold-out returns 409), and cancelling a booking restores the seat. This was a genuine bug, not a DB/migration issue.
+
+## Fixed: pricing UX confusion in admin packages form
+"Price (listing display)" field is just cosmetic card text — real bookable pricing is in Room Types & Pricing, which was invisible until after first save. Now: label clarified, and the Room Types section always renders (placeholder message before first save instead of vanishing).
+
+## New prompt written: SALES-DASHBOARD-PROMPT.md
+Per owner: admin needs a prominent "Total Receivable" figure + agent needs a prominent "Amount Payable" figure, both filterable by date range. Scoped, not built yet — next session's task.
+
+## Open: DB migration still pending (owner away from DB PC)
+The 3 ALTER TABLE statements from the last session are still not run. Owner doesn't need to be at a specific "DB PC" — any machine with internet works, using the DATABASE_URL already in `.env`:
+- Render dashboard → the Postgres instance page has a "Connect" tab with the connection string and a copyable `psql` command — usable from Render's own web dashboard on any browser.
+- Or install a free GUI client (TablePlus, Beekeeper Studio, pgAdmin) on whatever laptop is at hand right now and paste in the DATABASE_URL from `.env`.
+- Or if Node is available: `npx pg` or similar one-off script using the same connection string.
+Until this runs, saving a package with flight sectors or a room type with a child price will fail.
