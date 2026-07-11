@@ -6,11 +6,13 @@ import { waLink } from "@/lib/whatsapp";
 
 type Flight = {
   id: string;
+  flightNo: string | null;
   airline: string;
   airlineLogoUrl: string | null;
   route: string;
   depDate: string | null;
   depTime: string | null;
+  arrTime: string | null;
   arrDate: string | null;
   baggage: string | null;
   meal: string | null;
@@ -85,47 +87,88 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
 export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
   const [bookingFlight, setBookingFlight] = useState<Flight | null>(null);
 
+  // Group into one table per airline + route, matching the reference
+  // layout (one ticket-style table per flight/route combination).
+  const groups = new Map<string, Flight[]>();
+  for (const f of flights) {
+    const key = `${f.airline}|${f.route}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(f);
+  }
+
   return (
     <>
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-6 pb-16 space-y-10">
         {flights.length === 0 ? (
           <p className="text-muted text-center">
             No group flights are listed right now — WhatsApp us for current availability.
           </p>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {flights.map((f) => (
-              <div key={f.id} className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow p-5 flex gap-4">
-                <div className="relative w-16 h-16 shrink-0 bg-surface rounded-lg overflow-hidden">
-                  {f.airlineLogoUrl && <Image src={f.airlineLogoUrl} alt={f.airline} fill className="object-contain" />}
+          Array.from(groups.entries()).map(([key, group]) => {
+            const first = group[0];
+            return (
+              <div key={key} className="rounded-2xl overflow-hidden border border-border shadow-sm">
+                {/* Airline + route header */}
+                <div className="bg-white flex items-center justify-center gap-4 py-4 px-4 border-b border-border">
+                  {first.airlineLogoUrl && (
+                    <div className="relative w-10 h-10 shrink-0">
+                      <Image src={first.airlineLogoUrl} alt={first.airline} fill className="object-contain" />
+                    </div>
+                  )}
+                  <span className="font-display font-semibold text-lg">{first.airline}</span>
+                  <span className="text-muted">✈</span>
+                  <span className="font-display font-semibold text-lg tracking-wide">{first.route}</span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-lg">{f.airline}</h3>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${f.seats > 0 ? "bg-gold/10 text-gold" : "bg-muted/20 text-muted"}`}>
-                      {f.seats > 0 ? `${f.seats} seats left` : "Sold out"}
-                    </span>
-                  </div>
-                  <p className="text-muted text-sm mb-1">{f.route}</p>
-                  <p className="text-muted text-sm mb-1">
-                    {f.depDate} {f.depTime ? `· ${f.depTime}` : ""} {f.arrDate ? `→ ${f.arrDate}` : ""}
-                  </p>
-                  {f.baggage && <p className="text-muted text-xs mb-1">Baggage: {f.baggage}</p>}
-                  {f.meal && <p className="text-muted text-xs mb-2">Meal: {f.meal}</p>}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="font-display text-xl font-semibold text-gold">{f.price}</span>
-                    <button
-                      onClick={() => setBookingFlight(f)}
-                      disabled={f.seats <= 0}
-                      className="text-sm font-semibold text-gold hover:underline disabled:opacity-40 disabled:no-underline"
-                    >
-                      Book This Seat →
-                    </button>
-                  </div>
+
+                {/* Ticket table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[720px]">
+                    <thead>
+                      <tr className="bg-[var(--navy)] text-white text-xs uppercase tracking-wide">
+                        <th className="px-4 py-3 text-left">Flight</th>
+                        <th className="px-4 py-3 text-left">Date</th>
+                        <th className="px-4 py-3 text-left">Time</th>
+                        <th className="px-4 py-3 text-left">Destination</th>
+                        <th className="px-4 py-3 text-left">Bag</th>
+                        <th className="px-4 py-3 text-left">Meal</th>
+                        <th className="px-4 py-3 text-left">Fare</th>
+                        <th className="px-4 py-3"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.map((f, i) => (
+                        <tr
+                          key={f.id}
+                          className={`text-white ${i % 2 === 0 ? "bg-[#0d2136]" : "bg-[#0a1a2b]"}`}
+                        >
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.flightNo ?? "—"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">✈ {f.depDate ?? "—"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">{f.route.replace("-", "→").replace(" to ", "→")}</td>
+                          <td className="px-4 py-3 whitespace-nowrap">🧳 {f.baggage ?? "—"}</td>
+                          <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-400" : "text-green-400"}`}>
+                            {f.meal ?? "—"}
+                          </td>
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.price}</td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => setBookingFlight(f)}
+                              disabled={f.seats <= 0}
+                              className="border border-gold text-gold hover:bg-gold hover:text-black font-semibold text-xs px-4 py-1.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                            >
+                              {f.seats > 0 ? "Book Now" : "Sold Out"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
       </section>
 

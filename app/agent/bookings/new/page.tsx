@@ -10,9 +10,12 @@ type ServiceType = "umrah" | "group_ticket" | "insurance" | "world_tour" | "visa
 
 type GroupFlight = {
   id: string;
+  flightNo: string | null;
   airline: string;
   route: string;
   depDate: string | null;
+  depTime: string | null;
+  arrTime: string | null;
   price: string;
   seats: number;
 };
@@ -180,17 +183,49 @@ function NewBookingInner() {
                 {serviceType === "group_ticket" && (
                   <div className="ap-field">
                     <label>Flight</label>
-                    <select
-                      value={groupFlightId}
-                      onChange={(e) => setGroupFlightId(e.target.value)}
-                    >
-                      <option value="">Select a flight…</option>
-                      {flights.map((f) => (
-                        <option key={f.id} value={f.id}>
-                          {f.airline} · {f.route} {f.depDate ? `· ${f.depDate}` : ""} ({f.seats} seats left)
-                        </option>
-                      ))}
-                    </select>
+                    {flights.length === 0 ? (
+                      <p style={{ fontSize: "12px", color: "var(--muted)" }}>No active flights available.</p>
+                    ) : (
+                      <div style={{ overflowX: "auto", border: "1px solid var(--bdr)", borderRadius: "10px" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12.5px" }}>
+                          <thead>
+                            <tr style={{ background: "var(--navy)", color: "#fff", textTransform: "uppercase", fontSize: "10px", letterSpacing: "0.05em" }}>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}></th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Flight</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Route</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Date</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Time</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Fare</th>
+                              <th style={{ padding: "8px 10px", textAlign: "left" }}>Seats</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {flights.map((f) => (
+                              <tr
+                                key={f.id}
+                                onClick={() => f.seats > 0 && setGroupFlightId(f.id)}
+                                style={{
+                                  cursor: f.seats > 0 ? "pointer" : "not-allowed",
+                                  opacity: f.seats > 0 ? 1 : 0.4,
+                                  background: groupFlightId === f.id ? "var(--gold-bg)" : "transparent",
+                                  borderTop: "1px solid var(--bdr)",
+                                }}
+                              >
+                                <td style={{ padding: "8px 10px" }}>
+                                  <input type="radio" checked={groupFlightId === f.id} readOnly disabled={f.seats <= 0} />
+                                </td>
+                                <td style={{ padding: "8px 10px", fontWeight: 600 }}>{f.flightNo ?? f.airline}</td>
+                                <td style={{ padding: "8px 10px" }}>{f.route}</td>
+                                <td style={{ padding: "8px 10px" }}>{f.depDate ?? "—"}</td>
+                                <td style={{ padding: "8px 10px" }}>{f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}</td>
+                                <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--gold)" }}>{f.price}</td>
+                                <td style={{ padding: "8px 10px" }}>{f.seats > 0 ? f.seats : "Sold out"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
 

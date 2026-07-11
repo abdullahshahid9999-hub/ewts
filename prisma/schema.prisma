@@ -84,6 +84,7 @@ model GroupFlight {
   depDate       String?  @map("dep_date")
   arrDate       String?  @map("arr_date")
   depTime       String?  @map("dep_time")
+  arrTime       String?  @map("arr_time")
   baggage       String?
   meal          String?
   price         String

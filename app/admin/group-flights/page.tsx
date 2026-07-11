@@ -6,9 +6,25 @@ import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
-type GroupFlight = { id: string; airline: string; route: string; price: string; seats: number; status: string };
+type GroupFlight = {
+  id: string;
+  flightNo: string | null;
+  airline: string;
+  route: string;
+  depDate: string | null;
+  depTime: string | null;
+  arrTime: string | null;
+  baggage: string | null;
+  meal: string | null;
+  price: string;
+  seats: number;
+  status: string;
+};
 
-const emptyForm = { airline: "", route: "", price: "", depDate: "", seats: "0", status: "active" };
+const emptyForm = {
+  flightNo: "", airline: "", route: "", price: "", depDate: "", depTime: "", arrTime: "",
+  baggage: "", meal: "Yes", seats: "0", status: "active",
+};
 
 function GroupFlightsInner() {
   const { accessToken, refresh } = useAdminAuth();
@@ -31,6 +47,16 @@ function GroupFlightsInner() {
   useEffect(() => { load(); }, [load]);
 
   function resetForm() { setEditingId(null); setForm(emptyForm); setFile(null); setError(null); }
+
+  function startEdit(f: GroupFlight) {
+    setEditingId(f.id);
+    setForm({
+      flightNo: f.flightNo ?? "", airline: f.airline, route: f.route, price: f.price,
+      depDate: f.depDate ?? "", depTime: f.depTime ?? "", arrTime: f.arrTime ?? "",
+      baggage: f.baggage ?? "", meal: f.meal ?? "Yes", seats: String(f.seats), status: f.status,
+    });
+    setFile(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,15 +84,26 @@ function GroupFlightsInner() {
 
   return (
     <>
-      <div className="adp-ph"><div><h2>Group <em>Flights</em></h2><p>Group ticket listings shown on the public site</p></div></div>
+      <div className="adp-ph"><div><h2>Group <em>Flights</em></h2><p>Group ticket listings shown on the public site &amp; agent portal</p></div></div>
 
       <div className="adp-card">
         <div className="adp-ch"><h3>{editingId ? "Edit Flight" : "New Flight"}</h3></div>
         <form onSubmit={handleSubmit} className="adp-fg adp-fr" style={{ padding: "16px 18px" }}>
+          <div><label>Flight No.</label><input placeholder="e.g. PF 786" value={form.flightNo} onChange={(e) => setForm((f) => ({ ...f, flightNo: e.target.value }))} /></div>
           <div><label>Airline</label><input required value={form.airline} onChange={(e) => setForm((f) => ({ ...f, airline: e.target.value }))} /></div>
-          <div><label>Route</label><input required placeholder="e.g. LHE-JED" value={form.route} onChange={(e) => setForm((f) => ({ ...f, route: e.target.value }))} /></div>
-          <div><label>Price</label><input required value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} /></div>
-          <div><label>Departure Date</label><input value={form.depDate} onChange={(e) => setForm((f) => ({ ...f, depDate: e.target.value }))} /></div>
+          <div><label>Route</label><input required placeholder="e.g. LAHORE→DUBAI" value={form.route} onChange={(e) => setForm((f) => ({ ...f, route: e.target.value }))} /></div>
+          <div><label>Departure Date</label><input type="date" value={form.depDate} onChange={(e) => setForm((f) => ({ ...f, depDate: e.target.value }))} /></div>
+          <div><label>Departure Time</label><input type="time" value={form.depTime} onChange={(e) => setForm((f) => ({ ...f, depTime: e.target.value }))} /></div>
+          <div><label>Arrival Time</label><input type="time" value={form.arrTime} onChange={(e) => setForm((f) => ({ ...f, arrTime: e.target.value }))} /></div>
+          <div><label>Baggage</label><input placeholder="e.g. 20+7 KG" value={form.baggage} onChange={(e) => setForm((f) => ({ ...f, baggage: e.target.value }))} /></div>
+          <div>
+            <label>Meal</label>
+            <select value={form.meal} onChange={(e) => setForm((f) => ({ ...f, meal: e.target.value }))}>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div><label>Price</label><input required placeholder="e.g. 80,000 PKR" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} /></div>
           <div><label>Seats</label><input type="number" value={form.seats} onChange={(e) => setForm((f) => ({ ...f, seats: e.target.value }))} /></div>
           <div>
             <label>Status</label>
@@ -88,19 +125,19 @@ function GroupFlightsInner() {
         <div className="adp-tw">
           {loading ? <p className="etd">Loading…</p> : items.length === 0 ? <p className="etd">No group flights yet.</p> : (
             <table className="adp-table">
-              <thead><tr><th>Airline</th><th>Route</th><th>Price</th><th>Seats</th><th></th></tr></thead>
+              <thead><tr><th>Flight</th><th>Airline</th><th>Route</th><th>Date</th><th>Time</th><th>Price</th><th>Seats</th><th></th></tr></thead>
               <tbody>
                 {items.map((f) => (
                   <tr key={f.id}>
-                    <td><strong>{f.airline}</strong></td>
+                    <td><strong>{f.flightNo ?? "—"}</strong></td>
+                    <td>{f.airline}</td>
                     <td>{f.route}</td>
+                    <td>{f.depDate ?? "—"}</td>
+                    <td>{f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}</td>
                     <td>{f.price}</td>
                     <td>{f.seats}</td>
                     <td style={{ display: "flex", gap: "6px" }}>
-                      <button
-                        onClick={() => { setEditingId(f.id); setForm({ airline: f.airline, route: f.route, price: f.price, depDate: "", seats: String(f.seats), status: f.status }); setFile(null); }}
-                        className="adp-btn adp-btn-s"
-                      >Edit</button>
+                      <button onClick={() => startEdit(f)} className="adp-btn adp-btn-s">Edit</button>
                       <button onClick={() => handleDelete(f.id)} className="adp-btn adp-btn-r">Delete</button>
                     </td>
                   </tr>
