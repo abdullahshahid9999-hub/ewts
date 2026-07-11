@@ -1,5 +1,24 @@
 # EWTS Rebuild — Progress Notes
 
+## ⚠️ PENDING DB MIGRATIONS — run these on the live DB before anything else
+These are scattered further down in this file where each was introduced;
+consolidated here so none get missed. Run in this order (later ones don't
+depend on earlier ones, order doesn't matter, just run all six):
+```sql
+ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
+ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
+ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
+ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
+ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
+```
+Until these run: saving a package with flight sectors or a child price,
+and saving a group flight with an arrival time/region/trip type, will
+fail. Can be run from any machine with internet using the `DATABASE_URL`
+already in `.env` — via Render's dashboard "Connect" tab, or any GUI
+client (TablePlus, Beekeeper Studio, pgAdmin), no need to be at a specific
+"DB machine."
+
 ## Blocker on item 1 (build verification) — READ THIS FIRST
 This sandbox's network egress is allowlisted to specific domains and does
 **not** include `binaries.prisma.sh`. `npx prisma generate` fails with
