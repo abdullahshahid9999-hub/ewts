@@ -20,6 +20,40 @@ type RoomType = {
 
 type ItineraryStep = { title: string; details: string; images: string };
 type FlightSector = { type: "Departure" | "Arrival" | "Sector"; city: string; date: string; time: string };
+type DraftRoomType = {
+  roomType: string;
+  pricePerPersonPkr: string;
+  pricePerInfantPkr: string;
+  pricePerChildPkr: string;
+  maxAdults: string;
+  maxInfants: string;
+  minAdultsRequired: string;
+};
+
+const emptyDraftRoomType: DraftRoomType = {
+  roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0",
+  maxAdults: "2", maxInfants: "0", minAdultsRequired: "",
+};
+
+// Common basis names offered as one-click presets — Quadruple is normally
+// the cheapest per-head, which is why it ends up the display price.
+const ROOM_BASIS_PRESETS = ["Quadruple Room", "Triple Room", "Double Room", "Single Room"];
+
+function formatPkr(n: number) {
+  return `PKR ${n.toLocaleString("en-PK")}`;
+}
+
+// Mirrors lib/packagePrice.ts's computeDisplayPrice on the server — the
+// listing-card price is always the lowest per-person room price, shown
+// live here as the admin fills in the room basis rows so there's no
+// surprise about what will actually be saved.
+function computeDisplayPriceFromDrafts(rows: DraftRoomType[]): string | null {
+  const prices = rows
+    .map((r) => Number(r.pricePerPersonPkr))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (prices.length === 0) return null;
+  return formatPkr(Math.min(...prices));
+}
 
 type Package = {
   id: string;
@@ -78,6 +112,7 @@ function PackagesInner() {
   const [file, setFile] = useState<File | null>(null);
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
   const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
+  const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([{ ...emptyDraftRoomType }]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -107,6 +142,7 @@ function PackagesInner() {
     });
     setItinerary(itineraryFromPackage(pkg));
     setFlightSectors(sectorsFromPackage(pkg));
+    setDraftRoomTypes([{ ...emptyDraftRoomType }]);
     setFile(null);
   }
 
@@ -115,6 +151,7 @@ function PackagesInner() {
     setForm(emptyForm);
     setItinerary([]);
     setFlightSectors(defaultSectors);
+    setDraftRoomTypes([{ ...emptyDraftRoomType }]);
     setFile(null);
     setError(null);
   }
@@ -133,6 +170,18 @@ function PackagesInner() {
 
   function addSector() {
     setFlightSectors((s) => [...s, { type: "Sector", city: "", date: "", time: "" }]);
+  }
+
+  function addDraftRoomType() {
+    setDraftRoomTypes((rows) => [...rows, { ...emptyDraftRoomType }]);
+  }
+
+  function updateDraftRoomType(i: number, patch: Partial<DraftRoomType>) {
+    setDraftRoomTypes((rows) => rows.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  }
+
+  function removeDraftRoomType(i: number) {
+    setDraftRoomTypes((rows) => (rows.length <= 1 ? rows : rows.filter((_, idx) => idx !== i)));
   }
 
   function updateSector(i: number, patch: Partial<FlightSector>) {
@@ -158,7 +207,11 @@ function PackagesInner() {
     body.set("name", form.name);
     if (form.slug) body.set("slug", form.slug);
     body.set("duration", form.duration);
-    body.set("price", form.price);
+    // Price is derived from room basis pricing, not typed by hand — see
+    // computeDisplayPriceFromDrafts above (create) / lib/packagePrice.ts
+    // (server, and what keeps it in sync after every room-type edit).
+    const derivedPrice = !editingId ? computeDisplayPriceFromDrafts(draftRoomTypes) : null;
+    body.set("price", derivedPrice ?? form.price);
     body.set("destination", form.destination);
     body.set("departureCity", form.departureCity);
     body.set("tier", form.tier);
@@ -180,15 +233,36 @@ function PackagesInner() {
     const sectorsPayload = flightSectors.filter((sec) => sec.city.trim() && sec.date);
     if (sectorsPayload.length > 0) body.set("flightSectors", JSON.stringify(sectorsPayload));
 
+    // Room basis division (Quad/Triple/Double/...) submitted inline with
+    // package creation, instead of requiring a save-then-add-room-types
+    // round trip. Only relevant on create — once a package exists, room
+    // types are managed below via Room Types & Pricing (PackageRoomTypesManager).
+    if (!editingId) {
+      const roomTypesPayload = draftRoomTypes
+        .filter((r) => r.roomType.trim() && Number(r.pricePerPersonPkr) > 0 && Number(r.maxAdults) >= 1)
+        .map((r) => ({
+          roomType: r.roomType.trim(),
+          pricePerPersonPkr: Number(r.pricePerPersonPkr),
+          pricePerInfantPkr: Number(r.pricePerInfantPkr || 0),
+          pricePerChildPkr: Number(r.pricePerChildPkr || 0),
+          maxAdults: Number(r.maxAdults),
+          maxInfants: Number(r.maxInfants || 0),
+          minAdultsRequired: r.minAdultsRequired ? Number(r.minAdultsRequired) : null,
+        }));
+      if (roomTypesPayload.length > 0) body.set("roomTypes", JSON.stringify(roomTypesPayload));
+    }
+
     const url = editingId ? `/api/admin/packages/${editingId}` : "/api/admin/packages";
     const res = await adminFetch(url, accessToken, refresh, { method: editingId ? "PATCH" : "POST", body });
     const data = await res.json().catch(() => ({}));
     setSubmitting(false);
     if (!res.ok) { setError(data.error ?? "Could not save package."); return; }
     if (!editingId) {
-      // Jump straight into editing the new package so room types can be
-      // added immediately — they need a real packageId to attach to.
+      // Jump straight into editing the new package so more room types can
+      // be added/edited immediately — the ones just submitted are already
+      // saved, this just switches to the "existing package" management view.
       setEditingId(data.package.id);
+      setDraftRoomTypes([{ ...emptyDraftRoomType }]);
     }
     load();
   }
@@ -246,11 +320,21 @@ function PackagesInner() {
             <input placeholder="e.g. 10 Days" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} />
           </div>
           <div>
-            <label>Price (listing display only — not the real bookable price)</label>
-            <input placeholder="e.g. PKR 250,000" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} />
+            <label>Price (listing display — auto-calculated)</label>
+            <input
+              readOnly
+              disabled
+              value={
+                editingId
+                  ? (form.price || "— set by adding room types below —")
+                  : (computeDisplayPriceFromDrafts(draftRoomTypes) ?? "— add a room type below to set this —")
+              }
+              style={{ color: "var(--a-muted)", background: "rgba(0,0,0,0.03)", cursor: "not-allowed" }}
+            />
             <p style={{ fontSize: "10.5px", color: "var(--a-dim)", marginTop: "4px" }}>
-              This text just shows on the package card. Actual bookable prices per room type are
-              set in <strong>Room Types &amp; Pricing</strong> below (save the package first).
+              This is always the lowest per-person room price below (usually Quad) — it's what
+              shows on the package card. It updates automatically whenever room basis pricing
+              changes, so it can't drift out of sync.
             </p>
           </div>
           <div>
@@ -376,6 +460,90 @@ function PackagesInner() {
             </button>
           </div>
 
+          {/* Room basis division — only shown while creating a new package.
+              Once saved, this becomes the Room Types & Pricing manager below
+              (which supports edit/delete individually). The lowest price
+              entered here becomes the Price field above automatically. */}
+          {!editingId && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label>Room Basis Division (Quad / Triple / Double / Single…)</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "6px" }}>
+                {draftRoomTypes.map((rt, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1.3fr 1fr 1fr 1fr 0.8fr 0.8fr 1fr auto",
+                      gap: "8px",
+                      alignItems: "end",
+                      padding: "10px",
+                      border: "1px solid var(--a-border)",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Room Type</label>
+                      <input
+                        list="room-basis-presets"
+                        placeholder="e.g. Quadruple Room"
+                        value={rt.roomType}
+                        onChange={(e) => updateDraftRoomType(i, { roomType: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Price / Person (PKR)</label>
+                      <input type="number" value={rt.pricePerPersonPkr} onChange={(e) => updateDraftRoomType(i, { pricePerPersonPkr: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Price / Infant</label>
+                      <input type="number" value={rt.pricePerInfantPkr} onChange={(e) => updateDraftRoomType(i, { pricePerInfantPkr: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Price / Child</label>
+                      <input type="number" value={rt.pricePerChildPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildPkr: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Max Adults</label>
+                      <input type="number" value={rt.maxAdults} onChange={(e) => updateDraftRoomType(i, { maxAdults: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Max Infants</label>
+                      <input type="number" value={rt.maxInfants} onChange={(e) => updateDraftRoomType(i, { maxInfants: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Min Adults Req.</label>
+                      <input
+                        type="number"
+                        placeholder="optional"
+                        value={rt.minAdultsRequired}
+                        onChange={(e) => updateDraftRoomType(i, { minAdultsRequired: e.target.value })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeDraftRoomType(i)}
+                      disabled={draftRoomTypes.length <= 1}
+                      className="adp-btn adp-btn-r"
+                      style={{ height: "34px" }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <datalist id="room-basis-presets">
+                {ROOM_BASIS_PRESETS.map((p) => <option key={p} value={p} />)}
+              </datalist>
+              <button type="button" onClick={addDraftRoomType} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
+                + Add Another Room Basis
+              </button>
+              <p style={{ fontSize: "10.5px", color: "var(--a-dim)", marginTop: "6px" }}>
+                Rows with no room type name or price are ignored on save. The display Price above
+                always tracks whichever row here is lowest.
+              </p>
+            </div>
+          )}
+
           {error && <p style={{ gridColumn: "1 / -1", color: "var(--a-red)", fontSize: "12px" }}>{error}</p>}
 
           <div style={{ gridColumn: "1 / -1", display: "flex", gap: "8px" }}>
@@ -401,9 +569,8 @@ function PackagesInner() {
         <div className="adp-card">
           <div className="adp-ch"><h3>Room Types &amp; Pricing</h3></div>
           <p style={{ padding: "16px 18px", fontSize: "12.5px", color: "var(--a-muted)" }}>
-            Click <strong>Create Package</strong> above first — room types (Double/Triple/Quad,
-            per-person, per-child, per-infant pricing) attach to a saved package and will appear
-            here right after you create it.
+            Add the room basis rows above (Quad/Triple/Double/…) and click <strong>Create Package</strong> —
+            they&apos;ll be saved together with the package, and you can keep editing/adding more here afterward.
           </p>
         </div>
       )}
