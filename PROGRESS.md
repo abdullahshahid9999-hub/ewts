@@ -516,3 +516,8 @@ try/catch with a specific error message. Good small follow-up: add the same
 try/catch to the other 9 (blogs, visa-services, group-flights,
 insurance-companies — both their POST and [id] PATCH routes) so upload
 failures are never a silent generic 500 again.
+
+## Schema audit + error-surfacing sweep (quick pass)
+- DB unreachable from this sandbox (render.com not in egress allowlist) — audit was static: scanned schema.prisma for scalar fields missing @map. Found none beyond what was already fixed (all flagged camelCase names are relation fields, not real columns, so no bug there). Live DB structure still needs owner's psql/TablePlus confirmation for full certainty.
+- Added missing try/catch error-surfacing (packages/agents pattern) to: blogs, agent-bookings, visa-services GET routes — these were still silently returning empty lists on DB failure.
+- Package detail page display (itinerary/room-types/calculator) already verified correct in code from prior session — could not test live end-to-end (no DB/browser access here).

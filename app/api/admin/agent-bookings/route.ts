@@ -23,11 +23,15 @@ export async function GET(req: NextRequest) {
   if (category) where.serviceType = category;
   if (status) where.status = status;
 
-  const agentBookings = await prisma.agentBooking.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: { agent: { select: { agentCode: true, fullName: true } }, groupFlight: true },
-  });
-
-  return NextResponse.json({ agentBookings });
+  try {
+    const agentBookings = await prisma.agentBooking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: { agent: { select: { agentCode: true, fullName: true } }, groupFlight: true },
+    });
+    return NextResponse.json({ agentBookings });
+  } catch (e) {
+    console.error("Agent bookings list failed:", e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Failed to load bookings." }, { status: 500 });
+  }
 }

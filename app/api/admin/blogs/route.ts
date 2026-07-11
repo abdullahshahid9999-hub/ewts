@@ -10,8 +10,13 @@ import { uploadToR2 } from "@/lib/r2";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const blogs = await prisma.blog.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json({ blogs });
+  try {
+    const blogs = await prisma.blog.findMany({ orderBy: { createdAt: "desc" } });
+    return NextResponse.json({ blogs });
+  } catch (e) {
+    console.error("Blogs list failed:", e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Failed to load blogs." }, { status: 500 });
+  }
 }
 
 function slugify(title: string) {

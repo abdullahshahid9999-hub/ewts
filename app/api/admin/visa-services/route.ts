@@ -10,8 +10,13 @@ import { uploadToR2 } from "@/lib/r2";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const visaServices = await prisma.visaService.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json({ visaServices });
+  try {
+    const visaServices = await prisma.visaService.findMany({ orderBy: { createdAt: "desc" } });
+    return NextResponse.json({ visaServices });
+  } catch (e) {
+    console.error("Visa services list failed:", e);
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Failed to load visa services." }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
