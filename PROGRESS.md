@@ -742,3 +742,12 @@ this file). Ran `npx tsc --noEmit` without a generated client anyway —
 same pre-existing "implicit any from missing generated PrismaClient"
 class of errors as before, nothing new introduced by these changes. Needs
 a real build (Render or unrestricted machine) to confirm clean.
+
+## Group tickets: nested grouping + filters
+Route → Airline nested grouping (logo/name shown once per airline, not per date row). Added `region` (domestic/international/gulf/ksa) and `trip_type` (oneway/return) fields with public filter pills.
+**DB migration needed:**
+```sql
+ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
+ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
+ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
+```
