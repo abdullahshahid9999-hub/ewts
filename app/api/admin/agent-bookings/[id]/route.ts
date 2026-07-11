@@ -18,25 +18,62 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.agentBooking.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  // Cancelling a previously-non-cancelled group ticket releases its seat
-  // back to inventory. Guarded so re-cancelling an already-cancelled
-  // booking (or any other status transition) never double-restores.
-  const releasesSeat =
-    status === "cancelled" && existing.status !== "cancelled" &&
-    existing.serviceType === "group_ticket" && existing.groupFlightId;
+  // Seats are now only touched at ISSUE time (not cancellation) — a
+  // cancelled booking that was never issued never decremented a seat in
+  // the first place, so there's nothing to restore on cancel. See
+  // agent/bookings POST for the matching read-only sold-out guard.
+  const isBeingIssued = status === "issued" && existing.status !== "issued";
+  const decrementsSeat =
+    isBeingIssued && existing.serviceType === "group_ticket" && existing.groupFlightId;
 
   const booking = await prisma
     .$transaction(async (tx) => {
-      if (releasesSeat) {
-        await tx.groupFlight.update({
-          where: { id: existing.groupFlightId! },
-          data: { seats: { increment: 1 } },
+      if (decrementsSeat) {
+        // Conditional `seats: { gt: 0 }` guard means this affects zero
+        // rows if the flight sold out between booking-creation and now —
+        // we detect that via count and bail, instead of going negative
+        // (the real oversell protection, since creation-time no longer
+        // reserves a seat).
+        const seatUpdate = await tx.groupFlight.updateMany({
+          where: { id: existing.groupFlightId!, seats: { gt: 0 } },
+          data: { seats: { decrement: 1 } },
+        });
+        if (seatUpdate.count === 0) {
+          throw new Error("SOLD_OUT");
+        }
+      }
+
+      if (isBeingIssued) {
+        // Agent payable ledger: the moment a booking is issued, the agent
+        // owes the office sellPrice minus their (already-snapshotted)
+        // commission. Agent.balance sign convention: negative = agent
+        // owes the office (see /api/admin/finance's totalReceivable,
+        // sum of balance < 0) — so this is a decrement.
+        const netOwed = existing.sellPrice - existing.commission;
+        await tx.agent.update({
+          where: { id: existing.agentId },
+          data: { balance: { decrement: netOwed } },
+        });
+        await tx.agentTransaction.create({
+          data: {
+            agentId: existing.agentId,
+            amount: -netOwed,
+            type: "debit",
+            note: `Booking issued: ${existing.bookingRef}`,
+          },
         });
       }
+
       return tx.agentBooking.update({ where: { id }, data: { status } });
     })
-    .catch(() => null);
-  if (!booking) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    .catch((e) => {
+      if (e instanceof Error && e.message === "SOLD_OUT") return null;
+      throw e;
+    });
+
+  if (!booking) {
+    return NextResponse.json({ error: "This flight is sold out — no seats remaining, cannot issue." }, { status: 409 });
+  }
 
   return NextResponse.json({ booking });
 }

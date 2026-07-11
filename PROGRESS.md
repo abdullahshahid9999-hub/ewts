@@ -1,5 +1,21 @@
 # EWTS Rebuild — Progress Notes
 
+## ✅ DB MIGRATIONS — owner confirmed these have been run
+The six `ALTER TABLE` statements below were pending across several
+sessions; owner confirmed running them directly. Not independently
+verified from this sandbox (still can't reach the DB — see next section),
+but taking the owner's word for it. If any save on flight sectors, child
+fare, group-flight arrival time/region/trip type, or bank accounts still
+fails with a column-not-found error, that's the first thing to re-check.
+```sql
+ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
+ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
+ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
+ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
+ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
+```
+
 ## Blocker on item 1 (build verification) — READ THIS FIRST
 This sandbox's network egress is allowlisted to specific domains and does
 **not** include `binaries.prisma.sh`. `npx prisma generate` fails with
@@ -543,12 +559,9 @@ Confirmed and fixed — creating a group_ticket AgentBooking never touched Group
 ## New prompt written: SALES-DASHBOARD-PROMPT.md
 Per owner: admin needs a prominent "Total Receivable" figure + agent needs a prominent "Amount Payable" figure, both filterable by date range. Scoped, not built yet — next session's task.
 
-## Open: DB migration still pending (owner away from DB PC)
-The 3 ALTER TABLE statements from the last session are still not run. Owner doesn't need to be at a specific "DB PC" — any machine with internet works, using the DATABASE_URL already in `.env`:
-- Render dashboard → the Postgres instance page has a "Connect" tab with the connection string and a copyable `psql` command — usable from Render's own web dashboard on any browser.
-- Or install a free GUI client (TablePlus, Beekeeper Studio, pgAdmin) on whatever laptop is at hand right now and paste in the DATABASE_URL from `.env`.
-- Or if Node is available: `npx pg` or similar one-off script using the same connection string.
-Until this runs, saving a package with flight sectors or a room type with a child price will fail.
+## Resolved: DB migrations (was "owner away from DB PC")
+Owner ran these — see the confirmed block at the top of this file.
+
 
 ## Sales Dashboard — Date-wise Money Owed/Receivable (Admin + Agent)
 
@@ -665,3 +678,89 @@ Root cause: `AgentSidebar.tsx` only had three nav items (Dashboard, My Bookings,
 ## Full Topup System (July 2026)
 
 Built the complete agent topup flow end-to-end. Agent side: `/agent/topup` is a real two-panel page — left shows live bank account cards fetched from the DB, right is a form to enter amount + upload a payment slip photo (uploaded to R2 `payments/` folder) with submission history table below. `/agent/bank-accounts` is a standalone card grid of the same data. Admin side: new `/admin/bank-accounts` page gives full CRUD over the bank accounts agents see (add, edit, hide/show, delete, sort order). `/admin/payment-slips` upgraded with filter tabs (pending/approved/rejected/all), pending count badge, reject-with-note modal so admin can give agents a reason, and date/time column. New `BankAccount` model added to Prisma schema (`bank_accounts` table — owner must run the SQL below). New API routes: `POST/GET /api/agent/topup`, `GET /api/agent/bank-accounts`, `GET /api/agent/transactions`, `GET/POST /api/admin/bank-accounts`, `PATCH/DELETE /api/admin/bank-accounts/[id]`. `npx tsc --noEmit` clean.
+## DASHBOARD-INVENTORY-PAYABLE-PROMPT.md corrected (self-contained now)
+Added an explicit warning + cleanup steps at the top of that prompt file itself, so the next session removes my old create-time seat decrement/restore code before adding the issue-time version — no double-decrement risk, no separate note needed here.
+
+## Admin Dashboard Stats + Seat Inventory (issue-time) + Agent Payable/Top-Up Ledger (July 2026)
+
+### Fixed a broken schema file first
+`prisma/schema.prisma`'s `BankAccount` model had literal `\n` escape
+sequences typed into the file instead of real newlines (from a prior
+session), which broke parsing of everything after it. Reformatted with
+real newlines/quotes — no field or column changes, purely a text-encoding
+fix.
+
+### Cleanup per this prompt's own warning (done first, before Part 2/3)
+- `app/api/agent/bookings/route.ts` POST: removed the creation-time
+  `prisma.$transaction` that decremented `GroupFlight.seats` when a
+  group-ticket booking was created. Replaced with a plain
+  `agentBooking.create`, keeping a read-only `seats > 0` check just to
+  reject agents from starting a booking against an already-sold-out
+  flight (doesn't reserve a seat).
+- `app/api/admin/agent-bookings/[id]/route.ts` PATCH: removed the
+  seat-restore-on-cancel block (`releasesSeat`/`groupFlight.update`
+  increment) — no longer correct once decrement moved to issue-time, since
+  a cancelled-but-never-issued booking never touched seats.
+
+### Part 1 — `GET /api/admin/dashboard-stats`
+New admin-gated route: total agents, pending agent-bookings (`pending` +
+`issue_requested`), active packages/group-flights/visa-services (summed
+into `totalActiveListings`, breakdown also returned), revenue this month
+(sum of `sellPrice` for bookings with `status: issued` and `updatedAt` in
+the current calendar month — no dedicated `issuedAt` column exists, so
+`updatedAt` is used as the issue-time marker since it's bumped by Prisma
+exactly when the PATCH route flips status to `issued`), and total payable
+(sum of `Agent.balance` where `balance < 0`, returned as a positive PKR
+number). `app/admin/dashboard/page.tsx` now fetches this on mount via
+`adminFetch` and renders a 5-card stats row above the existing section
+grid.
+
+### Part 2 — Seat decrement moved to ISSUE time
+In the same PATCH route, when `status` transitions to `"issued"` from
+anything else (`isBeingIssued`) and the booking is a `group_ticket` with a
+`groupFlightId`, the transaction runs a conditional
+`groupFlight.updateMany({ where: { seats: { gt: 0 } }, data: { seats: {
+decrement: 1 } } })`. If it affects zero rows (flight sold out between
+booking-creation and issue, or two simultaneous issues racing), the whole
+transaction throws and the route returns 409 — issuing is blocked rather
+than allowing seats to go negative. This is the real oversell guard now
+(the agent-facing check at creation is read-only, as noted above).
+
+### Part 3 — Agent payable ledger wired into the same issue transition
+Same `isBeingIssued` branch, same transaction: computes
+`netOwed = existing.sellPrice - existing.commission` (commission is the
+value already snapshotted on the booking, not recomputed), decrements
+`Agent.balance` by `netOwed` (confirmed sign convention from
+`/api/admin/finance`'s existing `totalReceivable` comment: negative
+balance = agent owes the office), and creates an `AgentTransaction`
+(`amount: -netOwed, type: "debit", note: "Booking issued: <bookingRef>"`).
+All three writes (seat decrement, balance decrement, booking status
+update) happen inside one `$transaction` so they can't go out of sync.
+
+### Part 4 — Agent top-up / payment-slip approval
+Checked `app/api/admin/payment-slips/[id]/route.ts` — the credit-on-approve
+logic (increment `Agent.balance` by slip amount + create a `credit`
+`AgentTransaction`) already existed and matches the spec exactly. No
+changes made here, per "verify rather than duplicate."
+
+### Not touched
+- No new Prisma migrations/columns — `BankAccount` fix was formatting
+  only, everything else reads/writes existing columns.
+- Commission calculation (`lib/commission.ts`) — unchanged.
+- Payment-slip approval logic — verified correct, left as-is.
+
+Build blocker note still applies: `npx prisma generate` 403s on
+`binaries.prisma.sh` in this sandbox (same as documented at the top of
+this file). Ran `npx tsc --noEmit` without a generated client anyway —
+same pre-existing "implicit any from missing generated PrismaClient"
+class of errors as before, nothing new introduced by these changes. Needs
+a real build (Render or unrestricted machine) to confirm clean.
+
+## Group tickets: nested grouping + filters
+Route → Airline nested grouping (logo/name shown once per airline, not per date row). Added `region` (domestic/international/gulf/ksa) and `trip_type` (oneway/return) fields with public filter pills.
+**DB migration needed:**
+```sql
+ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
+ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
+ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
+```
