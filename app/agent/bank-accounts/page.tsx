@@ -13,6 +13,7 @@ type BankAccount = {
   accountNumber: string;
   iban: string | null;
   branchCode: string | null;
+  logoUrl: string | null;
 };
 
 function BankAccountsInner() {
@@ -55,7 +56,15 @@ function BankAccountsInner() {
           {accounts.map((acc) => (
             <div key={acc.id} className="ap-card">
               <div className="ap-ch">
-                <div><h3>🏦 {acc.bankName}</h3></div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {acc.logoUrl
+                      ? <img src={acc.logoUrl} alt={acc.bankName} style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 8, border: "1px solid var(--bdr)", background: "#fff", padding: 3 }} />
+                      : <div style={{ width: 40, height: 40, borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🏦</div>
+                    }
+                    <h3>{acc.bankName}</h3>
+                  </div>
+                </div>
               </div>
               <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
                 <Field label="Account Title" value={acc.accountTitle} />

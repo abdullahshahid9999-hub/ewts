@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const accounts = await prisma.bankAccount.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    select: { id: true, bankName: true, accountTitle: true, accountNumber: true, iban: true, branchCode: true },
+    select: { id: true, bankName: true, accountTitle: true, accountNumber: true, iban: true, branchCode: true, logoUrl: true },
   });
 
   return NextResponse.json({ accounts });

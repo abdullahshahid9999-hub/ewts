@@ -12,6 +12,7 @@ type BankAccount = {
   accountNumber: string;
   iban: string | null;
   branchCode: string | null;
+  logoUrl: string | null;
 };
 
 type Slip = {
@@ -148,8 +149,12 @@ function TopupInner() {
                     borderRadius: 10,
                     padding: "14px 16px",
                   }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
-                      🏦 {acc.bankName}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      {acc.logoUrl
+                        ? <img src={acc.logoUrl} alt={acc.bankName} style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 6, border: "1px solid var(--bdr)", background: "#fff", padding: 2 }} />
+                        : <div style={{ width: 36, height: 36, borderRadius: 6, border: "1px solid var(--bdr)", background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏦</div>
+                      }
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{acc.bankName}</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                       <Row label="Account Title" value={acc.accountTitle} />
