@@ -9,6 +9,7 @@ type RoomType = {
   roomType: string;
   pricePerPersonPkr: number;
   pricePerInfantPkr: number;
+  pricePerChildPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
@@ -25,13 +26,14 @@ export default function PackageBookingWidget({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(roomTypes[0]?.id ?? null);
   const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
 
   const selected = roomTypes.find((r) => r.id === selectedId) ?? null;
 
   const total = useMemo(
-    () => (selected ? adults * selected.pricePerPersonPkr + infants * selected.pricePerInfantPkr : 0),
-    [selected, adults, infants]
+    () => (selected ? adults * selected.pricePerPersonPkr + children * selected.pricePerChildPkr + infants * selected.pricePerInfantPkr : 0),
+    [selected, adults, children, infants]
   );
 
   const minInvalid = !!(selected?.minAdultsRequired && adults < selected.minAdultsRequired);
@@ -53,12 +55,16 @@ export default function PackageBookingWidget({
     setInfants((i) => Math.min(Math.max(i + delta, 0), selected.maxInfants));
   }
 
+  function adjustChildren(delta: number) {
+    setChildren((c) => Math.max(c + delta, 0));
+  }
+
   const bookingFormHref = selected
-    ? `/booking-form?packageId=${encodeURIComponent(packageId)}&roomType=${encodeURIComponent(selected.roomType)}&adults=${adults}&infants=${infants}`
+    ? `/booking-form?packageId=${encodeURIComponent(packageId)}&roomType=${encodeURIComponent(selected.roomType)}&adults=${adults}&children=${children}&infants=${infants}`
     : "#";
 
   const whatsappMessage = selected
-    ? `Assalam o Alaikum! I'm interested in "${packageName}" — ${selected.roomType}, ${adults} adult(s)${infants ? `, ${infants} infant(s)` : ""}.`
+    ? `Assalam o Alaikum! I'm interested in "${packageName}" — ${selected.roomType}, ${adults} adult(s)${children ? `, ${children} child(ren)` : ""}${infants ? `, ${infants} infant(s)` : ""}.`
     : `Assalam o Alaikum! I'm interested in "${packageName}".`;
 
   if (roomTypes.length === 0) {
@@ -126,6 +132,14 @@ export default function PackageBookingWidget({
               </div>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-sm">Children</span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => adjustChildren(-1)} className="w-8 h-8 rounded-full border border-border font-bold">−</button>
+                <span className="w-6 text-center font-semibold">{children}</span>
+                <button type="button" onClick={() => adjustChildren(1)} className="w-8 h-8 rounded-full border border-border font-bold">+</button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between mb-3">
               <span className="text-sm">
                 Infants{" "}
                 <span className="text-muted text-xs">
@@ -150,6 +164,12 @@ export default function PackageBookingWidget({
               <span>Adults ({adults} × Rs. {selected.pricePerPersonPkr.toLocaleString()})</span>
               <span>Rs. {(adults * selected.pricePerPersonPkr).toLocaleString()}</span>
             </div>
+            {children > 0 && (
+              <div className="flex justify-between mb-1">
+                <span>Children ({children} × Rs. {selected.pricePerChildPkr.toLocaleString()})</span>
+                <span>Rs. {(children * selected.pricePerChildPkr).toLocaleString()}</span>
+              </div>
+            )}
             {infants > 0 && (
               <div className="flex justify-between mb-1">
                 <span>Infants ({infants} × Rs. {selected.pricePerInfantPkr.toLocaleString()})</span>

@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 type Pkg = { id: string; slug: string | null; name: string; category: string; imageUrl: string | null };
-type RoomType = { roomType: string; pricePerPersonPkr: number; pricePerInfantPkr: number };
+type RoomType = { roomType: string; pricePerPersonPkr: number; pricePerChildPkr: number; pricePerInfantPkr: number };
 
 export default function BookingFormClient({
   pkg,
   roomType,
   adults,
+  children,
   infants,
 }: {
   pkg: Pkg;
   roomType: RoomType;
   adults: number;
+  children: number;
   infants: number;
 }) {
   const router = useRouter();
@@ -28,8 +30,9 @@ export default function BookingFormClient({
   const [submitting, setSubmitting] = useState(false);
 
   const adultsTotal = adults * roomType.pricePerPersonPkr;
+  const childrenTotal = children * roomType.pricePerChildPkr;
   const infantsTotal = infants * roomType.pricePerInfantPkr;
-  const total = adultsTotal + infantsTotal;
+  const total = adultsTotal + childrenTotal + infantsTotal;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +46,7 @@ export default function BookingFormClient({
         packageId: pkg.id,
         roomType: roomType.roomType,
         adults,
+        children,
         infants,
         customerName,
         email,
@@ -160,6 +164,12 @@ export default function BookingFormClient({
                   <span>Adults ({adults} × Rs. {roomType.pricePerPersonPkr.toLocaleString()})</span>
                   <span>Rs. {adultsTotal.toLocaleString()}</span>
                 </div>
+                {children > 0 && (
+                  <div className="flex justify-between">
+                    <span>Children ({children} × Rs. {roomType.pricePerChildPkr.toLocaleString()})</span>
+                    <span>Rs. {childrenTotal.toLocaleString()}</span>
+                  </div>
+                )}
                 {infants > 0 && (
                   <div className="flex justify-between">
                     <span>Infants ({infants} × Rs. {roomType.pricePerInfantPkr.toLocaleString()})</span>

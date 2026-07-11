@@ -32,7 +32,7 @@ function InvalidAccess() {
 export default async function BookingFormPage({
   searchParams,
 }: {
-  searchParams: Promise<{ packageId?: string; roomType?: string; adults?: string; infants?: string }>;
+  searchParams: Promise<{ packageId?: string; roomType?: string; adults?: string; children?: string; infants?: string }>;
 }) {
   const params = await searchParams;
   const packageId = params.packageId;
@@ -62,10 +62,12 @@ export default async function BookingFormPage({
   // for anything that affects price. The server recomputes total on
   // submit regardless (see /api/bookings).
   const requestedAdults = Number(params.adults);
+  const requestedChildren = Number(params.children);
   const requestedInfants = Number(params.infants);
   const adults = Number.isFinite(requestedAdults)
     ? Math.min(Math.max(requestedAdults, 1), roomType.maxAdults)
     : 1;
+  const children = Number.isFinite(requestedChildren) ? Math.max(requestedChildren, 0) : 0;
   const infants = Number.isFinite(requestedInfants)
     ? Math.min(Math.max(requestedInfants, 0), roomType.maxInfants)
     : 0;
@@ -78,9 +80,11 @@ export default async function BookingFormPage({
         roomType={{
           roomType: roomType.roomType,
           pricePerPersonPkr: roomType.pricePerPersonPkr,
+          pricePerChildPkr: roomType.pricePerChildPkr,
           pricePerInfantPkr: roomType.pricePerInfantPkr,
         }}
         adults={adults}
+        children={children}
         infants={infants}
       />
       <Footer />

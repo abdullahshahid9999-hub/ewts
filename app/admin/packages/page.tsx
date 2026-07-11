@@ -12,6 +12,7 @@ type RoomType = {
   roomType: string;
   pricePerPersonPkr: number;
   pricePerInfantPkr: number;
+  pricePerChildPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
