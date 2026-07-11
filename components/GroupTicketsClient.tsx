@@ -16,6 +16,8 @@ type Flight = {
   arrDate: string | null;
   baggage: string | null;
   meal: string | null;
+  region: string | null;
+  tripType: string | null;
   price: string;
   seats: number;
 };
@@ -84,27 +86,81 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
   );
 }
 
+const REGION_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "domestic", label: "Domestic" },
+  { value: "international", label: "International" },
+  { value: "gulf", label: "Gulf" },
+  { value: "ksa", label: "KSA" },
+];
+
+const TRIP_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "oneway", label: "One-way" },
+  { value: "return", label: "Return" },
+];
+
 export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
   const [bookingFlight, setBookingFlight] = useState<Flight | null>(null);
+  const [region, setRegion] = useState("all");
+  const [tripType, setTripType] = useState("all");
 
-  // Group by DESTINATION (route) first — so multiple airlines serving the
-  // same route sit under one clearly-labeled section instead of looking
-  // like unrelated, disconnected blocks.
-  const groups = new Map<string, Flight[]>();
-  for (const f of flights) {
-    if (!groups.has(f.route)) groups.set(f.route, []);
-    groups.get(f.route)!.push(f);
+  const filtered = flights.filter(
+    (f) =>
+      (region === "all" || f.region === region) &&
+      (tripType === "all" || f.tripType === tripType)
+  );
+
+  // Group by DESTINATION first, then by AIRLINE within that destination —
+  // so the same airline running multiple days on the same route shows its
+  // logo/name ONCE, with all its dates listed as rows underneath, instead
+  // of repeating the logo on every single date.
+  const routeGroups = new Map<string, Map<string, Flight[]>>();
+  for (const f of filtered) {
+    if (!routeGroups.has(f.route)) routeGroups.set(f.route, new Map());
+    const airlineGroups = routeGroups.get(f.route)!;
+    if (!airlineGroups.has(f.airline)) airlineGroups.set(f.airline, []);
+    airlineGroups.get(f.airline)!.push(f);
   }
 
   return (
     <>
+      <section className="max-w-6xl mx-auto px-6 pt-2 pb-8">
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+          {REGION_FILTERS.map((r) => (
+            <button
+              key={r.value}
+              onClick={() => setRegion(r.value)}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-colors ${
+                region === r.value ? "bg-gold border-gold text-black" : "border-border text-muted hover:border-gold"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {TRIP_FILTERS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTripType(t.value)}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-colors ${
+                tripType === t.value ? "bg-[var(--navy)] border-[var(--navy)] text-white" : "border-border text-muted hover:border-[var(--navy)]"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="max-w-6xl mx-auto px-6 pb-16 space-y-12">
-        {flights.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="text-muted text-center">
-            No group flights are listed right now — WhatsApp us for current availability.
+            No group flights match these filters right now — WhatsApp us for current availability.
           </p>
         ) : (
-          Array.from(groups.entries()).map(([route, group]) => (
+          Array.from(routeGroups.entries()).map(([route, airlineGroups]) => (
             <div key={route}>
               {/* Destination heading — the single source of truth for
                   "these flights all go to the same place," so it's never
@@ -117,65 +173,68 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                 <span className="h-px flex-1 bg-border" />
               </div>
 
-              <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-white">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm min-w-[760px]">
-                    <thead>
-                      <tr className="bg-gold text-black text-xs uppercase tracking-wide">
-                        <th className="px-4 py-3 text-left">Airline</th>
-                        <th className="px-4 py-3 text-left">Flight</th>
-                        <th className="px-4 py-3 text-left">Date</th>
-                        <th className="px-4 py-3 text-left">Time</th>
-                        <th className="px-4 py-3 text-left">Bag</th>
-                        <th className="px-4 py-3 text-left">Meal</th>
-                        <th className="px-4 py-3 text-left">Fare</th>
-                        <th className="px-4 py-3"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {group.map((f, i) => (
-                        <tr
-                          key={f.id}
-                          className={`${i % 2 === 0 ? "bg-white" : "bg-[var(--surface)]"} border-t border-border`}
-                        >
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-12 h-12 shrink-0 rounded-lg bg-white border border-border p-1.5">
-                                {f.airlineLogoUrl ? (
-                                  <Image src={f.airlineLogoUrl} alt={f.airline} fill className="object-contain p-0.5" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-[9px] text-muted font-semibold text-center leading-tight">
-                                    {f.airline}
-                                  </div>
-                                )}
-                              </div>
-                              <span className="font-semibold whitespace-nowrap">{f.airline}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.flightNo ?? "—"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted">{f.depDate ?? "—"}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted">
-                            {f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-muted">{f.baggage ?? "—"}</td>
-                          <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-500" : "text-green-600"}`}>
-                            {f.meal ?? "—"}
-                          </td>
-                          <td className="px-4 py-3 font-display font-semibold text-gold whitespace-nowrap">{f.price}</td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => setBookingFlight(f)}
-                              disabled={f.seats <= 0}
-                              className="bg-[var(--navy)] hover:bg-gold hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              <div className="space-y-6">
+                {Array.from(airlineGroups.entries()).map(([airline, group]) => (
+                  <div key={airline} className="rounded-2xl overflow-hidden border border-border shadow-sm bg-white">
+                    {/* Airline shown ONCE per group, not per date row */}
+                    <div className="flex items-center gap-3 px-4 py-3 bg-[var(--surface)] border-b border-border">
+                      <div className="relative w-12 h-12 shrink-0 rounded-lg bg-white border border-border p-1.5">
+                        {group[0].airlineLogoUrl ? (
+                          <Image src={group[0].airlineLogoUrl} alt={airline} fill className="object-contain p-0.5" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[9px] text-muted font-semibold text-center leading-tight">
+                            {airline}
+                          </div>
+                        )}
+                      </div>
+                      <span className="font-display font-semibold text-lg">{airline}</span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm min-w-[700px]">
+                        <thead>
+                          <tr className="bg-gold text-black text-xs uppercase tracking-wide">
+                            <th className="px-4 py-3 text-left">Flight</th>
+                            <th className="px-4 py-3 text-left">Date</th>
+                            <th className="px-4 py-3 text-left">Time</th>
+                            <th className="px-4 py-3 text-left">Bag</th>
+                            <th className="px-4 py-3 text-left">Meal</th>
+                            <th className="px-4 py-3 text-left">Fare</th>
+                            <th className="px-4 py-3"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.map((f, i) => (
+                            <tr
+                              key={f.id}
+                              className={`${i % 2 === 0 ? "bg-white" : "bg-[var(--surface)]"} border-t border-border`}
                             >
-                              {f.seats > 0 ? "Book Now" : "Sold Out"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                              <td className="px-4 py-3 font-semibold whitespace-nowrap">{f.flightNo ?? "—"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-muted">{f.depDate ?? "—"}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-muted">
+                                {f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-muted">{f.baggage ?? "—"}</td>
+                              <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-500" : "text-green-600"}`}>
+                                {f.meal ?? "—"}
+                              </td>
+                              <td className="px-4 py-3 font-display font-semibold text-gold whitespace-nowrap">{f.price}</td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => setBookingFlight(f)}
+                                  disabled={f.seats <= 0}
+                                  className="bg-[var(--navy)] hover:bg-gold hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                >
+                                  {f.seats > 0 ? "Book Now" : "Sold Out"}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))

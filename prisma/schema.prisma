@@ -87,6 +87,8 @@ model GroupFlight {
   arrTime       String?  @map("arr_time")
   baggage       String?
   meal          String?
+  region        String?  @default("international") // domestic | international | gulf | ksa
+  tripType      String?  @default("oneway") @map("trip_type") // oneway | return
   price         String
   airlineLogoUrl String? @map("airline_logo_url")
   seats         Int      @default(0)

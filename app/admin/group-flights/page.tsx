@@ -16,6 +16,8 @@ type GroupFlight = {
   arrTime: string | null;
   baggage: string | null;
   meal: string | null;
+  region: string | null;
+  tripType: string | null;
   price: string;
   seats: number;
   status: string;
@@ -23,7 +25,7 @@ type GroupFlight = {
 
 const emptyForm = {
   flightNo: "", airline: "", route: "", price: "", depDate: "", depTime: "", arrTime: "",
-  baggage: "", meal: "Yes", seats: "0", status: "active",
+  baggage: "", meal: "Yes", region: "international", tripType: "oneway", seats: "0", status: "active",
 };
 
 function GroupFlightsInner() {
@@ -53,7 +55,8 @@ function GroupFlightsInner() {
     setForm({
       flightNo: f.flightNo ?? "", airline: f.airline, route: f.route, price: f.price,
       depDate: f.depDate ?? "", depTime: f.depTime ?? "", arrTime: f.arrTime ?? "",
-      baggage: f.baggage ?? "", meal: f.meal ?? "Yes", seats: String(f.seats), status: f.status,
+      baggage: f.baggage ?? "", meal: f.meal ?? "Yes", region: f.region ?? "international",
+      tripType: f.tripType ?? "oneway", seats: String(f.seats), status: f.status,
     });
     setFile(null);
   }
@@ -101,6 +104,22 @@ function GroupFlightsInner() {
             <select value={form.meal} onChange={(e) => setForm((f) => ({ ...f, meal: e.target.value }))}>
               <option value="Yes">Yes</option>
               <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label>Region</label>
+            <select value={form.region} onChange={(e) => setForm((f) => ({ ...f, region: e.target.value }))}>
+              <option value="domestic">Domestic</option>
+              <option value="international">International</option>
+              <option value="gulf">Gulf</option>
+              <option value="ksa">KSA (Saudi Arabia)</option>
+            </select>
+          </div>
+          <div>
+            <label>Trip Type</label>
+            <select value={form.tripType} onChange={(e) => setForm((f) => ({ ...f, tripType: e.target.value }))}>
+              <option value="oneway">One-way</option>
+              <option value="return">Return</option>
             </select>
           </div>
           <div><label>Price</label><input required placeholder="e.g. 80,000 PKR" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} /></div>

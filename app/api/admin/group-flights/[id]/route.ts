@@ -38,6 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       arrDate: str("arrDate"),
       depTime: str("depTime"),
       arrTime: str("arrTime"),
+      region: str("region"),
+      tripType: str("tripType"),
       baggage: str("baggage"),
       meal: str("meal"),
       price: str("price"),
