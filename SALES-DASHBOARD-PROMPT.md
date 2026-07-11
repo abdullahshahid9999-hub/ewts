@@ -1,61 +1,76 @@
-# Sales Dashboard — Date-wise Money Owed/Receivable (Admin + Agent)
+# Fix: Agent Balance Doesn't Move On Sale + No Topup Flow + Dashboard Missing Sales Data
 
 ## First step
-Clone repo, read `PROGRESS.md` + `git log -20` for context. A basic
-`/admin/finance` page already exists (`app/admin/finance/page.tsx` +
-`app/api/admin/finance/route.ts`) — read it first, this task extends it,
-doesn't replace it.
+Clone repo, `git log -20` + PROGRESS.md for context. These are 3 confirmed
+bugs (verified by reading the code, not guessed) — fix in this order.
 
-## The problem, in the owner's words
-Right now there's no single place that clearly shows:
-- **Admin side**: total money the business is owed right now (across all
-  agents, all services) — needs to be visually distinct/obvious ("Total"
-  styling, not buried in a table).
-- **Agent side**: how much that specific agent currently owes the
-  business ("Major" — i.e. the outstanding/payable amount) — same idea,
-  needs to be obviously labeled, not just a balance number in a sidebar.
-- Both sides need to filter by date range (tenure) — "show me this for
-  last week / this month / a custom range," not just an all-time total.
+## Bug 1: Selling never changes seats/payable (root cause)
+`app/api/agent/bookings/route.ts` — booking creation computes `commission`
+and stores it on the `AgentBooking` row, but **never touches
+`Agent.balance`**. That's why the owner sees no payable change after a
+sale. (Seat decrement for group tickets was already fixed in a prior
+session — confirm that fix actually reached the live DB: it needs
+`price_per_child_pkr`, `flight_sectors`, `bookings.children` migrations
+run first, listed in PROGRESS.md. If those never ran, check whether that
+blocks unrelated inserts too.)
 
-## What to build
+**Fix**: in the same transaction that creates the `AgentBooking`, increment
+`Agent.balance` by the commission amount (this is what the agent is owed
+— or, if the business model is "agent collects full sellPrice from
+customer and owes the company sellPrice minus commission," clarify which
+direction with the owner before coding — **this is a real business-logic
+decision, don't guess it**). Write an `AgentTransaction` row alongside it
+(model already exists, same pattern as the payment-slip-approval credit
+in `app/api/admin/payment-slips/[id]/route.ts` — copy that transaction
+pattern).
 
-### 1. Admin: `/admin/finance` — extend, don't rebuild
-Add:
-- A date-range filter (from/to, plus quick presets: Today, This Week,
-  This Month, All Time) that re-queries the existing breakdown/balances
-  data scoped to `AgentBooking.createdAt` within that range.
-- A prominent "Total Receivable" figure — sum of outstanding balances
-  across all agents with `balance < 0` (i.e. they owe the company) that
-  are still unpaid — styled as the clear headline number of the page, not
-  just another table column. Use the existing `adp-sc` stat-card pattern,
-  but make this one visually the largest/most prominent (e.g. spans two
-  columns or sits alone at the top).
-- Keep the existing service-wise and per-agent tables below it, just
-  scoped to the selected date range.
+## Bug 2: No agent topup flow exists at all
+Checked: `PaymentSlip` rows are never created anywhere in the codebase.
+The admin approve/reject route
+(`app/api/admin/payment-slips/[id]/route.ts`) works, but nothing ever
+feeds it — it's a dead end.
 
-### 2. Agent: extend `/agent/dashboard` or `/agent/profile`
-Add a clearly-labeled **"Amount Payable"** card — the agent's own
-outstanding balance owed to the company (this is just their `balance`
-when negative, already available via `/api/agent/profile` — no new
-backend needed for the number itself, just needs its own prominent card
-rather than being one line among several). Add the same date-range filter
-scoped to that agent's own `AgentBooking` rows, so they can see "what do
-I owe from bookings made in [date range]."
+**Build**:
+- `app/api/agent/payment-slips/route.ts` — POST, `requireAgent`-gated.
+  Agent submits: amount, and an uploaded slip image (reuse `uploadToR2`
+  pattern from admin routes, `folder: "payment-slips"`). Creates a
+  `PaymentSlip` row with `status: "pending"`.
+- `app/agent/topup/page.tsx` (or a section on `/agent/profile`) — form:
+  amount + image upload (client-side `compressImage` before upload, same
+  as admin image fields), submit, shows pending/approved/rejected history
+  for that agent (`GET` their own slips — add agentId scoping to a new or
+  existing route, `requireAgent`, never another agent's slips).
+- Confirm the existing admin approval flow
+  (`app/api/admin/payment-slips/[id]/route.ts`) actually credits
+  `Agent.balance` correctly once real slips exist — re-test it, it was
+  built against a flow that never had real data flowing through it.
 
-### 3. Backend
-`/api/admin/finance` needs a `from`/`to` query param support, filtering
-the underlying `AgentBooking.findMany` calls by `createdAt`. Check
-whether a similar date-scoped query is needed on the agent side (likely a
-small addition to `/api/agent/bookings` — it may already support this,
-check first) or a new lightweight endpoint.
+## Bug 3: Admin dashboard doesn't show sales/receivable data
+`/admin/finance` exists and has the numbers, but `/admin/dashboard`
+(the actual landing page after login) doesn't surface any of it — the
+owner has to know to click into Finance separately.
+
+**Fix**: pull the "Total Receivable" figure (and maybe today's/this
+week's booking count) into `/admin/dashboard` itself as a stat card at
+the top, above the section-links grid. Don't duplicate the finance
+query logic — either fetch from the existing `/api/admin/finance` route,
+or extract its core query into a shared function both routes call.
+
+## Order to build in
+1. Bug 1 first (balance-on-sale) — the topup flow in Bug 2 is meaningless
+   without agents actually accumulating payable balances to top up
+   against.
+2. Bug 2 (topup flow).
+3. Bug 3 (dashboard surfacing) — cosmetic/placement, do last.
 
 ## Don't do
-- Don't change how balance/commission is calculated — this is a display/
-  filtering feature, not a finance-logic change.
-- Don't let agents see other agents' figures — every agent-side number
-  must be scoped to `requireAgent(req).id`, same as the rest of the agent
-  API surface.
+- Don't guess the commission-vs-full-price balance direction in Bug 1 —
+  ask if PROGRESS.md/schema comments don't already make it unambiguous.
+- Don't build a second payment/balance system — reuse `AgentTransaction`
+  and the existing `PaymentSlip` approval pattern exactly.
 
 ## When done
-Type-check clean, update PROGRESS.md, commit in logical chunks (backend
-date filter first, then admin UI, then agent UI).
+Type-check clean, test the full loop mentally: agent sells → balance
+moves → agent submits topup with slip → admin approves → balance moves
+back → dashboard reflects all of it. Update PROGRESS.md, commit in the
+3-bug order above, not one giant commit.
