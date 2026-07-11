@@ -1,9 +1,12 @@
 # EWTS Rebuild — Progress Notes
 
-## ⚠️ PENDING DB MIGRATIONS — run these on the live DB before anything else
-These are scattered further down in this file where each was introduced;
-consolidated here so none get missed. Run in this order (later ones don't
-depend on earlier ones, order doesn't matter, just run all six):
+## ✅ DB MIGRATIONS — owner confirmed these have been run
+The six `ALTER TABLE` statements below were pending across several
+sessions; owner confirmed running them directly. Not independently
+verified from this sandbox (still can't reach the DB — see next section),
+but taking the owner's word for it. If any save on flight sectors, child
+fare, group-flight arrival time/region/trip type, or bank accounts still
+fails with a column-not-found error, that's the first thing to re-check.
 ```sql
 ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
@@ -12,12 +15,6 @@ ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
 ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
 ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
 ```
-Until these run: saving a package with flight sectors or a child price,
-and saving a group flight with an arrival time/region/trip type, will
-fail. Can be run from any machine with internet using the `DATABASE_URL`
-already in `.env` — via Render's dashboard "Connect" tab, or any GUI
-client (TablePlus, Beekeeper Studio, pgAdmin), no need to be at a specific
-"DB machine."
 
 ## Blocker on item 1 (build verification) — READ THIS FIRST
 This sandbox's network egress is allowlisted to specific domains and does
@@ -562,12 +559,9 @@ Confirmed and fixed — creating a group_ticket AgentBooking never touched Group
 ## New prompt written: SALES-DASHBOARD-PROMPT.md
 Per owner: admin needs a prominent "Total Receivable" figure + agent needs a prominent "Amount Payable" figure, both filterable by date range. Scoped, not built yet — next session's task.
 
-## Open: DB migration still pending (owner away from DB PC)
-The 3 ALTER TABLE statements from the last session are still not run. Owner doesn't need to be at a specific "DB PC" — any machine with internet works, using the DATABASE_URL already in `.env`:
-- Render dashboard → the Postgres instance page has a "Connect" tab with the connection string and a copyable `psql` command — usable from Render's own web dashboard on any browser.
-- Or install a free GUI client (TablePlus, Beekeeper Studio, pgAdmin) on whatever laptop is at hand right now and paste in the DATABASE_URL from `.env`.
-- Or if Node is available: `npx pg` or similar one-off script using the same connection string.
-Until this runs, saving a package with flight sectors or a room type with a child price will fail.
+## Resolved: DB migrations (was "owner away from DB PC")
+Owner ran these — see the confirmed block at the top of this file.
+
 
 ## Sales Dashboard — Date-wise Money Owed/Receivable (Admin + Agent)
 
