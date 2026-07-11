@@ -521,3 +521,15 @@ failures are never a silent generic 500 again.
 - DB unreachable from this sandbox (render.com not in egress allowlist) — audit was static: scanned schema.prisma for scalar fields missing @map. Found none beyond what was already fixed (all flagged camelCase names are relation fields, not real columns, so no bug there). Live DB structure still needs owner's psql/TablePlus confirmation for full certainty.
 - Added missing try/catch error-surfacing (packages/agents pattern) to: blogs, agent-bookings, visa-services GET routes — these were still silently returning empty lists on DB failure.
 - Package detail page display (itinerary/room-types/calculator) already verified correct in code from prior session — could not test live end-to-end (no DB/browser access here).
+
+## Flight sectors + child fare (Umrah packages)
+Admin packages form: repeatable flight-sector rows (city + date + time, minimalistic). Row 1 = Departure, Row 2 = Arrival, both locked (- disabled), required minimum. "+" adds extra removable sectors. Rendered on package detail page as cards.
+Also added: child fare (pricePerChildPkr) alongside existing infant fare on room types — wired through admin room-type manager, booking calculator, booking-form, confirmation.
+
+**DB migration needed (sandbox can't reach the DB — run manually):**
+```sql
+ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
+ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
+```
+Until these run, saving a package with sectors or a room type with a child price will fail — same class of issue as the earlier `price_per_infant_pkr` miss.
