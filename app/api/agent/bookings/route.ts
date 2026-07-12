@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
   }
 
   const groupFlightId = typeof body.groupFlightId === "string" ? body.groupFlightId : undefined;
+  const packageId = typeof body.packageId === "string" ? body.packageId : undefined;
 
   // Commission is a SNAPSHOT computed right now from the agent's current
   // rate for this service type (admin-configured, can change over time —
@@ -164,6 +165,7 @@ export async function POST(req: NextRequest) {
         agentId: agent.id,
         serviceType,
         groupFlightId,
+        packageId: serviceType === "umrah" ? packageId : undefined,
         sellPrice,
         commission,
         bookingRef: generateBookingRef(),

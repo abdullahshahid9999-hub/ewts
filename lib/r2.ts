@@ -40,7 +40,7 @@ const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", 
 export async function uploadToR2(params: {
   buffer: Buffer;
   contentType: string;
-  folder: "packages" | "visas" | "blogs" | "flights" | "insurance" | "agents" | "payments";
+  folder: "packages" | "visas" | "blogs" | "flights" | "insurance" | "agents" | "payments" | "banks";
 }) {
   const { buffer, contentType, folder } = params;
 

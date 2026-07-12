@@ -13,6 +13,7 @@ const NAV = [
     section: "Services",
     items: [
       { href: "/admin/packages", icon: "🌙", label: "Packages" },
+      { href: "/admin/direct-bookings", icon: "🧳", label: "Direct Bookings" },
       { href: "/admin/visa-services", icon: "🛂", label: "Visa Services" },
       { href: "/admin/visa-applications", icon: "📥", label: "Visa Applications" },
       { href: "/admin/group-flights", icon: "✈️", label: "Group Flights" },

@@ -21,6 +21,7 @@ function pkr(n: number) {
 
 const SECTIONS = [
   { href: "/admin/packages", title: "Packages", desc: "Umrah & tour packages" },
+  { href: "/admin/direct-bookings", title: "Direct Bookings", desc: "Walk-in customer bookings, no agent" },
   { href: "/admin/visa-services", title: "Visa Services", desc: "Country visa listings" },
   { href: "/admin/group-flights", title: "Group Flights", desc: "Group ticket listings" },
   { href: "/admin/insurance", title: "Insurance", desc: "Companies, plans, rates" },

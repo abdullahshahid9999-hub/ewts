@@ -44,8 +44,9 @@ model Package {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  roomTypes PackageRoomType[]
-  bookings  Booking[]
+  roomTypes     PackageRoomType[]
+  bookings      Booking[]
+  agentBookings AgentBooking[]
 
   @@map("packages")
 }
@@ -355,6 +356,12 @@ model AgentBooking {
   agentId           String    @map("agent_id")
   serviceType       String    @map("service_type") // "umrah" | "group_ticket" | "insurance" — exact strings, do not rename
   groupFlightId     String?   @map("group_flight_id")
+  // Which SPECIFIC package/tour this booking is for (umrah/tours bookings
+  // only — group_ticket bookings use groupFlightId instead, insurance
+  // bookings reference neither). Without this, admin could only filter by
+  // broad category, so opening one specific tour showed every booking in
+  // that category regardless of which actual package it was for.
+  packageId         String?   @map("package_id")
   status            String    @default("pending") // pending | confirmed | issue_requested | issued | cancelled
   sellPrice         Int       @map("sell_price")
   // Snapshot of the agent's commission rate AT THE TIME this booking was
@@ -372,6 +379,7 @@ model AgentBooking {
 
   agent       Agent        @relation(fields: [agentId], references: [id])
   groupFlight GroupFlight? @relation(fields: [groupFlightId], references: [id])
+  package     Package?     @relation(fields: [packageId], references: [id])
 
   @@map("agent_bookings")
 }
@@ -426,24 +434,7 @@ model PaymentSlip {
 model BankAccount {
   id            String   @id @default(uuid())
   bankName      String   @map("bank_name")
-  accountTitle  String   @map("account_title")
-  accountNumber String   @map("account_number")
-  iban          String?
-  branchCode    String?  @map("branch_code")
   logoUrl       String?  @map("logo_url")
-  sortOrder     Int      @default(0) @map("sort_order")
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  @@map("bank_accounts")
-}
-
-// ── ADMIN USERS ──
-=======
-model BankAccount {
-  id            String   @id @default(uuid())
-  bankName      String   @map("bank_name")
   accountTitle  String   @map("account_title")
   accountNumber String   @map("account_number")
   iban          String?
@@ -457,7 +448,6 @@ model BankAccount {
 }
 
 // ── ADMIN USERS ──
->>>>>>> 47a5fbf296c0a4ded874bdc0084ad14768188815
 // Separate from Agent — admins are internal staff, gated additionally by
 // the ADMIN_EMAILS allow-list at the application layer (see admin panel
 // brief's security section), not just by having a row in this table.

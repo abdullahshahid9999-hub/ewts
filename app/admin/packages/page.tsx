@@ -378,7 +378,11 @@ function PackagesInner() {
             <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </div>
 
-          {/* FLIGHT SECTORS — minimum 1 Departure + 1 Arrival, "-" disabled on those two */}
+          {/* FLIGHT SECTORS — minimum 1 Departure + 1 Arrival, "-" disabled on those two.
+              Hidden for Umrah packages: those use a fixed Makkah/Madinah itinerary rather
+              than per-package flight sectors, and the owner asked for this field to not
+              appear at all when adding an Umrah package (not just be optional). */}
+          {form.category !== "umrah" && (
           <div style={{ gridColumn: "1 / -1" }}>
             <label>Flight Sectors (city, date &amp; time)</label>
             <div style={{ display: "grid", gap: "8px" }}>
@@ -424,6 +428,7 @@ function PackagesInner() {
               + Add Sector
             </button>
           </div>
+          )}
 
                     {/* ITINERARY EDITOR */}
           <div style={{ gridColumn: "1 / -1" }}>
@@ -594,6 +599,7 @@ function PackagesInner() {
                     <td><span className={`adp-pill adp-p-${p.status}`}>{p.status}</span></td>
                     <td style={{ display: "flex", gap: "6px" }}>
                       <button onClick={() => startEdit(p)} className="adp-btn adp-btn-s">Edit</button>
+                      <a href={`/admin/agent-bookings?packageId=${p.id}`} className="adp-btn adp-btn-s">Bookings</a>
                       <button onClick={() => handleDelete(p.id)} className="adp-btn adp-btn-r">Delete</button>
                     </td>
                   </tr>

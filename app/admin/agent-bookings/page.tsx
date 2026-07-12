@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
@@ -13,6 +14,7 @@ type AgentBooking = {
   sellPrice: number;
   commission: number;
   agent: { agentCode: string; fullName: string };
+  package: { id: string; name: string; category: string } | null;
 };
 
 const CATEGORIES = [
@@ -32,6 +34,8 @@ const STATUSES = [
 
 function AgentBookingsInner() {
   const { accessToken, refresh } = useAdminAuth();
+  const searchParams = useSearchParams();
+  const packageId = searchParams.get("packageId"); // when set (linked from a specific package's admin page), scopes the list to ONLY that package's bookings — not just its broad category
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [bookings, setBookings] = useState<AgentBooking[]>([]);
@@ -42,11 +46,12 @@ function AgentBookingsInner() {
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (status) params.set("status", status);
+    if (packageId) params.set("packageId", packageId);
     const res = await adminFetch(`/api/admin/agent-bookings?${params.toString()}`, accessToken, refresh);
     const data = await res.json().catch(() => ({}));
     setBookings(data.agentBookings ?? []);
     setLoading(false);
-  }, [category, status, accessToken, refresh]);
+  }, [category, status, packageId, accessToken, refresh]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -62,6 +67,13 @@ function AgentBookingsInner() {
   return (
     <>
       <div className="adp-ph"><div><h2>Agent <em>Bookings</em></h2><p>Review and issue bookings placed by agents</p></div></div>
+
+      {packageId && bookings[0]?.package && (
+        <div style={{ background: "var(--a-gold-bg, #fdf6e3)", border: "1px solid var(--a-gold, #d4a843)", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span>Showing bookings for <strong>{bookings[0].package.name}</strong> only</span>
+          <a href="/admin/agent-bookings" style={{ fontWeight: 700 }}>Clear (show all)</a>
+        </div>
+      )}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="adp-ss">
@@ -117,7 +129,9 @@ export default function AdminAgentBookingsPage() {
   return (
     <AdminGuard>
       <AdminShell>
-        <AgentBookingsInner />
+        <Suspense fallback={<div style={{ padding: 24 }}>Loading…</div>}>
+          <AgentBookingsInner />
+        </Suspense>
       </AdminShell>
     </AdminGuard>
   );
