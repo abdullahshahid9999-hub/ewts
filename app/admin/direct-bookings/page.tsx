@@ -12,20 +12,24 @@ type DirectBooking = {
   phone: string | null;
   email: string | null;
   roomTypeLabel: string | null;
+  travelClass: string | null;
   adults: number | null;
   children: number | null;
   infants: number | null;
+  seatsRequested: number | null;
   totalPricePkr: number | null;
   specialRequests: string | null;
   status: string;
   createdAt: string;
   package: { name: string; category: string; slug: string | null } | null;
+  groupFlight: { airline: string; route: string; flightNo: string | null; depDate: string | null } | null;
 };
 
 const CATEGORIES = [
-  { value: "", label: "All (Umrah + Tours)" },
+  { value: "", label: "All (Umrah + Tours + Flights)" },
   { value: "umrah", label: "Umrah" },
   { value: "tours", label: "World Tours" },
+  { value: "group_ticket", label: "Group Flights" },
 ];
 const STATUSES = [
   { value: "", label: "All Statuses" },
@@ -68,22 +72,40 @@ function DirectBookingsInner() {
     load();
   }
 
+  async function exportToExcel() {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (status) params.set("status", status);
+    const res = await adminFetch(`/api/admin/direct-bookings/export?${params.toString()}`, accessToken, refresh);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `direct-bookings-${category || "all"}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <>
       <div className="adp-ph">
         <div>
           <h2>Direct <em>Bookings</em></h2>
-          <p>Walk-in / website customer bookings for Umrah &amp; World Tour packages — no agent involved</p>
+          <p>Walk-in / website customer bookings for Umrah, World Tour packages &amp; group flights — no agent involved</p>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className="adp-ss">
-          {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="adp-ss">
-          {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-        </select>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className="adp-ss">
+            {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="adp-ss">
+            {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+        <button onClick={exportToExcel} className="adp-btn adp-btn-s">⬇ Export to Excel</button>
       </div>
 
       <div className="adp-card">
@@ -106,17 +128,22 @@ function DirectBookingsInner() {
                       <td><strong>{b.bookingRef}</strong></td>
                       <td>{b.customerName ?? "—"}</td>
                       <td>
-                        {b.package?.name ?? "—"}
+                        {b.package?.name ?? (b.groupFlight ? `${b.groupFlight.airline} — ${b.groupFlight.route}` : "—")}
                         {b.package?.category && (
                           <span className="adp-pill" style={{ marginLeft: "6px" }}>
                             {b.package.category === "umrah" ? "Umrah" : "World Tour"}
                           </span>
                         )}
+                        {b.groupFlight && (
+                          <span className="adp-pill" style={{ marginLeft: "6px" }}>Group Flight</span>
+                        )}
                       </td>
                       <td>
-                        {b.roomTypeLabel ?? "—"}
+                        {b.roomTypeLabel ?? b.travelClass ?? "—"}
                         <div style={{ fontSize: "12px", opacity: 0.7 }}>
-                          {b.adults ?? 0}A / {b.children ?? 0}C / {b.infants ?? 0}I
+                          {b.groupFlight
+                            ? `${b.seatsRequested ?? 1} seat(s)`
+                            : `${b.adults ?? 0}A / ${b.children ?? 0}C / ${b.infants ?? 0}I`}
                         </div>
                       </td>
                       <td>{pkr(b.totalPricePkr)}</td>

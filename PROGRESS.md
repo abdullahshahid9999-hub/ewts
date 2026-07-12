@@ -824,3 +824,55 @@ Added `priceAdult/priceChild/priceInfant` (Int?) to `visa_services`. Legacy `pri
 - AdminSidebar: "Visa Applications" added under Services
 
 `npx tsc --noEmit` clean.
+
+## Group flight direct bookings persisted + Excel export for Direct Bookings (July 2026)
+
+**Bug found: group flight "Book Now" never saved anything.** The public
+`/group-tickets` page's booking modal only built a WhatsApp deep-link and
+opened it — no database write at all, so a customer's request existed
+only in a WhatsApp chat, nowhere else. Fixed:
+- `prisma/schema.prisma`: `Booking` gained `groupFlightId` (relation to
+  `GroupFlight`, reciprocal `directBookings` on `GroupFlight`),
+  `travelClass`, and `seatsRequested` — a Booking row is now either a
+  package booking (`packageId` set) or a group-flight booking
+  (`groupFlightId` set), same table, same "direct customer request"
+  concept already used for Umrah/Tours.
+  **Migration needed:**
+  ```sql
+  ALTER TABLE bookings ADD COLUMN group_flight_id TEXT REFERENCES group_flights(id);
+  ALTER TABLE bookings ADD COLUMN travel_class TEXT;
+  ALTER TABLE bookings ADD COLUMN seats_requested INTEGER;
+  ```
+- New `POST /api/group-flights/book` — public, rate-limited (same
+  pattern as `/api/bookings`), validates the flight is active with
+  `seats > 0` (read-only check, doesn't decrement — mirrors the
+  agent-side rule that seats only actually decrement at admin issue-time,
+  see agent-bookings PATCH route), creates a `Booking` row with
+  `service: "group_ticket"`, emails `ADMIN_EMAILS[0]` a notification.
+- `components/GroupTicketsClient.tsx`'s `BookingModal` now POSTs to this
+  route first (with a loading/error state) and only opens the WhatsApp
+  link after a successful save — so the request is never lost even if
+  the customer doesn't follow through on WhatsApp.
+
+**Direct Bookings admin module (`/admin/direct-bookings`) extended:**
+- `GET /api/admin/direct-bookings` now also accepts `?category=
+  group_ticket` (filters `groupFlightId: { not: null }`) alongside the
+  existing `umrah`/`tours` package-category filters, and includes the
+  related `groupFlight` (airline/route/flightNo/depDate) in the response.
+- New `GET /api/admin/direct-bookings/export` — same filters, returns a
+  real `.xlsx` file (via the new `xlsx` npm dependency) with one row per
+  booking (ref, type, package/flight, customer, contact, room/class,
+  pax/seats, total price, status, timestamp). Admin page gained an
+  "Export to Excel" button next to the filters that always exports
+  whatever's currently filtered/on screen.
+- Table rows now show flight info (airline/route + a "Group Flight"
+  pill) and seats-requested when a row is a group-flight booking instead
+  of a package booking.
+
+Not touched: agent-network `AgentBooking`/seat-decrement-at-issue flow
+(untouched, this is the separate direct-customer path), payment
+collection (still none, per owner's existing "payment pipeline later"
+call). `npx tsc --noEmit` shows only the same pre-existing baseline
+"implicit any" class of error, now also appearing once in the new export
+route (missing generated Prisma types, same root cause as everywhere
+else) — nothing structurally new.

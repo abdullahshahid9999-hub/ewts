@@ -98,6 +98,7 @@ model GroupFlight {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   agentBookings AgentBooking[]
+  directBookings Booking[]
 
   @@map("group_flights")
 }
@@ -277,6 +278,14 @@ model Booking {
   // group ticket direct bookings, etc. that also use this table).
   packageId       String? @map("package_id")
   roomTypeLabel   String? @map("room_type_label") // snapshot of the room type name at booking time (e.g. "Triple Room") — don't rely on live PackageRoomType, admin might change/delete it later
+  // Direct (non-agent) group flight booking — sibling to packageId above.
+  // A Booking row is either a package booking (packageId set) or a group
+  // flight booking (groupFlightId set), never both. Kept on the same
+  // table rather than a new one since it's the same "direct customer
+  // booking" concept the admin Direct Bookings module already lists.
+  groupFlightId   String? @map("group_flight_id")
+  travelClass     String? @map("travel_class") // "Economy" | "Business" | "First Class" — group flight bookings only
+  seatsRequested  Int?    @map("seats_requested") // group flight bookings only; package bookings use adults/children/infants instead
   adults          Int?    @default(1)
   children        Int?    @default(0)
   infants         Int?    @default(0)
@@ -289,6 +298,7 @@ model Booking {
 
   travellers Traveller[]
   package    Package?    @relation(fields: [packageId], references: [id])
+  groupFlight GroupFlight? @relation(fields: [groupFlightId], references: [id])
 
   @@map("bookings")
 }
