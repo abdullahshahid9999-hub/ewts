@@ -796,3 +796,31 @@ Not touched: `Booking` model/schema (no changes needed, existing columns
 cover this), the public booking-form/checkout flow itself, agent-bookings
 module. `npx tsc --noEmit` shows the same pre-existing baseline errors
 only — nothing new from these files.
+
+## Visa Module — Full Application System (July 2026)
+
+**Schema changes (new tables needed — SQL below):**
+Added `priceAdult/priceChild/priceInfant` (Int?) to `visa_services`. Legacy `price` string kept as display fallback — still read by the public listing card if numeric prices not yet set; NOT deprecated or dropped, deliberately kept for backwards compat with existing visa rows. New models: `VisaRequiredDocument` (child of VisaService, per-visa document checklist), `VisaApplication` (one row per visa per batch; batchRef is a plain string grouping submissions from one session, NOT a FK; totalPricePkr is always server-computed on submission, never trusted from client), `VisaApplicationDocument` (uploaded file rows).
+
+**R2:** Added `application/pdf` to `ALLOWED_CONTENT_TYPES` at the shared helper (not hacked per-caller). Ext logic updated.
+
+**API routes added:**
+- `GET /api/visa/[id]` — public, returns visa + requiredDocuments
+- `POST /api/visa-applications` — public multipart, 1–N applications per batch, server-computes totalPricePkr, uploads docs to R2 `visas/` folder
+- `GET/POST /api/admin/visa-services/[id]/documents` — child-CRUD for doc requirements (mirrors room-types pattern)
+- `PATCH/DELETE /api/admin/visa-services/[id]/documents/[docId]`
+- `GET /api/admin/visa-applications` — list with status/visaId filters
+- `PATCH /api/admin/visa-applications/[id]` — status pipeline + adminNote
+- Extended existing PATCH/POST `/api/admin/visa-services/[id]` with new price fields
+
+**Public pages:**
+- `/visa` — cards now link to `/visa/[id]`; show priceAdult if set, else legacy price string
+- `/visa/[id]` — new detail page: quick facts, age-tiered pricing grid, full required-documents list (the "read first" section the owner asked for), then Apply Now
+- `/visa/[id]/VisaApplyFlow.tsx` — multi-visa cart client component: per-visa applicant info form + traveler counters + per-document file uploads, tab switching between applications in a batch, price preview, "Add Another Visa Application" → Submit All
+
+**Admin pages:**
+- `/admin/visa-services` — extended with Adult/Child/Infant price fields + inline Required Documents repeatable list (loads on demand when editing)
+- `/admin/visa-applications` — new review panel: pending count badge, status filter buttons, table with expandable row showing contact info, uploaded doc links, status pipeline action buttons, add/edit admin note inline
+- AdminSidebar: "Visa Applications" added under Services
+
+`npx tsc --noEmit` clean.
