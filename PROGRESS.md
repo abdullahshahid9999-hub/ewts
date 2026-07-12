@@ -764,3 +764,35 @@ ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
 ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
 ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
 ```
+
+## World Tour parity check + new Direct Bookings admin module (July 2026)
+
+**World Tour (name entry, room-type booking, admin creation) — already existed, nothing to build.**
+Checked: `app/tours/[slug]/page.tsx` already shares the exact same
+`PackageDetailView` component as `app/umrah/[slug]/page.tsx` (only the
+`category: "tours"` filter differs), `app/booking-form/page.tsx` is
+category-agnostic (works off `packageId`, not category), and
+`app/admin/packages/page.tsx` already has a `Tours` option in its
+category dropdown with the same Room Basis Division UI as Umrah. So the
+"same as Umrah" ask for World Tour was already fully wired from earlier
+work — confirmed rather than duplicated.
+
+**New: Direct Bookings admin module** — the one genuinely missing piece.
+Direct/walk-in customer bookings (public `/api/bookings` POST, `Booking`
+model — separate from the agent-network `AgentBooking` ledger) had no
+admin-facing view at all. Added:
+- `GET /api/admin/direct-bookings` — list with optional `?category=` (via
+  the related `Package.category`, umrah/tours) and `?status=` filters.
+- `GET/PATCH /api/admin/direct-bookings/[id]` — single-record fetch and
+  status transitions (`pending` → `confirmed`/`cancelled`).
+- `app/admin/direct-bookings/page.tsx` — new admin page, same list+filter
+  pattern as `/admin/agent-bookings`: category/status filter dropdowns,
+  table with Confirm/Cancel actions, expandable row for phone/email/
+  special-requests detail.
+- Linked from `AdminSidebar` (new "Direct Bookings" nav item under the
+  Packages/Visa/Flights section) and the admin dashboard's section grid.
+
+Not touched: `Booking` model/schema (no changes needed, existing columns
+cover this), the public booking-form/checkout flow itself, agent-bookings
+module. `npx tsc --noEmit` shows the same pre-existing baseline errors
+only — nothing new from these files.
