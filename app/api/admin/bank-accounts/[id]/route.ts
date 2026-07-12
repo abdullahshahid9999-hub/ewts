@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json().catch(() => null);
-  const { bankName, accountTitle, accountNumber, iban, branchCode, sortOrder, isActive } = body ?? {};
+  const { bankName, logoUrl, accountTitle, accountNumber, iban, branchCode, sortOrder, isActive } = body ?? {};
 
   const existing = await prisma.bankAccount.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -17,6 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     where: { id },
     data: {
       ...(bankName !== undefined && { bankName }),
+      ...(logoUrl !== undefined && { logoUrl }),
       ...(accountTitle !== undefined && { accountTitle }),
       ...(accountNumber !== undefined && { accountNumber }),
       ...(iban !== undefined && { iban }),

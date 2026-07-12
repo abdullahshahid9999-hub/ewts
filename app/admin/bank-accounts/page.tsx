@@ -8,6 +8,7 @@ import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 type BankAccount = {
   id: string;
   bankName: string;
+  logoUrl: string | null;
   accountTitle: string;
   accountNumber: string;
   iban: string | null;
@@ -27,6 +28,7 @@ function BankAccountsInner() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,21 +44,22 @@ function BankAccountsInner() {
     e.preventDefault();
     setError(null);
     setSaving(true);
+    const body = new FormData();
+    body.set("bankName", form.bankName);
+    body.set("accountTitle", form.accountTitle);
+    body.set("accountNumber", form.accountNumber);
+    if (form.iban) body.set("iban", form.iban);
+    if (form.branchCode) body.set("branchCode", form.branchCode);
+    body.set("sortOrder", form.sortOrder);
+    if (logoFile) body.set("logo", logoFile);
     const res = await adminFetch("/api/admin/bank-accounts", accessToken, refresh, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bankName: form.bankName,
-        accountTitle: form.accountTitle,
-        accountNumber: form.accountNumber,
-        iban: form.iban || null,
-        branchCode: form.branchCode || null,
-        sortOrder: Number(form.sortOrder),
-      }),
+      body,
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
     if (!res.ok) { setError(data.error ?? "Could not create."); return; }
+    setLogoFile(null);
     setForm(empty);
     load();
   }
@@ -124,6 +127,10 @@ function BankAccountsInner() {
             <input style={iStyle} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. HBL" required />
           </div>
           <div>
+            <label style={{ fontSize: 10, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>Bank Logo</label>
+            <input type="file" accept="image/*" style={iStyle} onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)} />
+          </div>
+          <div>
             <label style={{ fontSize: 10, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>Account Title *</label>
             <input style={iStyle} value={form.accountTitle} onChange={(e) => setForm({ ...form, accountTitle: e.target.value })} placeholder="e.g. East & West Travel" required />
           </div>
@@ -183,7 +190,13 @@ function BankAccountsInner() {
                       </>
                     ) : (
                       <>
-                        <td style={{ fontWeight: 700 }}>{acc.bankName}</td>
+                        <td style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                          {acc.logoUrl && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={acc.logoUrl} alt={acc.bankName} style={{ width: 22, height: 22, objectFit: "contain", borderRadius: 4 }} />
+                          )}
+                          {acc.bankName}
+                        </td>
                         <td>{acc.accountTitle}</td>
                         <td style={{ fontFamily: "monospace", fontSize: 11 }}>{acc.accountNumber}</td>
                         <td style={{ fontFamily: "monospace", fontSize: 11 }}>{acc.iban ?? "—"}</td>
