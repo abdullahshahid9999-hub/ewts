@@ -876,3 +876,20 @@ call). `npx tsc --noEmit` shows only the same pre-existing baseline
 "implicit any" class of error, now also appearing once in the new export
 route (missing generated Prisma types, same root cause as everywhere
 else) — nothing structurally new.
+
+## Passenger-wise details wired up (Umrah/Tours + Agent bookings)
+`Traveller` model existed in schema but nothing ever created rows in it — genuine gap. Fixed both sides:
+- B2C `/booking-form`: one name/passport/CNIC row per adult, required for Umrah, optional for tours. `/api/bookings` validates + creates real `Traveller` rows, includes them in the admin notification email.
+- Agent `/agent/bookings/new`: `AgentBooking` had ZERO customer/passenger fields at all (pure internal sales record) — added `customerName`/`customerPhone`/`customerEmail` + `travellers` (JSON array, same shape as Traveller, consistent with how itinerary/flightSectors are already stored). Required passenger names for Umrah, same as B2C.
+- `/admin/agent-bookings` now shows Customer + Passengers columns — the data was being captured but invisible without this.
+
+**DB migration needed:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN customer_name TEXT;
+ALTER TABLE agent_bookings ADD COLUMN customer_phone TEXT;
+ALTER TABLE agent_bookings ADD COLUMN customer_email TEXT;
+ALTER TABLE agent_bookings ADD COLUMN travellers JSONB;
+```
+
+## Not done: real online B2C booking for Visa + Insurance
+Owner asked that Visa and Insurance be bookable online like Umrah/Tours/Group-tickets already are — currently both are WhatsApp-enquiry only (Insurance has a quote calculator but no actual booking/order flow). This needs real schema+flow design (what does "a visa booking" or "an insurance booking" actually capture — passport copies? travel dates? which plan/rate?), not something to guess blind. Wrote `VISA-INSURANCE-BOOKING-PROMPT.md` for the next session to pick up properly.
