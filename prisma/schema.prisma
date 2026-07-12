@@ -380,6 +380,10 @@ model AgentBooking {
   // rate afterward, only future bookings use the new rate; this row keeps
   // whatever was correct when it was made.
   commission        Int       @default(0)
+  customerName      String?   @map("customer_name")
+  customerPhone     String?   @map("customer_phone")
+  customerEmail     String?   @map("customer_email")
+  travellers        Json?     // [{fullName, passportNo, cnic}] — same shape as the public Traveller model, kept as JSON here since AgentBooking is a sales record, not the same table
   bookingRef        String    @unique @map("booking_ref")
   expiresAt         DateTime? @map("expires_at")
   issueRequestedAt  DateTime? @map("issue_requested_at")

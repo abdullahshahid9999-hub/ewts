@@ -121,6 +121,29 @@ export async function POST(req: NextRequest) {
 
   const groupFlightId = typeof body.groupFlightId === "string" ? body.groupFlightId : undefined;
   const packageId = typeof body.packageId === "string" ? body.packageId : undefined;
+  const customerName = typeof body.customerName === "string" ? body.customerName.trim() : undefined;
+  const customerPhone = typeof body.customerPhone === "string" ? body.customerPhone.trim() : undefined;
+  const customerEmail = typeof body.customerEmail === "string" ? body.customerEmail.trim() : undefined;
+  const travellersInput: unknown = body.travellers;
+  const travellers = Array.isArray(travellersInput)
+    ? travellersInput
+        .map((t) => ({
+          fullName: typeof t?.fullName === "string" ? t.fullName.trim() : "",
+          passportNo: typeof t?.passportNo === "string" ? t.passportNo.trim() : "",
+          cnic: typeof t?.cnic === "string" ? t.cnic.trim() : "",
+        }))
+        .filter((t) => t.fullName)
+    : [];
+
+  if (!customerName || !customerPhone) {
+    return NextResponse.json({ error: "Customer name and phone are required." }, { status: 400 });
+  }
+  if (serviceType === "umrah" && travellers.length === 0) {
+    return NextResponse.json(
+      { error: "Please add at least one passenger's full name for Umrah bookings." },
+      { status: 400 }
+    );
+  }
 
   // Commission is a SNAPSHOT computed right now from the agent's current
   // rate for this service type (admin-configured, can change over time —
@@ -154,6 +177,10 @@ export async function POST(req: NextRequest) {
         groupFlightId,
         sellPrice,
         commission,
+        customerName,
+        customerPhone,
+        customerEmail,
+        travellers: travellers.length > 0 ? travellers : undefined,
         bookingRef: generateBookingRef(),
         status: "pending",
         expiresAt: computeExpiresAt(serviceType),
@@ -168,6 +195,10 @@ export async function POST(req: NextRequest) {
         packageId: serviceType === "umrah" ? packageId : undefined,
         sellPrice,
         commission,
+        customerName,
+        customerPhone,
+        customerEmail,
+        travellers: travellers.length > 0 ? travellers : undefined,
         bookingRef: generateBookingRef(),
         status: "pending",
         expiresAt: computeExpiresAt(serviceType),
