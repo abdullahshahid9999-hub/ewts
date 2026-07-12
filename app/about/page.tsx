@@ -116,6 +116,14 @@ export default function AboutPage() {
             Explore
           </a>
         </div>
+        <a
+          href="https://www.trustpilot.com/review/eastwestpk.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-5 text-sm font-semibold text-green-400 hover:underline"
+        >
+          ⭐ We're now on Trustpilot — Write a Review
+        </a>
       </section>
 
       {/* STATS ROW */}

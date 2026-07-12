@@ -157,6 +157,14 @@ export default async function Home() {
                 WhatsApp Us
               </a>
             </div>
+            <a
+              href="https://www.trustpilot.com/review/eastwestpk.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mb-6 text-sm font-semibold text-green-400 hover:underline"
+            >
+              ⭐ We're now on Trustpilot — Write a Review
+            </a>
             <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-white/10 pt-6">
               {HERO_STATS.map((s) => (
                 <div key={s.label}>
