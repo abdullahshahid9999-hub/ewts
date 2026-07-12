@@ -30,7 +30,7 @@ function getClient() {
   });
 }
 
-const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 
 /**
  * Uploads a file buffer to R2 under a namespaced key and returns its
@@ -54,7 +54,7 @@ export async function uploadToR2(params: {
     throw new Error("R2_BUCKET_NAME / R2_PUBLIC_URL are not configured.");
   }
 
-  const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
+  const ext = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : contentType === "application/pdf" ? "pdf" : "jpg";
   const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
   const client = getClient();

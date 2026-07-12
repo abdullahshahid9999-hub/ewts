@@ -14,6 +14,7 @@ const NAV = [
     items: [
       { href: "/admin/packages", icon: "🌙", label: "Packages" },
       { href: "/admin/visa-services", icon: "🛂", label: "Visa Services" },
+      { href: "/admin/visa-applications", icon: "📥", label: "Visa Applications" },
       { href: "/admin/group-flights", icon: "✈️", label: "Group Flights" },
       { href: "/admin/insurance", icon: "🛡️", label: "Insurance Plans" },
     ],

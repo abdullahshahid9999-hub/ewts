@@ -106,7 +106,16 @@ model VisaService {
   title          String
   country        String
   type           String   // tourist | umrah | business | work
+  // Legacy display-only price string (e.g. "PKR 12,000") — kept so the
+  // existing listing card still renders something when the new numeric
+  // fields are not yet set. New code should prefer priceAdult/Child/Infant.
   price          String?
+  // Age-tiered pricing (PKR, server-computed on application submission).
+  // Convention: positive integer = fee. Null = not configured yet (fall
+  // back to `price` string for display). Zero is a valid price (free).
+  priceAdult     Int?     @map("price_adult")
+  priceChild     Int?     @map("price_child")
+  priceInfant    Int?     @map("price_infant")
   days           String?
   validity       String?
   maxStay        String?  @map("max_stay")
@@ -118,8 +127,80 @@ model VisaService {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  requiredDocuments VisaRequiredDocument[]
+  applications      VisaApplication[]
+
   @@map("visa_services")
 }
+
+// Admin-configured per-visa document checklist. Each row is one document
+// slot shown in the application form (e.g. "Passport Scan", "Bank Statement").
+model VisaRequiredDocument {
+  id          String  @id @default(uuid())
+  visaId      String  @map("visa_id")
+  name        String                      // e.g. "Passport Scan"
+  description String?                     // instruction shown to user
+  isRequired  Boolean @default(true) @map("is_required")
+  sortOrder   Int     @default(0)  @map("sort_order")
+
+  visa      VisaService               @relation(fields: [visaId], references: [id], onDelete: Cascade)
+  uploads   VisaApplicationDocument[]
+
+  @@map("visa_required_documents")
+}
+
+// One application row per visa per batch. Multiple rows can share a
+// batchRef (same family/submission session). Status is tracked per-row so
+// a family can be approved for one country and rejected for another.
+// Convention: totalPricePkr is always positive (cost to applicant).
+model VisaApplication {
+  id             String   @id @default(uuid())
+  // Groups submissions made together in one session. NOT a FK — just a
+  // shared string so admin can see "these 3 came in together."
+  batchRef       String   @map("batch_ref")
+  visaId         String   @map("visa_id")
+  // Applicant contact (the lead person submitting, not per-traveler)
+  fullName       String   @map("full_name")
+  passportNumber String   @map("passport_number")
+  phone          String
+  email          String
+  // Traveler counts for this specific visa application
+  adults         Int      @default(1)
+  children       Int      @default(0)
+  infants        Int      @default(0)
+  // Server-computed at submission: adults×priceAdult + children×priceChild
+  // + infants×priceInfant. Stored so price is auditable even if admin
+  // later changes the visa price.
+  totalPricePkr  Int      @map("total_price_pkr")
+  // Pipeline: pending → under_review → approved | rejected | more_info_needed
+  status         String   @default("pending")
+  adminNote      String?  @map("admin_note")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  visa      VisaService             @relation(fields: [visaId], references: [id])
+  documents VisaApplicationDocument[]
+
+  @@map("visa_applications")
+}
+
+// One row per uploaded document per application. docId links back to the
+// VisaRequiredDocument that defined this slot (can be null if applicant
+// uploads an extra/ad-hoc file not tied to a specific requirement).
+model VisaApplicationDocument {
+  id        String   @id @default(uuid())
+  appId     String   @map("app_id")
+  docId     String?  @map("doc_id")   // nullable: extra uploads not tied to a slot
+  fileUrl   String   @map("file_url")
+  fileName  String   @map("file_name")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  application VisaApplication       @relation(fields: [appId], references: [id], onDelete: Cascade)
+  document    VisaRequiredDocument? @relation(fields: [docId], references: [id], onDelete: SetNull)
+
+  @@map("visa_application_documents")
+}
+
 
 model InsuranceCompany {
   id          String   @id @default(uuid())

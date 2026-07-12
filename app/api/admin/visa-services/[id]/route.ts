@@ -31,6 +31,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       country: str("country"),
       type: str("type"),
       price: str("price"),
+      // Age-tiered pricing — convert empty string to null, keep 0 as valid
+      priceAdult: form.get("priceAdult") !== null && form.get("priceAdult") !== "" ? Number(form.get("priceAdult")) || 0 : undefined,
+      priceChild: form.get("priceChild") !== null && form.get("priceChild") !== "" ? Number(form.get("priceChild")) || 0 : undefined,
+      priceInfant: form.get("priceInfant") !== null && form.get("priceInfant") !== "" ? Number(form.get("priceInfant")) || 0 : undefined,
       days: str("days"),
       validity: str("validity"),
       maxStay: str("maxStay"),

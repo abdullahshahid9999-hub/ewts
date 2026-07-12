@@ -12,6 +12,12 @@ async function getVisas() {
     return await prisma.visaService.findMany({
       where: { status: "active" },
       orderBy: { createdAt: "desc" },
+      select: {
+        id: true, title: true, country: true, type: true,
+        price: true, priceAdult: true,
+        validity: true, maxStay: true, processingTime: true,
+        requirements: true, countryFlag: true, countryImage: true,
+      },
     });
   } catch {
     return [];
@@ -123,19 +129,16 @@ export default async function VisaPage() {
                   {v.maxStay && (
                     <p className="text-sm mb-1"><span className="font-semibold">Max stay: </span>{v.maxStay}</p>
                   )}
-                  {v.requirements && (
-                    <p className="text-muted text-xs mb-3 line-clamp-3">{v.requirements}</p>
-                  )}
-                  <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-display text-xl font-semibold text-gold">{v.price ?? "Enquire"}</span>
-                    <a
-                      href={waLink(`Assalam o Alaikum! I'd like details about the ${v.country} ${v.type} visa.`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-gold hover:underline"
+                  <div className="mt-auto flex items-center justify-between pt-3">
+                    <span className="font-display text-xl font-semibold text-gold">
+                      {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
+                    </span>
+                    <Link
+                      href={`/visa/${v.id}`}
+                      className="text-sm font-bold bg-gold text-black px-4 py-1.5 rounded-lg hover:bg-gold-light transition-colors"
                     >
-                      Enquire →
-                    </a>
+                      View &amp; Apply
+                    </Link>
                   </div>
                 </div>
               </div>
