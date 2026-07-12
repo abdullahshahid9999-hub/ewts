@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim() : "";
   const passport = typeof body?.passport === "string" ? body.passport.trim() : "";
   const specialRequests = typeof body?.specialRequests === "string" ? body.specialRequests.trim() : "";
+  const travellersInput: unknown = body?.travellers;
+  const travellers = Array.isArray(travellersInput)
+    ? travellersInput
+        .map((t) => ({
+          fullName: typeof t?.fullName === "string" ? t.fullName.trim() : "",
+          passportNo: typeof t?.passportNo === "string" ? t.passportNo.trim() : "",
+          cnic: typeof t?.cnic === "string" ? t.cnic.trim() : "",
+        }))
+        .filter((t) => t.fullName)
+    : [];
 
   if (!packageId || !roomType || !customerName || !phone || !email) {
     return NextResponse.json(
@@ -64,6 +74,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (pkg.category === "umrah" && travellers.length < adults) {
+    return NextResponse.json(
+      { error: `Please provide the full name of each adult traveller (${adults} required for Umrah bookings).` },
+      { status: 400 }
+    );
+  }
+
   // Server-side price computation — the only source of truth for what
   // this booking actually costs, regardless of what the client displayed.
   const totalPricePkr = adults * rt.pricePerPersonPkr + children * rt.pricePerChildPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant/child, admin-configurable per room type
@@ -84,7 +101,9 @@ export async function POST(req: NextRequest) {
       infants,
       totalPricePkr,
       status: "pending",
+      travellers: travellers.length > 0 ? { create: travellers } : undefined,
     },
+    include: { travellers: true },
   });
 
   const notifyEmail = process.env.ADMIN_EMAILS?.split(",")[0]?.trim();
@@ -104,6 +123,7 @@ export async function POST(req: NextRequest) {
         ${email ? `<p><strong>Email:</strong> ${email}</p>` : ""}
         ${passport ? `<p><strong>CNIC/Passport:</strong> ${passport}</p>` : ""}
         ${specialRequests ? `<p><strong>Special Requests:</strong> ${specialRequests}</p>` : ""}
+        ${travellers.length > 0 ? `<p><strong>Travellers:</strong></p><ul>${travellers.map((t) => `<li>${t.fullName}${t.passportNo ? ` — Passport: ${t.passportNo}` : ""}${t.cnic ? ` — CNIC: ${t.cnic}` : ""}</li>`).join("")}</ul>` : ""}
         <p><em>No payment has been collected yet — this is a booking request only.</em></p>
       `,
     }).catch((e) => console.error("Booking notification email failed:", e));

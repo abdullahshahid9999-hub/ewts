@@ -26,8 +26,16 @@ export default function BookingFormClient({
   const [phone, setPhone] = useState("");
   const [passport, setPassport] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
+  const [travellers, setTravellers] = useState(
+    Array.from({ length: adults }, () => ({ fullName: "", passportNo: "", cnic: "" }))
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const isUmrah = pkg.category === "umrah";
+
+  function updateTraveller(i: number, patch: Partial<{ fullName: string; passportNo: string; cnic: string }>) {
+    setTravellers((t) => t.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  }
 
   const adultsTotal = adults * roomType.pricePerPersonPkr;
   const childrenTotal = children * roomType.pricePerChildPkr;
@@ -37,6 +45,12 @@ export default function BookingFormClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (isUmrah && travellers.some((t) => !t.fullName.trim())) {
+      setError("Please enter the full name of every adult traveller — required for Umrah bookings.");
+      return;
+    }
+
     setSubmitting(true);
 
     const res = await fetch("/api/bookings", {
@@ -53,6 +67,7 @@ export default function BookingFormClient({
         phone,
         passport: passport || undefined,
         specialRequests: specialRequests || undefined,
+        travellers: travellers.filter((t) => t.fullName.trim()),
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -117,6 +132,45 @@ export default function BookingFormClient({
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               />
             </div>
+
+            {travellers.length > 0 && (
+              <div className="border-t border-border pt-4">
+                <p className="font-semibold text-sm mb-1">
+                  Passenger Details {isUmrah && <span className="text-red-600">*</span>}
+                </p>
+                <p className="text-muted text-xs mb-3">
+                  {isUmrah
+                    ? "Required for Umrah — full name of each adult traveller, as on passport."
+                    : "Optional — helps us prepare travel documents faster."}
+                </p>
+                <div className="space-y-3">
+                  {travellers.map((t, i) => (
+                    <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <input
+                        required={isUmrah}
+                        placeholder={`Adult ${i + 1} — Full Name`}
+                        value={t.fullName}
+                        onChange={(e) => updateTraveller(i, { fullName: e.target.value })}
+                        className="rounded-lg border border-border px-3 py-2 text-sm sm:col-span-1"
+                      />
+                      <input
+                        placeholder="Passport No. (optional)"
+                        value={t.passportNo}
+                        onChange={(e) => updateTraveller(i, { passportNo: e.target.value })}
+                        className="rounded-lg border border-border px-3 py-2 text-sm"
+                      />
+                      <input
+                        placeholder="CNIC (optional)"
+                        value={t.cnic}
+                        onChange={(e) => updateTraveller(i, { cnic: e.target.value })}
+                        className="rounded-lg border border-border px-3 py-2 text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1">Special Requests (optional)</label>
               <textarea
