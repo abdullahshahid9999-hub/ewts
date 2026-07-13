@@ -9,7 +9,7 @@ import { calculateCommission } from "@/lib/commission";
 // show up' symptom). Force this route to always run fresh.
 export const dynamic = "force-dynamic";
 
-const VALID_SERVICE_TYPES = ["umrah", "group_ticket", "insurance"] as const;
+const VALID_SERVICE_TYPES = ["umrah", "tours", "group_ticket", "insurance"] as const;
 const VALID_STATUSES = ["pending", "confirmed", "issue_requested", "issued", "cancelled"] as const;
 
 // Internal-inventory bookings (umrah/insurance, no live supplier API) get a
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
         agentId: agent.id,
         serviceType,
         groupFlightId,
-        packageId: serviceType === "umrah" ? packageId : undefined,
+        packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
         sellPrice,
         commission,
         customerName,

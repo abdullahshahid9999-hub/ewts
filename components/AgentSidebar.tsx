@@ -22,10 +22,10 @@ const NAV = [
   {
     section: "New Booking",
     items: [
-      { href: "/agent/bookings/new?service=umrah", icon: "🕌", label: "Umrah Packages" },
+      { href: "/agent/umrah", icon: "🕌", label: "Umrah Packages" },
+      { href: "/agent/tours", icon: "🌍", label: "World Tour" },
       { href: "/agent/bookings/new?service=group_ticket", icon: "✈️", label: "Group Flights" },
       { href: "/agent/bookings/new?service=insurance", icon: "🛡️", label: "Insurance" },
-      { href: "/agent/bookings/new?service=world_tour", icon: "🌍", label: "World Tour" },
       { href: "/agent/bookings/new?service=visa_services", icon: "📄", label: "Visa Services" },
     ],
   },
