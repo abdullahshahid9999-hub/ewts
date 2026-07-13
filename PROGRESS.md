@@ -910,3 +910,28 @@ ALTER TABLE agent_bookings ADD COLUMN infants INTEGER DEFAULT 0;
 ```
 
 **Not done**: Group Tickets/Insurance/Visa agent views still use the older manual form, not the "browse like a user" pattern — same idea could be applied there once/if the group-tickets ticket-table UI and the visa-application flow (being built concurrently per `VISA-INSURANCE-BOOKING-PROMPT.md`) are agent-portal-ready.
+
+## Insurance: real B2C + agent booking (calculator + filters, matching old site)
+- New `InsuranceApplication` model (mirrors `VisaApplication`'s pattern) — B2C submissions via `/api/insurance/apply`, server-computes `travellers × rate.pricePkr`, never trusts client total.
+- `InsuranceCalculator.tsx`: each search result now has a "Book Now" that expands an inline name/phone/email form, submits, shows a clear "no payment taken yet" confirmation.
+- `/admin/insurance-applications` — review list + confirm/cancel, added to sidebar nav.
+- `/agent/insurance` — same destination/duration/traveller search as the public calculator, but agent sets the sell price charged to the customer and submits through `/api/agent/bookings` (commission/payable tracking stays separate, no direct payment) — added `insurancePlanLabel` snapshot field to `AgentBooking` for this.
+- Found + fixed two nav bugs while wiring this in: the agent "New Booking" landing page's Insurance card pointed at the old manual sell-price-only form instead of the new calculator page, and **World Tours had no card on that page at all** despite `/agent/tours` already existing from a previous session — agents had no way to reach it from the main entry point.
+
+**DB migration needed:**
+```sql
+CREATE TABLE insurance_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rate_id UUID NOT NULL REFERENCES insurance_rates(id),
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  travellers INTEGER NOT NULL DEFAULT 1,
+  total_price_pkr INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+ALTER TABLE agent_bookings ADD COLUMN insurance_plan_label TEXT;
+```
+(Also confirm the earlier `agent_bookings` migration — room_type_label/adults/children/infants — actually ran; this session's insurance work depends on those columns existing too.)
