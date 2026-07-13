@@ -56,11 +56,17 @@ export default async function VisaPage() {
         <p className="text-white/70 max-w-xl mx-auto mb-4">
           95% approval rate — we handle all paperwork for you
         </p>
-        <p className="text-white/50 text-sm">
-          <Link href="/" className="hover:text-gold">Home</Link>
-          <span className="mx-2">/</span>
-          <span>Visa Services</span>
-        </p>
+        <div className="flex items-center justify-center gap-4 text-sm">
+          <p className="text-white/50">
+            <Link href="/" className="hover:text-gold">Home</Link>
+            <span className="mx-2">/</span>
+            <span>Visa Services</span>
+          </p>
+          <span className="text-white/30">·</span>
+          <Link href="/visa/my-applications" className="text-gold hover:underline font-semibold text-xs">
+            Track My Application →
+          </Link>
+        </div>
       </section>
 
       {/* STATS BAR */}

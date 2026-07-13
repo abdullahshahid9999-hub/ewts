@@ -60,6 +60,7 @@ function VisaApplicationsInner() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [noteTarget, setNoteTarget] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,20 +241,38 @@ function VisaApplicationsInner() {
                               </div>
                               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                 {STATUS_PIPELINE.filter((s) => s !== app.status).map((s) => (
-                                  <button
-                                    key={s}
-                                    disabled={acting}
-                                    onClick={(e) => { e.stopPropagation(); updateStatus(app.id, s); }}
-                                    className="adp-btn adp-btn-s"
-                                    style={{
-                                      justifyContent: "flex-start",
-                                      textTransform: "capitalize",
-                                      background: s === "approved" ? "var(--a-green)" : s === "rejected" ? "var(--a-red)" : undefined,
-                                      color: (s === "approved" || s === "rejected") ? "#fff" : undefined,
-                                    }}
-                                  >
-                                    → Mark as {s.replace(/_/g, " ")}
-                                  </button>
+                                  s === "more_info_needed" ? (
+                                    // More Info Needed always forces a note first
+                                    <button
+                                      key={s}
+                                      disabled={acting}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setNoteTarget(app.id);
+                                        setNoteText(app.adminNote ?? "");
+                                        setPendingStatus(app.id);
+                                      }}
+                                      className="adp-btn adp-btn-s"
+                                      style={{ justifyContent: "flex-start", background: "#FFF7ED", color: "#C2410C", border: "1px solid #FED7AA" }}
+                                    >
+                                      📋 More Info Needed (add note)
+                                    </button>
+                                  ) : (
+                                    <button
+                                      key={s}
+                                      disabled={acting}
+                                      onClick={(e) => { e.stopPropagation(); updateStatus(app.id, s); }}
+                                      className="adp-btn adp-btn-s"
+                                      style={{
+                                        justifyContent: "flex-start",
+                                        textTransform: "capitalize",
+                                        background: s === "approved" ? "var(--a-green)" : s === "rejected" ? "var(--a-red)" : undefined,
+                                        color: (s === "approved" || s === "rejected") ? "#fff" : undefined,
+                                      }}
+                                    >
+                                      → Mark as {s.replace(/_/g, " ")}
+                                    </button>
+                                  )
                                 ))}
                               </div>
 
@@ -261,30 +280,48 @@ function VisaApplicationsInner() {
                               <div style={{ marginTop: 12 }}>
                                 {noteTarget === app.id ? (
                                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)" }}>
+                                      {pendingStatus === app.id
+                                        ? "📋 Write what info is needed from the applicant:"
+                                        : "📝 Admin note (visible to applicant):"}
+                                    </div>
                                     <textarea
-                                      rows={2}
+                                      rows={3}
                                       value={noteText}
                                       onChange={(e) => setNoteText(e.target.value)}
                                       onClick={(e) => e.stopPropagation()}
-                                      placeholder="Internal note for applicant..."
+                                      placeholder={pendingStatus === app.id
+                                        ? "e.g. Please provide a clear bank statement for last 3 months and a recent salary slip..."
+                                        : "Internal note for applicant..."}
                                       style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 8, fontSize: 12, resize: "vertical" }}
                                     />
+                                    {pendingStatus === app.id && !noteText.trim() && (
+                                      <p style={{ fontSize: 11, color: "var(--a-red)" }}>Note is required when requesting more info.</p>
+                                    )}
                                     <div style={{ display: "flex", gap: 6 }}>
                                       <button
-                                        disabled={acting}
-                                        onClick={(e) => { e.stopPropagation(); updateStatus(app.id, app.status, noteText); }}
+                                        disabled={acting || (pendingStatus === app.id && !noteText.trim())}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const newStatus = pendingStatus === app.id ? "more_info_needed" : app.status;
+                                          updateStatus(app.id, newStatus, noteText);
+                                          setPendingStatus(null);
+                                        }}
                                         className="adp-btn adp-btn-g adp-btn-s"
                                       >
-                                        Save Note
+                                        {pendingStatus === app.id ? "Send to Applicant" : "Save Note"}
                                       </button>
-                                      <button onClick={(e) => { e.stopPropagation(); setNoteTarget(null); }} className="adp-btn adp-btn-s">
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setNoteTarget(null); setPendingStatus(null); }}
+                                        className="adp-btn adp-btn-s"
+                                      >
                                         Cancel
                                       </button>
                                     </div>
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setNoteTarget(app.id); setNoteText(app.adminNote ?? ""); }}
+                                    onClick={(e) => { e.stopPropagation(); setNoteTarget(app.id); setNoteText(app.adminNote ?? ""); setPendingStatus(null); }}
                                     className="adp-btn adp-btn-s"
                                     style={{ fontSize: 11 }}
                                   >

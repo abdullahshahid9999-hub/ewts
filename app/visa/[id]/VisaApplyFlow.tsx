@@ -160,13 +160,19 @@ export default function VisaApplyFlow({ visa }: { visa: VisaInfo }) {
       <div className="text-center py-4">
         <p className="text-3xl mb-3">✅</p>
         <h3 className="font-semibold mb-1">Applications Submitted!</h3>
-        <p className="text-muted text-xs mb-2">Reference: <strong>{batchRef}</strong></p>
+        <p className="text-muted text-xs mb-1">Reference: <strong className="font-mono">{batchRef}</strong></p>
         <p className="text-muted text-xs mb-4">
-          We&apos;ll review your documents and contact you shortly. Keep your reference number.
+          We&apos;ll review your documents and contact you. Save your reference number.
         </p>
+        <a
+          href={`/visa/my-applications?ref=${batchRef}`}
+          className="block w-full bg-gold text-black font-bold py-2.5 rounded-xl text-sm mb-2 hover:bg-gold-light transition-colors"
+        >
+          Track My Application →
+        </a>
         <button
           onClick={() => { setMode("idle"); setDrafts([emptyDraft(visa)]); setActiveIdx(0); setBatchRef(null); }}
-          className="text-xs text-gold hover:underline"
+          className="text-xs text-muted hover:underline"
         >
           Submit another application
         </button>
