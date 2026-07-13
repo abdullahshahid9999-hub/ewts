@@ -23,7 +23,7 @@ const SERVICES = [
     arabic: "تذاكر المجموعة",
     description: "Confirmed seat allocations on all major airlines — economy & business class.",
     cta: "Book Now",
-    href: "/agent/bookings/new?service=group_ticket",
+    href: "/agent/group-flights",
     icon: "✈️",
     bg: "from-[#1c2e4a] to-[#0d1b2e]",
     accent: "#D4A843",

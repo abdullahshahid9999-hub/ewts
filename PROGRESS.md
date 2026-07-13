@@ -935,3 +935,54 @@ CREATE TABLE insurance_applications (
 ALTER TABLE agent_bookings ADD COLUMN insurance_plan_label TEXT;
 ```
 (Also confirm the earlier `agent_bookings` migration — room_type_label/adults/children/infants — actually ran; this session's insurance work depends on those columns existing too.)
+## Agent group-flight booking: dedicated browse → book → reference flow (July 2026)
+
+Replaced the generic one-size-fits-all `/agent/bookings/new` form (for
+group tickets specifically) with a proper dedicated flow, per the owner's
+spec:
+
+1. **`/agent/group-flights`** — new browse page, lists every active group
+   flight with full details (airline/logo, route, flight no., dep/arr
+   date+time, baggage, meal, trip type, seats left, price) and a Book Now
+   per flight. Sidebar's "New Booking → Group Flights" now points here
+   instead of the generic form.
+2. **`/agent/group-flights/book/[flightId]`** — the booking page:
+   selected flight shown at the top, adult/child/infant counters, a live
+   **Bill/Summary panel on the right** (agent name/code/tier shown
+   automatically from the logged-in session, per-passenger-type rate
+   inputs pre-filled from the flight's listed fare, running total),
+   passenger detail fields (name/passport/CNIC) that auto-expand to match
+   the adult count, and customer contact fields. Submits to the existing
+   `POST /api/agent/bookings` (`serviceType: "group_ticket"`) — no API
+   changes needed there, it already accepted all of this.
+3. **`/agent/bookings/[id]`** — new booking reference/confirmation page:
+   booking ref, flight + passenger + fare details, and action buttons —
+   **Print with Fare** / **Print without Fare** (toggles a `showFare`
+   flag and calls `window.print()`; a `@media print { .no-print {
+   display:none } }` rule hides all action buttons and chrome from the
+   print output either way), **Issue Booking** (reuses the existing
+   OTP-gated `issue-request` flow/modal from `/agent/bookings` — agents
+   can only *request* issuance, actual `status: issued` is still
+   admin-only via the existing admin/agent-bookings PATCH route, which is
+   where the seat decrement + payable ledger debit already happen — an
+   agent-side "Issue" button intentionally does NOT bypass that),
+   **Cancel Booking** (new, see below), and **Go Back to Dashboard**. Also
+   shows a live countdown against `AgentBooking.expiresAt` ("PNR must be
+   issued within Xm Ys") — this field already existed
+   (`computeExpiresAt`, 30-min default) but had no UI surfacing it before
+   now.
+
+**New supporting API routes:**
+- `GET /api/agent/bookings/[id]` — single booking fetch, agent-scoped
+  (404s if it's not this agent's booking), includes `groupFlight` +
+  `package`.
+- `POST /api/agent/bookings/[id]/cancel` — agent self-service cancel.
+  Blocked once `status === "issued"` (ledger/seats already committed at
+  that point — office has to reverse it manually) and effectively a no-op
+  if already cancelled; anything else (`pending`/`confirmed`/
+  `issue_requested`) can be self-cancelled.
+
+Not touched: `POST /api/agent/bookings` itself (already handled
+group_ticket correctly), the admin-side issue/seat-decrement/ledger logic
+(deliberately left as the only path to `status: issued`). `npx tsc
+--noEmit` shows zero new errors from any of these new files.
