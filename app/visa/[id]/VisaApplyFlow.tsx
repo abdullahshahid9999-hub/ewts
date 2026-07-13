@@ -293,7 +293,7 @@ export default function VisaApplyFlow({ visa }: { visa: VisaInfo }) {
                 className="text-xs w-full"
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? []);
-                  files.forEach((f, idx) => setFile(activeIdx, `extra_${idx}`, f));
+                  files.forEach((f, idx) => setFile(activeIdx, `extra_${idx}_${activeIdx}`, f));
                 }}
               />
             </div>
