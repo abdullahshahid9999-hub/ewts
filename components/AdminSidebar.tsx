@@ -18,6 +18,7 @@ const NAV = [
       { href: "/admin/visa-applications", icon: "📥", label: "Visa Applications" },
       { href: "/admin/group-flights", icon: "✈️", label: "Group Flights" },
       { href: "/admin/insurance", icon: "🛡️", label: "Insurance Plans" },
+      { href: "/admin/insurance-applications", icon: "📥", label: "Insurance Applications" },
     ],
   },
   {

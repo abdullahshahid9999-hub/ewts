@@ -893,3 +893,96 @@ ALTER TABLE agent_bookings ADD COLUMN travellers JSONB;
 
 ## Not done: real online B2C booking for Visa + Insurance
 Owner asked that Visa and Insurance be bookable online like Umrah/Tours/Group-tickets already are — currently both are WhatsApp-enquiry only (Insurance has a quote calculator but no actual booking/order flow). This needs real schema+flow design (what does "a visa booking" or "an insurance booking" actually capture — passport copies? travel dates? which plan/rate?), not something to guess blind. Wrote `VISA-INSURANCE-BOOKING-PROMPT.md` for the next session to pick up properly.
+
+## Agent view matches user (B2C) view — Umrah/Tours
+Built `/agent/umrah` + `/agent/tours` (browse packages, same cards as public site) and `/agent/umrah/[slug]` + `/agent/tours/[slug]` (same content sections, agent-specific booking widget). `AgentPackageBookingWidget` mirrors the public room-selector + adults/children/infants calculator exactly, but: agent sets the actual sell price charged to the customer (a "use suggested price" button pre-fills from real room pricing, editable), submission goes to `/api/agent/bookings` not `/api/bookings` — so commission/payable/balance tracking stays completely separate from the B2C payment-free flow, per the ask ("payment aur record keeping method different hon").
+
+**Real bug fixed in passing**: `VALID_SERVICE_TYPES` on `/api/agent/bookings` never included `"tours"` — only `umrah`/`group_ticket`/`insurance`. Any tours booking through the sidebar's existing "World Tour" link would have silently 400'd. Fixed.
+
+Sidebar nav → New Booking → Umrah/World Tour now point at these new pages instead of the old manual sell-price-only form (which still exists for group_ticket/insurance/visa_services, untouched).
+
+**DB migration needed:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN room_type_label TEXT;
+ALTER TABLE agent_bookings ADD COLUMN adults INTEGER DEFAULT 1;
+ALTER TABLE agent_bookings ADD COLUMN children INTEGER DEFAULT 0;
+ALTER TABLE agent_bookings ADD COLUMN infants INTEGER DEFAULT 0;
+```
+
+**Not done**: Group Tickets/Insurance/Visa agent views still use the older manual form, not the "browse like a user" pattern — same idea could be applied there once/if the group-tickets ticket-table UI and the visa-application flow (being built concurrently per `VISA-INSURANCE-BOOKING-PROMPT.md`) are agent-portal-ready.
+
+## Insurance: real B2C + agent booking (calculator + filters, matching old site)
+- New `InsuranceApplication` model (mirrors `VisaApplication`'s pattern) — B2C submissions via `/api/insurance/apply`, server-computes `travellers × rate.pricePkr`, never trusts client total.
+- `InsuranceCalculator.tsx`: each search result now has a "Book Now" that expands an inline name/phone/email form, submits, shows a clear "no payment taken yet" confirmation.
+- `/admin/insurance-applications` — review list + confirm/cancel, added to sidebar nav.
+- `/agent/insurance` — same destination/duration/traveller search as the public calculator, but agent sets the sell price charged to the customer and submits through `/api/agent/bookings` (commission/payable tracking stays separate, no direct payment) — added `insurancePlanLabel` snapshot field to `AgentBooking` for this.
+- Found + fixed two nav bugs while wiring this in: the agent "New Booking" landing page's Insurance card pointed at the old manual sell-price-only form instead of the new calculator page, and **World Tours had no card on that page at all** despite `/agent/tours` already existing from a previous session — agents had no way to reach it from the main entry point.
+
+**DB migration needed:**
+```sql
+CREATE TABLE insurance_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rate_id UUID NOT NULL REFERENCES insurance_rates(id),
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  travellers INTEGER NOT NULL DEFAULT 1,
+  total_price_pkr INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+ALTER TABLE agent_bookings ADD COLUMN insurance_plan_label TEXT;
+```
+(Also confirm the earlier `agent_bookings` migration — room_type_label/adults/children/infants — actually ran; this session's insurance work depends on those columns existing too.)
+## Agent group-flight booking: dedicated browse → book → reference flow (July 2026)
+
+Replaced the generic one-size-fits-all `/agent/bookings/new` form (for
+group tickets specifically) with a proper dedicated flow, per the owner's
+spec:
+
+1. **`/agent/group-flights`** — new browse page, lists every active group
+   flight with full details (airline/logo, route, flight no., dep/arr
+   date+time, baggage, meal, trip type, seats left, price) and a Book Now
+   per flight. Sidebar's "New Booking → Group Flights" now points here
+   instead of the generic form.
+2. **`/agent/group-flights/book/[flightId]`** — the booking page:
+   selected flight shown at the top, adult/child/infant counters, a live
+   **Bill/Summary panel on the right** (agent name/code/tier shown
+   automatically from the logged-in session, per-passenger-type rate
+   inputs pre-filled from the flight's listed fare, running total),
+   passenger detail fields (name/passport/CNIC) that auto-expand to match
+   the adult count, and customer contact fields. Submits to the existing
+   `POST /api/agent/bookings` (`serviceType: "group_ticket"`) — no API
+   changes needed there, it already accepted all of this.
+3. **`/agent/bookings/[id]`** — new booking reference/confirmation page:
+   booking ref, flight + passenger + fare details, and action buttons —
+   **Print with Fare** / **Print without Fare** (toggles a `showFare`
+   flag and calls `window.print()`; a `@media print { .no-print {
+   display:none } }` rule hides all action buttons and chrome from the
+   print output either way), **Issue Booking** (reuses the existing
+   OTP-gated `issue-request` flow/modal from `/agent/bookings` — agents
+   can only *request* issuance, actual `status: issued` is still
+   admin-only via the existing admin/agent-bookings PATCH route, which is
+   where the seat decrement + payable ledger debit already happen — an
+   agent-side "Issue" button intentionally does NOT bypass that),
+   **Cancel Booking** (new, see below), and **Go Back to Dashboard**. Also
+   shows a live countdown against `AgentBooking.expiresAt` ("PNR must be
+   issued within Xm Ys") — this field already existed
+   (`computeExpiresAt`, 30-min default) but had no UI surfacing it before
+   now.
+
+**New supporting API routes:**
+- `GET /api/agent/bookings/[id]` — single booking fetch, agent-scoped
+  (404s if it's not this agent's booking), includes `groupFlight` +
+  `package`.
+- `POST /api/agent/bookings/[id]/cancel` — agent self-service cancel.
+  Blocked once `status === "issued"` (ledger/seats already committed at
+  that point — office has to reverse it manually) and effectively a no-op
+  if already cancelled; anything else (`pending`/`confirmed`/
+  `issue_requested`) can be self-cancelled.
+
+Not touched: `POST /api/agent/bookings` itself (already handled
+group_ticket correctly), the admin-side issue/seat-decrement/ledger logic
+(deliberately left as the only path to `status: issued`). `npx tsc
+--noEmit` shows zero new errors from any of these new files.
