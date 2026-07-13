@@ -41,6 +41,13 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans?: () 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rates, setRates] = useState<QuoteRate[] | null>(null);
+  const [bookingRateId, setBookingRateId] = useState<string | null>(null);
+  const [bookName, setBookName] = useState("");
+  const [bookPhone, setBookPhone] = useState("");
+  const [bookEmail, setBookEmail] = useState("");
+  const [bookSubmitting, setBookSubmitting] = useState(false);
+  const [bookError, setBookError] = useState<string | null>(null);
+  const [bookedRef, setBookedRef] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,6 +67,28 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans?: () 
     onViewPlans?.();
   }
 
+  async function handleBook(rateId: string) {
+    setBookError(null);
+    if (!bookName.trim() || !bookPhone.trim() || !bookEmail.trim()) {
+      setBookError("Name, phone, and email are required.");
+      return;
+    }
+    setBookSubmitting(true);
+    const res = await fetch("/api/insurance/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rateId, fullName: bookName, phone: bookPhone, email: bookEmail, travellers: Number(travellers) || 1 }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBookSubmitting(false);
+    if (!res.ok) {
+      setBookError(data.error ?? "Could not submit — please try again.");
+      return;
+    }
+    setBookedRef(data.application.id);
+    setBookingRateId(null);
+  }
+
   return (
     <div className="bg-white border border-border rounded-2xl p-6 max-w-lg mx-auto">
       <h2 className="font-display text-xl font-semibold mb-1">Get Your Quote</h2>
@@ -74,15 +103,51 @@ export default function InsuranceCalculator({ onViewPlans }: { onViewPlans?: () 
 
           {loading ? (
             <p className="text-muted text-sm">Finding matching plans…</p>
+          ) : bookedRef ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-3">
+              <p className="font-semibold text-green-800 text-sm mb-1">Application received!</p>
+              <p className="text-green-800 text-xs">
+                No payment has been taken yet. Our team will contact you on WhatsApp/phone to confirm and arrange payment.
+              </p>
+            </div>
           ) : rates && rates.length > 0 ? (
             <div className="space-y-2 mb-3">
               {rates.map((r) => (
-                <div key={r.id} className="border border-border rounded-lg p-3 flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold text-sm">{r.plan.company.name} — {r.plan.name}</div>
-                    {r.coverageDetails && <div className="text-xs text-muted">{r.coverageDetails}</div>}
+                <div key={r.id} className="border border-border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-sm">{r.plan.company.name} — {r.plan.name}</div>
+                      {r.coverageDetails && <div className="text-xs text-muted">{r.coverageDetails}</div>}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-display text-gold font-semibold">Rs. {r.pricePkr.toLocaleString()}</div>
+                      <button
+                        onClick={() => { setBookingRateId(bookingRateId === r.id ? null : r.id); setBookError(null); }}
+                        className="text-xs font-semibold text-gold hover:underline"
+                      >
+                        {bookingRateId === r.id ? "Cancel" : "Book Now"}
+                      </button>
+                    </div>
                   </div>
-                  <div className="font-display text-gold font-semibold">Rs. {r.pricePkr.toLocaleString()}</div>
+
+                  {bookingRateId === r.id && (
+                    <div className="mt-3 pt-3 border-t border-border space-y-2">
+                      <input placeholder="Full Name *" value={bookName} onChange={(e) => setBookName(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                      <input placeholder="Phone *" value={bookPhone} onChange={(e) => setBookPhone(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                      <input type="email" placeholder="Email *" value={bookEmail} onChange={(e) => setBookEmail(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                      <p className="text-xs text-muted">
+                        {travellers} traveller(s) × Rs. {r.pricePkr.toLocaleString()} = <strong>Rs. {(Number(travellers) * r.pricePkr).toLocaleString()}</strong>
+                      </p>
+                      {bookError && <p className="text-xs text-red-700">{bookError}</p>}
+                      <button
+                        onClick={() => handleBook(r.id)}
+                        disabled={bookSubmitting}
+                        className="w-full bg-gold hover:bg-gold-light text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+                      >
+                        {bookSubmitting ? "Submitting…" : "Confirm Booking"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

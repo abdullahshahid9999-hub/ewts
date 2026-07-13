@@ -204,6 +204,25 @@ model VisaApplicationDocument {
 }
 
 
+model InsuranceApplication {
+  id            String   @id @default(uuid())
+  rateId        String   @map("rate_id")
+  fullName      String   @map("full_name")
+  phone         String
+  email         String
+  travellers    Int      @default(1)
+  // Server-computed at submission: travellers × rate.pricePkr. Stored so
+  // price is auditable even if admin later changes the rate.
+  totalPricePkr Int      @map("total_price_pkr")
+  status        String   @default("pending") // pending -> confirmed | cancelled
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  rate InsuranceRate @relation(fields: [rateId], references: [id])
+
+  @@map("insurance_applications")
+}
+
 model InsuranceCompany {
   id          String   @id @default(uuid())
   name        String
@@ -246,6 +265,7 @@ model InsuranceRate {
   createdAt       DateTime @default(now()) @map("created_at")
 
   plan InsurancePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  applications InsuranceApplication[]
 
   @@map("insurance_rates")
 }
