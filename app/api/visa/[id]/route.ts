@@ -10,7 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       where: { id, status: "active" },
       include: {
         requiredDocuments: {
-          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          orderBy: [{ sortOrder: "asc" }],
         },
       },
     });

@@ -8,7 +8,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id: visaId } = await params;
   const docs = await prisma.visaRequiredDocument.findMany({
     where: { visaId },
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ sortOrder: "asc" }],
   });
   return NextResponse.json({ docs });
 }

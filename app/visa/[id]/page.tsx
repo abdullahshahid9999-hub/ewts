@@ -14,7 +14,7 @@ async function getVisa(id: string) {
     return await prisma.visaService.findUnique({
       where: { id, status: "active" },
       include: {
-        requiredDocuments: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
+        requiredDocuments: { orderBy: [{ sortOrder: "asc" }] },
       },
     });
   } catch {
