@@ -893,3 +893,20 @@ ALTER TABLE agent_bookings ADD COLUMN travellers JSONB;
 
 ## Not done: real online B2C booking for Visa + Insurance
 Owner asked that Visa and Insurance be bookable online like Umrah/Tours/Group-tickets already are — currently both are WhatsApp-enquiry only (Insurance has a quote calculator but no actual booking/order flow). This needs real schema+flow design (what does "a visa booking" or "an insurance booking" actually capture — passport copies? travel dates? which plan/rate?), not something to guess blind. Wrote `VISA-INSURANCE-BOOKING-PROMPT.md` for the next session to pick up properly.
+
+## Agent view matches user (B2C) view — Umrah/Tours
+Built `/agent/umrah` + `/agent/tours` (browse packages, same cards as public site) and `/agent/umrah/[slug]` + `/agent/tours/[slug]` (same content sections, agent-specific booking widget). `AgentPackageBookingWidget` mirrors the public room-selector + adults/children/infants calculator exactly, but: agent sets the actual sell price charged to the customer (a "use suggested price" button pre-fills from real room pricing, editable), submission goes to `/api/agent/bookings` not `/api/bookings` — so commission/payable/balance tracking stays completely separate from the B2C payment-free flow, per the ask ("payment aur record keeping method different hon").
+
+**Real bug fixed in passing**: `VALID_SERVICE_TYPES` on `/api/agent/bookings` never included `"tours"` — only `umrah`/`group_ticket`/`insurance`. Any tours booking through the sidebar's existing "World Tour" link would have silently 400'd. Fixed.
+
+Sidebar nav → New Booking → Umrah/World Tour now point at these new pages instead of the old manual sell-price-only form (which still exists for group_ticket/insurance/visa_services, untouched).
+
+**DB migration needed:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN room_type_label TEXT;
+ALTER TABLE agent_bookings ADD COLUMN adults INTEGER DEFAULT 1;
+ALTER TABLE agent_bookings ADD COLUMN children INTEGER DEFAULT 0;
+ALTER TABLE agent_bookings ADD COLUMN infants INTEGER DEFAULT 0;
+```
+
+**Not done**: Group Tickets/Insurance/Visa agent views still use the older manual form, not the "browse like a user" pattern — same idea could be applied there once/if the group-tickets ticket-table UI and the visa-application flow (being built concurrently per `VISA-INSURANCE-BOOKING-PROMPT.md`) are agent-portal-ready.
