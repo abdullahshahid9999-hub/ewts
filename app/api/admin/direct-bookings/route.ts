@@ -6,18 +6,19 @@ import { requireAdmin } from "@/lib/apiAuth";
 // status change is visible immediately on the next list load.
 export const dynamic = "force-dynamic";
 
-const VALID_CATEGORIES = ["umrah", "tours"] as const;
+const VALID_CATEGORIES = ["umrah", "tours", "group_ticket"] as const;
 const VALID_STATUSES = ["pending", "confirmed", "cancelled"] as const;
 
-// Direct/walk-in customer bookings (the public /api/bookings flow —
-// customer picks a package + room type, no login, no agent involved).
-// Separate from AgentBooking, which is the agent-network ledgered flow.
+// Direct/walk-in customer bookings (the public /api/bookings and
+// /api/group-flights/book flows — customer picks a package + room type,
+// or a seat on a group flight, no login, no agent involved). Separate
+// from AgentBooking, which is the agent-network ledgered flow.
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category"); // package category: umrah | tours | all/null
+  const category = searchParams.get("category"); // package category (umrah|tours) or "group_ticket", or all/null
   const status = searchParams.get("status"); // all/null or one of VALID_STATUSES
 
   const where: Record<string, unknown> = {};
@@ -25,13 +26,21 @@ export async function GET(req: NextRequest) {
     where.status = status;
   }
   if (category && category !== "all" && VALID_CATEGORIES.includes(category as typeof VALID_CATEGORIES[number])) {
-    where.package = { category };
+    if (category === "group_ticket") {
+      where.groupFlightId = { not: null };
+    } else {
+      where.package = { category };
+    }
   }
 
   const bookings = await prisma.booking.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { package: { select: { name: true, category: true, slug: true } }, travellers: true },
+    include: {
+      package: { select: { name: true, category: true, slug: true } },
+      groupFlight: { select: { airline: true, route: true, flightNo: true, depDate: true } },
+      travellers: true,
+    },
   });
 
   return NextResponse.json({ bookings });

@@ -39,9 +39,25 @@ function NewBookingInner() {
   const [serviceType, setServiceType] = useState<ServiceType>(initialService ?? "umrah");
   const [sellPrice, setSellPrice] = useState("");
   const [groupFlightId, setGroupFlightId] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [travellers, setTravellers] = useState<{ fullName: string; passportNo: string; cnic: string }[]>([
+    { fullName: "", passportNo: "", cnic: "" },
+  ]);
   const [flights, setFlights] = useState<GroupFlight[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function addTraveller() {
+    setTravellers((t) => [...t, { fullName: "", passportNo: "", cnic: "" }]);
+  }
+  function updateTraveller(i: number, patch: Partial<{ fullName: string; passportNo: string; cnic: string }>) {
+    setTravellers((t) => t.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  }
+  function removeTraveller(i: number) {
+    setTravellers((t) => (t.length > 1 ? t.filter((_, idx) => idx !== i) : t));
+  }
 
   useEffect(() => {
     if (serviceType !== "group_ticket") return;
@@ -58,6 +74,10 @@ function NewBookingInner() {
     setError(null);
     setSellPrice("");
     setGroupFlightId("");
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerEmail("");
+    setTravellers([{ fullName: "", passportNo: "", cnic: "" }]);
     setStep("details");
   }
 
@@ -74,6 +94,15 @@ function NewBookingInner() {
       setError("Select a group flight.");
       return;
     }
+    if (!customerName.trim() || !customerPhone.trim()) {
+      setError("Customer name and phone are required.");
+      return;
+    }
+    const validTravellers = travellers.filter((t) => t.fullName.trim());
+    if (serviceType === "umrah" && validTravellers.length === 0) {
+      setError("Add at least one passenger's full name for Umrah bookings.");
+      return;
+    }
 
     setSubmitting(true);
     const res = await agentFetch("/api/agent/bookings", accessToken, refresh, {
@@ -83,6 +112,10 @@ function NewBookingInner() {
         serviceType,
         sellPrice: price,
         groupFlightId: serviceType === "group_ticket" ? groupFlightId : undefined,
+        customerName,
+        customerPhone,
+        customerEmail: customerEmail || undefined,
+        travellers: validTravellers,
       }),
     });
     const data = await res.json().catch(() => ({}));
@@ -239,6 +272,72 @@ function NewBookingInner() {
                     value={sellPrice}
                     onChange={(e) => setSellPrice(e.target.value)}
                   />
+                </div>
+
+                <div style={{ borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
+                  <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Customer Details</p>
+                  <div className="ap-field" style={{ marginBottom: 10 }}>
+                    <label>Full Name</label>
+                    <input required value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <div className="ap-field">
+                      <label>Phone</label>
+                      <input required value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                    </div>
+                    <div className="ap-field">
+                      <label>Email (optional)</label>
+                      <input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
+                  <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>
+                    Passenger Details {serviceType === "umrah" && <span style={{ color: "var(--red)" }}>*</span>}
+                  </p>
+                  <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>
+                    {serviceType === "umrah"
+                      ? "Required for Umrah — full name of every traveller, as on passport."
+                      : "Optional — helps speed up documentation."}
+                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {travellers.map((t, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8 }}>
+                        <input
+                          required={serviceType === "umrah"}
+                          placeholder={`Traveller ${i + 1} — Full Name`}
+                          value={t.fullName}
+                          onChange={(e) => updateTraveller(i, { fullName: e.target.value })}
+                          style={{ padding: "8px 10px", border: "1.5px solid var(--bdr)", borderRadius: 8, fontSize: 13 }}
+                        />
+                        <input
+                          placeholder="Passport No."
+                          value={t.passportNo}
+                          onChange={(e) => updateTraveller(i, { passportNo: e.target.value })}
+                          style={{ padding: "8px 10px", border: "1.5px solid var(--bdr)", borderRadius: 8, fontSize: 13 }}
+                        />
+                        <input
+                          placeholder="CNIC"
+                          value={t.cnic}
+                          onChange={(e) => updateTraveller(i, { cnic: e.target.value })}
+                          style={{ padding: "8px 10px", border: "1.5px solid var(--bdr)", borderRadius: 8, fontSize: 13 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeTraveller(i)}
+                          disabled={travellers.length <= 1}
+                          className="ap-btn ap-btn-ghost"
+                          style={{ padding: "8px 10px", opacity: travellers.length <= 1 ? 0.4 : 1 }}
+                        >
+                          −
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={addTraveller} className="ap-btn ap-btn-ghost" style={{ marginTop: 10 }}>
+                    + Add Traveller
+                  </button>
                 </div>
 
                 {error && (

@@ -13,6 +13,9 @@ type AgentBooking = {
   status: string;
   sellPrice: number;
   commission: number;
+  customerName: string | null;
+  customerPhone: string | null;
+  travellers: { fullName: string; passportNo?: string; cnic?: string }[] | null;
   agent: { agentCode: string; fullName: string };
   package: { id: string; name: string; category: string } | null;
 };
@@ -94,7 +97,7 @@ function AgentBookingsInner() {
             <table className="adp-table">
               <thead>
                 <tr>
-                  <th>Ref</th><th>Agent</th><th>Service</th><th>Sell Price</th><th>Commission</th><th>Status</th><th></th>
+                  <th>Ref</th><th>Agent</th><th>Customer</th><th>Passengers</th><th>Service</th><th>Sell Price</th><th>Commission</th><th>Status</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -102,6 +105,15 @@ function AgentBookingsInner() {
                   <tr key={b.id}>
                     <td><strong>{b.bookingRef}</strong></td>
                     <td>{b.agent.agentCode} — {b.agent.fullName}</td>
+                    <td>
+                      {b.customerName ?? <span style={{ color: "var(--a-dim)" }}>—</span>}
+                      {b.customerPhone && <div style={{ fontSize: 11, color: "var(--a-muted)" }}>{b.customerPhone}</div>}
+                    </td>
+                    <td style={{ fontSize: 11, maxWidth: 180 }}>
+                      {b.travellers && b.travellers.length > 0
+                        ? b.travellers.map((t) => t.fullName).join(", ")
+                        : <span style={{ color: "var(--a-dim)" }}>—</span>}
+                    </td>
                     <td className="capitalize">{b.serviceType.replace("_", " ")}</td>
                     <td>PKR {b.sellPrice.toLocaleString()}</td>
                     <td>PKR {b.commission.toLocaleString()}</td>

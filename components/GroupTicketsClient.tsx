@@ -36,9 +36,46 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
   const [passport, setPassport] = useState("");
   const [seats, setSeats] = useState("1");
   const [travelClass, setTravelClass] = useState("Economy");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    // Save the booking request to the database FIRST — this is the
+    // record of the request, same as a package booking. WhatsApp is
+    // still opened right after so the customer gets an immediate human
+    // response, but the data isn't lost even if they never send that
+    // message.
+    try {
+      const res = await fetch("/api/group-flights/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupFlightId: flight.id,
+          firstName,
+          lastName,
+          whatsapp,
+          email,
+          passport,
+          seats: Number(seats),
+          travelClass,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error ?? "Something went wrong — please try again.");
+        setSubmitting(false);
+        return;
+      }
+    } catch {
+      setError("Could not reach the server — please check your connection and try again.");
+      setSubmitting(false);
+      return;
+    }
+
     const lines = [
       "Assalam o Alaikum! I'd like to book a group ticket:",
       `Flight: ${flight.airline} — ${flight.route}`,
@@ -58,8 +95,9 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
         <h2 className="font-display text-xl font-semibold mb-1">Book Your Seat</h2>
         <p className="text-muted text-xs mb-4">
-          Your booking details will be sent to our WhatsApp team for confirmation
+          Your booking request is saved with us, and also sent to our WhatsApp team for confirmation
         </p>
+        {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <input required placeholder="First Name *" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm" />
@@ -76,8 +114,8 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
           </select>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm">Cancel</button>
-            <button type="submit" className="flex-1 rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm">
-              Confirm via WhatsApp
+            <button type="submit" disabled={submitting} className="flex-1 rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm disabled:opacity-50">
+              {submitting ? "Saving…" : "Confirm via WhatsApp"}
             </button>
           </div>
         </form>
