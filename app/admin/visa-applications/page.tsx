@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
@@ -155,8 +155,8 @@ function VisaApplicationsInner() {
               </thead>
               <tbody>
                 {apps.map((app) => (
-                  <>
-                    <tr key={app.id} style={{ cursor: "pointer" }} onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}>
+                  <Fragment key={app.id}>
+                    <tr style={{ cursor: "pointer" }} onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}>
                       <td style={{ whiteSpace: "nowrap", fontSize: 11 }}>
                         {new Date(app.createdAt).toLocaleDateString("en-PK", { day: "numeric", month: "short" })}
                       </td>
@@ -297,7 +297,7 @@ function VisaApplicationsInner() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

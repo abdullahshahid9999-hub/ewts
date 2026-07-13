@@ -274,27 +274,47 @@ export default function VisaApplyFlow({ visa }: { visa: VisaInfo }) {
           </div>
         )}
 
-        {/* Document uploads */}
-        {draft.visa.requiredDocuments.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
-              Upload Documents
-            </p>
+        {/* Document uploads — always show section */}
+        <div>
+          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
+            Upload Documents
+          </p>
+
+          {draft.visa.requiredDocuments.length === 0 ? (
+            // No configured requirements — show a generic upload slot
+            <div className="border border-border rounded-xl p-3 bg-surface">
+              <p className="text-xs text-muted mb-2">
+                Upload any supporting documents (passport scan, photo, bank statement, etc.)
+              </p>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                multiple
+                className="text-xs w-full"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  files.forEach((f, idx) => setFile(activeIdx, `extra_${idx}`, f));
+                }}
+              />
+            </div>
+          ) : (
             <div className="space-y-2">
               {draft.visa.requiredDocuments.map((doc) => (
                 <div key={doc.id} className="border border-border rounded-xl p-3">
-                  <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-start justify-between mb-1.5">
                     <div>
                       <span className="text-sm font-semibold">{doc.name}</span>
-                      {!doc.isRequired && (
-                        <span className="ml-1 text-xs text-muted">(optional)</span>
+                      {doc.isRequired ? (
+                        <span className="ml-1.5 text-xs text-red-500 font-bold">*required</span>
+                      ) : (
+                        <span className="ml-1.5 text-xs text-muted">(optional)</span>
                       )}
                       {doc.description && (
                         <p className="text-xs text-muted mt-0.5">{doc.description}</p>
                       )}
                     </div>
                     {draft.files[doc.id] && (
-                      <span className="text-green-600 text-xs font-semibold">✓</span>
+                      <span className="text-green-600 text-xs font-bold shrink-0">✓ Added</span>
                     )}
                   </div>
                   <input
@@ -309,8 +329,8 @@ export default function VisaApplyFlow({ visa }: { visa: VisaInfo }) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Remove this application (only if more than one) */}
         {drafts.length > 1 && (
