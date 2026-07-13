@@ -123,6 +123,8 @@ model VisaService {
   maxStay        String?  @map("max_stay")
   processingTime String?  @map("processing_time")
   requirements   String?
+  termsAndConditions String? @map("terms_and_conditions")
+  refundPolicy   String?  @map("refund_policy")
   countryFlag    String?  @map("country_flag")
   countryImage   String?  @map("country_image")
   status         String   @default("active")

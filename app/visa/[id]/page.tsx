@@ -115,6 +115,22 @@ export default async function VisaDetailPage({ params }: { params: Promise<{ id:
               <p className="text-sm text-muted whitespace-pre-wrap">{visa.requirements}</p>
             </div>
           )}
+
+          {/* Terms & Conditions */}
+          {visa.termsAndConditions && (
+            <div className="bg-white border border-border rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-4">Terms &amp; Conditions</h2>
+              <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">{visa.termsAndConditions}</p>
+            </div>
+          )}
+
+          {/* Refund & Cancellation Policy */}
+          {visa.refundPolicy && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-4">⚠️ Refund &amp; Cancellation Policy</h2>
+              <p className="text-sm text-amber-800 whitespace-pre-wrap leading-relaxed">{visa.refundPolicy}</p>
+            </div>
+          )}
         </div>
 
         {/* RIGHT: Sticky CTA + Apply Flow */}

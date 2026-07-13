@@ -62,10 +62,6 @@ export default async function VisaPage() {
             <span className="mx-2">/</span>
             <span>Visa Services</span>
           </p>
-          <span className="text-white/30">·</span>
-          <Link href="/visa/my-applications" className="text-gold hover:underline font-semibold text-xs">
-            Track My Application →
-          </Link>
         </div>
       </section>
 

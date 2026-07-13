@@ -40,6 +40,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       maxStay: str("maxStay"),
       processingTime: str("processingTime"),
       requirements: str("requirements"),
+      termsAndConditions: str("termsAndConditions"),
+      refundPolicy: str("refundPolicy"),
       countryFlag: str("countryFlag"),
       countryImage,
       status: str("status"),

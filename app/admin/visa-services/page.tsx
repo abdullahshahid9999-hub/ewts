@@ -25,12 +25,15 @@ type VisaService = {
   priceInfant: number | null;
   days: string | null;
   status: string;
+  termsAndConditions: string | null;
+  refundPolicy: string | null;
 };
 
 const emptyForm = {
   title: "", country: "", type: "tourist", price: "",
   priceAdult: "", priceChild: "", priceInfant: "",
   days: "", validity: "", status: "active",
+  termsAndConditions: "", refundPolicy: "",
 };
 
 function VisaServicesInner() {
@@ -191,6 +194,34 @@ function VisaServicesInner() {
           </div>
 
           {error && <p style={{ color: "var(--a-red)", fontSize: "12px", marginBottom: 10 }}>{error}</p>}
+
+          {/* Terms & Conditions + Refund Policy */}
+          <div style={{ borderTop: "1px solid var(--a-border2)", paddingTop: 14, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
+                Terms &amp; Conditions
+              </label>
+              <textarea
+                rows={6}
+                style={{ ...iStyle, resize: "vertical" }}
+                value={form.termsAndConditions}
+                onChange={(e) => setForm((f) => ({ ...f, termsAndConditions: e.target.value }))}
+                placeholder="e.g. Visa approval is subject to embassy decision. East & West Travel is not responsible for visa rejections..."
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
+                Refund &amp; Cancellation Policy
+              </label>
+              <textarea
+                rows={6}
+                style={{ ...iStyle, resize: "vertical" }}
+                value={form.refundPolicy}
+                onChange={(e) => setForm((f) => ({ ...f, refundPolicy: e.target.value }))}
+                placeholder="e.g. Service fee is non-refundable once processing has started. Embassy fee refundable only if visa is rejected..."
+              />
+            </div>
+          </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button type="submit" disabled={submitting} className="adp-btn adp-btn-g">{submitting ? "Saving…" : editingId ? "Update Visa" : "Create Visa"}</button>
             {editingId && <button type="button" onClick={resetForm} className="adp-btn adp-btn-t">Cancel</button>}
@@ -335,6 +366,8 @@ function VisaServicesInner() {
                             priceChild: v.priceChild != null ? String(v.priceChild) : "",
                             priceInfant: v.priceInfant != null ? String(v.priceInfant) : "",
                             days: v.days ?? "", validity: "", status: v.status,
+                            termsAndConditions: v.termsAndConditions ?? "",
+                            refundPolicy: v.refundPolicy ?? "",
                           });
                           setFile(null);
                           setDocsForId(null);

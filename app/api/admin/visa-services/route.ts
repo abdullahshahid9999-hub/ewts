@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
       maxStay: str("maxStay"),
       processingTime: str("processingTime"),
       requirements: str("requirements"),
+      termsAndConditions: str("termsAndConditions"),
+      refundPolicy: str("refundPolicy"),
       countryFlag: str("countryFlag"),
       countryImage,
       status: str("status") ?? "active",
