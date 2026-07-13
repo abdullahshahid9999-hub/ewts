@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
   const customerPhone = typeof body.customerPhone === "string" ? body.customerPhone.trim() : undefined;
   const customerEmail = typeof body.customerEmail === "string" ? body.customerEmail.trim() : undefined;
   const roomTypeLabel = typeof body.roomType === "string" ? body.roomType.trim() : undefined;
+  const insurancePlanLabel = typeof body.insurancePlanLabel === "string" ? body.insurancePlanLabel.trim() : undefined;
   const adults = body.adults !== undefined ? Number(body.adults) : undefined;
   const children = body.children !== undefined ? Number(body.children) : undefined;
   const infants = body.infants !== undefined ? Number(body.infants) : undefined;
@@ -204,6 +205,7 @@ export async function POST(req: NextRequest) {
         customerEmail,
         travellers: travellers.length > 0 ? travellers : undefined,
         roomTypeLabel,
+        insurancePlanLabel,
         adults: Number.isFinite(adults) ? adults : undefined,
         children: Number.isFinite(children) ? children : undefined,
         infants: Number.isFinite(infants) ? infants : undefined,

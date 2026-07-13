@@ -405,6 +405,7 @@ model AgentBooking {
   customerEmail     String?   @map("customer_email")
   travellers        Json?     // [{fullName, passportNo, cnic}] — same shape as the public Traveller model, kept as JSON here since AgentBooking is a sales record, not the same table
   roomTypeLabel     String?   @map("room_type_label") // snapshot, same reasoning as Booking.roomTypeLabel
+  insurancePlanLabel String?  @map("insurance_plan_label") // snapshot: "Company — Plan"
   adults            Int?      @default(1)
   children          Int?      @default(0)
   infants           Int?      @default(0)
