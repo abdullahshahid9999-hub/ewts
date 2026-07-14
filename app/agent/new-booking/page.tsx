@@ -9,7 +9,7 @@ const SERVICES = [
     arabic: "خدمات التأشيرة",
     description: "Apply for tourist, business, Umrah & work visas for 50+ countries.",
     cta: "Apply Now",
-    href: "/agent/bookings/new?service=visa_services",
+    href: "/agent/visa",
     icon: "📄",
     bg: "from-[#1a3a5c] to-[#0f2240]",
     accent: "#4A9EDB",
