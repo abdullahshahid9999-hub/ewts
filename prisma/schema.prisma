@@ -170,6 +170,10 @@ model VisaApplication {
   // shared string so admin can see "these 3 came in together."
   batchRef       String   @map("batch_ref")
   visaId         String   @map("visa_id")
+  // Set when an agent submits this on a customer's behalf (mirrors the
+  // same table serving both direct and agent bookings elsewhere, e.g.
+  // Booking.groupFlightId vs AgentBooking). Null = direct/B2C application.
+  agentId        String?  @map("agent_id")
   // Applicant contact (the lead person submitting, not per-traveler)
   fullName       String   @map("full_name")
   passportNumber String   @map("passport_number")
@@ -190,6 +194,7 @@ model VisaApplication {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   visa      VisaService             @relation(fields: [visaId], references: [id])
+  agent     Agent?                     @relation(fields: [agentId], references: [id])
   documents VisaApplicationDocument[]
 
   @@map("visa_applications")
@@ -383,6 +388,7 @@ model Agent {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   bookings        AgentBooking[]
+  visaApplications VisaApplication[]
   commissionRates AgentCommissionRate[]
   transactions AgentTransaction[]
   otps         AgentOtp[]
