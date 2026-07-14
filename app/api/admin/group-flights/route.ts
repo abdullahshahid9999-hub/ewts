@@ -41,16 +41,32 @@ export async function POST(req: NextRequest) {
   const seatsRaw = form.get("seats");
   const seats = typeof seatsRaw === "string" && seatsRaw ? Number(seatsRaw) : 0;
 
+  // `legs` is the JSON array of { flightNo, from, to, depTime, arrTime },
+  // one entry per leg. When present, the top-level flightNo/depTime/arrTime
+  // are derived from the first/last leg so older code paths (admin list
+  // table, public site cards) that only read those single fields keep
+  // working without changes.
+  let legs: { flightNo: string; from: string; to: string; depTime: string; arrTime: string }[] | undefined;
+  const legsRaw = form.get("legs");
+  if (typeof legsRaw === "string" && legsRaw) {
+    try {
+      const parsed = JSON.parse(legsRaw);
+      if (Array.isArray(parsed) && parsed.length > 0) legs = parsed;
+    } catch {
+      // ignore malformed legs payload, fall back to manual fields below
+    }
+  }
+
   const groupFlight = await prisma.groupFlight.create({
     data: {
-      flightNo: str("flightNo"),
+      flightNo: legs ? legs[0].flightNo || undefined : str("flightNo"),
       airline,
       airlineCode: str("airlineCode"),
       route,
       depDate: str("depDate"),
       arrDate: str("arrDate"),
-      depTime: str("depTime"),
-      arrTime: str("arrTime"),
+      depTime: legs ? legs[0].depTime || undefined : str("depTime"),
+      arrTime: legs ? legs[legs.length - 1].arrTime || undefined : str("arrTime"),
       region: str("region"),
       tripType: str("tripType"),
       baggage: str("baggage"),
@@ -59,6 +75,7 @@ export async function POST(req: NextRequest) {
       airlineLogoUrl,
       seats: Number.isFinite(seats) ? seats : 0,
       status: str("status") ?? "active",
+      legs,
     },
   });
 

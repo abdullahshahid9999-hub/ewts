@@ -5,6 +5,7 @@ import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
+import { legsFromFlight, type FlightLeg } from "@/lib/groupFlightLegs";
 
 type GroupFlight = {
   id: string;
@@ -21,12 +22,16 @@ type GroupFlight = {
   price: string;
   seats: number;
   status: string;
+  legs: unknown;
 };
 
 const emptyForm = {
-  flightNo: "", airline: "", route: "", price: "", depDate: "", depTime: "", arrTime: "",
+  airline: "", route: "", price: "", depDate: "",
   baggage: "", meal: "Yes", region: "international", tripType: "oneway", seats: "0", status: "active",
 };
+
+const emptyLeg: FlightLeg = { flightNo: "", from: "", to: "", depTime: "", arrTime: "" };
+const defaultLegs: FlightLeg[] = [{ ...emptyLeg }];
 
 function GroupFlightsInner() {
   const { accessToken, refresh } = useAdminAuth();
@@ -34,6 +39,7 @@ function GroupFlightsInner() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [legs, setLegs] = useState<FlightLeg[]>(defaultLegs);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -48,17 +54,31 @@ function GroupFlightsInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  function resetForm() { setEditingId(null); setForm(emptyForm); setFile(null); setError(null); }
+  function resetForm() { setEditingId(null); setForm(emptyForm); setLegs(defaultLegs); setFile(null); setError(null); }
 
   function startEdit(f: GroupFlight) {
     setEditingId(f.id);
     setForm({
-      flightNo: f.flightNo ?? "", airline: f.airline, route: f.route, price: f.price,
-      depDate: f.depDate ?? "", depTime: f.depTime ?? "", arrTime: f.arrTime ?? "",
+      airline: f.airline, route: f.route, price: f.price,
+      depDate: f.depDate ?? "",
       baggage: f.baggage ?? "", meal: f.meal ?? "Yes", region: f.region ?? "international",
       tripType: f.tripType ?? "oneway", seats: String(f.seats), status: f.status,
     });
+    setLegs(legsFromFlight(f));
     setFile(null);
+  }
+
+  function addLeg() {
+    setLegs((l) => [...l, { ...emptyLeg }]);
+  }
+
+  function updateLeg(i: number, patch: Partial<FlightLeg>) {
+    setLegs((l) => l.map((leg, idx) => (idx === i ? { ...leg, ...patch } : leg)));
+  }
+
+  function removeLeg(i: number) {
+    // Minimum 1 leg required — "-" is disabled when it's the only row left.
+    setLegs((l) => (l.length <= 1 ? l : l.filter((_, idx) => idx !== i)));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -69,6 +89,11 @@ function GroupFlightsInner() {
     const body = new FormData();
     Object.entries(form).forEach(([k, v]) => body.set(k, v));
     if (file) body.set("airlineLogo", await compressImage(file));
+
+    // At least one leg needs a flight number to be worth saving — empty
+    // rows (from a stray "+ Add Leg") are dropped rather than persisted.
+    const legsPayload = legs.filter((l) => l.flightNo.trim());
+    if (legsPayload.length > 0) body.set("legs", JSON.stringify(legsPayload));
 
     const url = editingId ? `/api/admin/group-flights/${editingId}` : "/api/admin/group-flights";
     const res = await adminFetch(url, accessToken, refresh, { method: editingId ? "PATCH" : "POST", body });
@@ -92,13 +117,71 @@ function GroupFlightsInner() {
       <div className="adp-card">
         <div className="adp-ch"><h3>{editingId ? "Edit Flight" : "New Flight"}</h3></div>
         <form onSubmit={handleSubmit} className="adp-fg adp-fr" style={{ padding: "16px 18px" }}>
-          <div><label>Flight No.</label><input placeholder="e.g. PF 786" value={form.flightNo} onChange={(e) => setForm((f) => ({ ...f, flightNo: e.target.value }))} /></div>
           <div><label>Airline</label><input required value={form.airline} onChange={(e) => setForm((f) => ({ ...f, airline: e.target.value }))} /></div>
           <div><label>Route</label><input required placeholder="e.g. LAHORE→DUBAI" value={form.route} onChange={(e) => setForm((f) => ({ ...f, route: e.target.value }))} /></div>
           <div><label>Departure Date</label><input type="date" value={form.depDate} onChange={(e) => setForm((f) => ({ ...f, depDate: e.target.value }))} /></div>
-          <div><label>Departure Time</label><input type="time" value={form.depTime} onChange={(e) => setForm((f) => ({ ...f, depTime: e.target.value }))} /></div>
-          <div><label>Arrival Time</label><input type="time" value={form.arrTime} onChange={(e) => setForm((f) => ({ ...f, arrTime: e.target.value }))} /></div>
           <div><label>Baggage</label><input placeholder="e.g. 20+7 KG" value={form.baggage} onChange={(e) => setForm((f) => ({ ...f, baggage: e.target.value }))} /></div>
+
+          {/* LEGS — one row per flight leg. A direct flight is 1 row; a
+              connecting flight (e.g. via Karachi) is 2+ rows. This whole
+              option is still ONE bookable thing at ONE price/seats/date
+              (set above) — legs are just its journey breakdown, shown
+              stacked under a single "Book Now" in the agent portal.
+              Minimum 1 leg — "-" disabled when it's the only row. */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Flight Legs (flight no., from/to city code &amp; times)</label>
+            <div style={{ display: "grid", gap: "8px" }}>
+              {legs.map((leg, i) => (
+                <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <span style={{ width: "56px", fontSize: "11px", fontWeight: 700, color: "var(--a-muted)" }}>
+                    Leg {i + 1}
+                  </span>
+                  <input
+                    placeholder="Flight No. (e.g. EK-774)"
+                    value={leg.flightNo}
+                    onChange={(e) => updateLeg(i, { flightNo: e.target.value })}
+                    style={{ flex: 1.2 }}
+                  />
+                  <input
+                    placeholder="From (e.g. LHE)"
+                    value={leg.from}
+                    onChange={(e) => updateLeg(i, { from: e.target.value })}
+                    style={{ width: "90px" }}
+                  />
+                  <input
+                    placeholder="To (e.g. KHI)"
+                    value={leg.to}
+                    onChange={(e) => updateLeg(i, { to: e.target.value })}
+                    style={{ width: "90px" }}
+                  />
+                  <input
+                    type="time"
+                    value={leg.depTime}
+                    onChange={(e) => updateLeg(i, { depTime: e.target.value })}
+                    style={{ width: "110px" }}
+                  />
+                  <input
+                    type="time"
+                    value={leg.arrTime}
+                    onChange={(e) => updateLeg(i, { arrTime: e.target.value })}
+                    style={{ width: "110px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLeg(i)}
+                    disabled={legs.length <= 1}
+                    className="adp-btn adp-btn-r"
+                    style={{ opacity: legs.length <= 1 ? 0.35 : 1, cursor: legs.length <= 1 ? "not-allowed" : "pointer" }}
+                  >
+                    −
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={addLeg} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
+              + Add Connecting Leg
+            </button>
+          </div>
           <div>
             <label>Meal</label>
             <select value={form.meal} onChange={(e) => setForm((f) => ({ ...f, meal: e.target.value }))}>
@@ -144,23 +227,33 @@ function GroupFlightsInner() {
         <div className="adp-tw">
           {loading ? <p className="etd">Loading…</p> : items.length === 0 ? <p className="etd">No group flights yet.</p> : (
             <table className="adp-table">
-              <thead><tr><th>Flight</th><th>Airline</th><th>Route</th><th>Date</th><th>Time</th><th>Price</th><th>Seats</th><th></th></tr></thead>
+              <thead><tr><th>Legs</th><th>Airline</th><th>Route</th><th>Date</th><th>Price</th><th>Seats</th><th></th></tr></thead>
               <tbody>
-                {items.map((f) => (
-                  <tr key={f.id}>
-                    <td><strong>{f.flightNo ?? "—"}</strong></td>
-                    <td>{f.airline}</td>
-                    <td>{f.route}</td>
-                    <td>{f.depDate ?? "—"}</td>
-                    <td>{f.depTime ?? "—"}{f.arrTime ? ` - ${f.arrTime}` : ""}</td>
-                    <td>{f.price}</td>
-                    <td>{f.seats}</td>
-                    <td style={{ display: "flex", gap: "6px" }}>
-                      <button onClick={() => startEdit(f)} className="adp-btn adp-btn-s">Edit</button>
-                      <button onClick={() => handleDelete(f.id)} className="adp-btn adp-btn-r">Delete</button>
-                    </td>
-                  </tr>
-                ))}
+                {items.map((f) => {
+                  const flightLegs = legsFromFlight(f);
+                  return (
+                    <tr key={f.id}>
+                      <td>
+                        {flightLegs.map((leg, i) => (
+                          <div key={i} style={{ fontSize: "12px", whiteSpace: "nowrap" }}>
+                            <strong>{leg.flightNo || "—"}</strong>
+                            {(leg.from || leg.to) && ` ${leg.from}→${leg.to}`}
+                            {(leg.depTime || leg.arrTime) && ` ${leg.depTime}-${leg.arrTime}`}
+                          </div>
+                        ))}
+                      </td>
+                      <td>{f.airline}</td>
+                      <td>{f.route}</td>
+                      <td>{f.depDate ?? "—"}</td>
+                      <td>{f.price}</td>
+                      <td>{f.seats}</td>
+                      <td style={{ display: "flex", gap: "6px" }}>
+                        <button onClick={() => startEdit(f)} className="adp-btn adp-btn-s">Edit</button>
+                        <button onClick={() => handleDelete(f.id)} className="adp-btn adp-btn-r">Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

@@ -27,17 +27,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const seatsRaw = form.get("seats");
   const seats = typeof seatsRaw === "string" && seatsRaw ? Number(seatsRaw) : undefined;
 
+  // Same legs-derives-single-fields logic as the create route (see there
+  // for the rationale) — kept in sync so editing a flight doesn't drift
+  // the backward-compat fields out of step with its legs.
+  let legs: { flightNo: string; from: string; to: string; depTime: string; arrTime: string }[] | undefined;
+  const legsRaw = form.get("legs");
+  if (typeof legsRaw === "string" && legsRaw) {
+    try {
+      const parsed = JSON.parse(legsRaw);
+      if (Array.isArray(parsed) && parsed.length > 0) legs = parsed;
+    } catch {
+      // ignore malformed legs payload, fall back to manual fields below
+    }
+  }
+
   const groupFlight = await prisma.groupFlight.update({
     where: { id },
     data: {
-      flightNo: str("flightNo"),
+      flightNo: legs ? legs[0].flightNo || undefined : str("flightNo"),
       airline: str("airline"),
       airlineCode: str("airlineCode"),
       route: str("route"),
       depDate: str("depDate"),
       arrDate: str("arrDate"),
-      depTime: str("depTime"),
-      arrTime: str("arrTime"),
+      depTime: legs ? legs[0].depTime || undefined : str("depTime"),
+      arrTime: legs ? legs[legs.length - 1].arrTime || undefined : str("arrTime"),
       region: str("region"),
       tripType: str("tripType"),
       baggage: str("baggage"),
@@ -46,6 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       airlineLogoUrl,
       seats: seats !== undefined && Number.isFinite(seats) ? seats : undefined,
       status: str("status"),
+      legs,
     },
   });
 
