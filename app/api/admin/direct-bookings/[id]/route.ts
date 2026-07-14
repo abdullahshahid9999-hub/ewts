@@ -29,8 +29,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
 
-  const booking = await prisma.booking
-    .update({ where: { id }, data: { status } })
+  const existing = await prisma.booking.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+  // Cancelling a pending/confirmed group-ticket booking releases its held
+  // seats back to inventory — they were reserved at booking time now,
+  // not left unmanaged the way this table used to work.
+  const releasesSeat =
+    status === "cancelled" &&
+    existing.status !== "cancelled" &&
+    existing.status !== "expired" &&
+    existing.service === "group_ticket" &&
+    existing.groupFlightId;
+
+  const booking = await prisma
+    .$transaction(async (tx) => {
+      if (releasesSeat) {
+        await tx.groupFlight.update({
+          where: { id: existing.groupFlightId! },
+          data: { seats: { increment: existing.seatsRequested ?? 1 } },
+        });
+      }
+      return tx.booking.update({ where: { id }, data: { status } });
+    })
     .catch(() => null);
   if (!booking) return NextResponse.json({ error: "Not found." }, { status: 404 });
 

@@ -321,7 +321,8 @@ model Booking {
   passport        String? // CNIC/Passport, optional, useful for travel docs
   specialRequests String? @map("special_requests")
   totalPricePkr   Int?    @map("total_price_pkr") // snapshot of the computed total at booking time, same immutability reasoning as agent commission — price display can change later, this booking's price shouldn't retroactively
-  status       String   @default("pending") // pending | confirmed | cancelled — payment status is a SEPARATE concern, added later per the owner's own pipeline plan
+  status       String   @default("pending") // pending | confirmed | cancelled | expired
+  expiresAt    DateTime? @map("expires_at") // 2-hour seat hold for group-flight bookings; released back to inventory if not confirmed by this time
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
