@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     },
     include: {
       visa: { select: { title: true, country: true, type: true } },
+      agent: { select: { fullName: true, agentCode: true } },
       documents: {
         include: { document: { select: { name: true } } },
       },

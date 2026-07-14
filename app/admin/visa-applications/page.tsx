@@ -28,6 +28,7 @@ type Application = {
   createdAt: string;
   updatedAt: string;
   visa: { title: string; country: string; type: string };
+  agent: { fullName: string; agentCode: string } | null;
   documents: AppDoc[];
 };
 
@@ -192,6 +193,7 @@ function VisaApplicationsInner() {
                   <th>Date</th>
                   <th>Applicant</th>
                   <th>Visa</th>
+                  <th>Source</th>
                   <th>Travelers</th>
                   <th>Total</th>
                   <th>Status</th>
@@ -213,6 +215,18 @@ function VisaApplicationsInner() {
                       <td>
                         <div style={{ fontWeight: 600, fontSize: 12 }}>{app.visa.title}</div>
                         <div style={{ fontSize: 11, color: "var(--a-muted)", textTransform: "capitalize" }}>{app.visa.country} · {app.visa.type}</div>
+                      </td>
+                      <td>
+                        {app.agent ? (
+                          <span
+                            title={`Agent code ${app.agent.agentCode}`}
+                            style={{ fontSize: 11, fontWeight: 700, color: "#7C3AED", background: "#F3E8FF", border: "1px solid #E9D5FF", padding: "2px 8px", borderRadius: 999, whiteSpace: "nowrap" }}
+                          >
+                            🧑‍💼 {app.agent.fullName}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Direct (B2C)</span>
+                        )}
                       </td>
                       <td style={{ fontSize: 12 }}>
                         {app.adults}A {app.children > 0 ? `${app.children}C ` : ""}{app.infants > 0 ? `${app.infants}I` : ""}
@@ -260,7 +274,7 @@ function VisaApplicationsInner() {
                     {/* Expanded detail row */}
                     {expandedId === app.id && (
                       <tr key={`${app.id}-detail`}>
-                        <td colSpan={8} style={{ padding: "0 0 12px 0", background: "var(--a-surface)" }}>
+                        <td colSpan={9} style={{ padding: "0 0 12px 0", background: "var(--a-surface)" }}>
                           <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
 
                             {/* Left: contact + docs */}
