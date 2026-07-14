@@ -986,3 +986,64 @@ Not touched: `POST /api/agent/bookings` itself (already handled
 group_ticket correctly), the admin-side issue/seat-decrement/ledger logic
 (deliberately left as the only path to `status: issued`). `npx tsc
 --noEmit` shows zero new errors from any of these new files.
+
+## Group Flights: Multi-Leg Support + Grouped Table Display (Agent Portal)
+
+Added connecting-flight support to Group Flights, per the owner's exact
+spec. `GroupFlight` previously represented exactly one leg (one flightNo,
+one dep/arr time) — no way to attach a second connecting leg to the same
+bookable option. Added `legs Json?` to the schema: an array of
+`{ flightNo, from, to, depTime, arrTime }`, one entry per leg, following
+the same JSON-array convention already used by `Package.itinerary` and
+`Package.flightSectors`. The row itself still holds ONE price/date/seats
+— that's the bookable "option," legs are just its journey breakdown.
+Existing `route`/`depDate`/`depTime`/`arrTime`/`flightNo` fields kept for
+backward compatibility; when `legs` is null (older rows), those fields
+are treated as a single 1-leg option — see `lib/groupFlightLegs.ts`
+(`legsFromFlight`, shared by admin form, admin table, and agent display
+so all three always agree on the fallback).
+
+**Admin form** (`app/admin/group-flights/page.tsx`): replaced the single
+Flight No./Departure Time/Arrival Time inputs with a repeatable "Flight
+Legs" editor — same UI pattern as the Flight Sectors editor in the
+packages admin form (Leg row: Flight No., From, To, Dep Time, Arr Time;
+minimum 1 leg, "-" disabled on the last remaining row, "+ Add Connecting
+Leg" to append). `route` stayed a separate manually-entered field (not
+auto-derived from legs) since existing rows already use free-text routes
+like "LAHORE→DUBAI" rather than 3-letter codes, and grouping is keyed off
+that same field — changing its semantics would've been a bigger, riskier
+change than the spec called for. Admin list table now shows a stacked
+per-leg summary in place of the old single Flight/Time columns.
+
+**Admin API** (`app/api/admin/group-flights/route.ts` + `[id]/route.ts`):
+both POST and PATCH now accept a `legs` FormData field (JSON string),
+parse and store it, and derive the backward-compat `flightNo`/`depTime`
+(from the first leg) and `arrTime` (from the last leg) so any older code
+path that only reads those single fields keeps working unchanged.
+
+**Agent portal** (`app/agent/group-flights/page.tsx`): flights are now
+grouped client-side by `(airline, route)` under one header each — airline
+logo + name (left) and route as "LHE → DXB"-style text in gold (matching
+the portal's existing gold-accent, card-based style). Below each header,
+a table lists one row per bookable OPTION (not per leg); options with
+multiple legs show them stacked within that row's first cell, with a
+single Date/Meal/Baggage/Seats/Price/Book Now per option. "Book Now"
+still links to `/agent/group-flights/book/[flightId]` using
+`GroupFlight.id` — no changes needed to the booking flow, API route, or
+`POST /api/agent/bookings` (`groupFlightId`), which already worked
+correctly per-option.
+
+**Not touched:** pricing/booking logic, `/api/agent/group-flights` GET
+(already returns full rows, `legs` just rides along), the booking page
+and its `POST /api/agent/bookings` call.
+
+`npx tsc --noEmit` shows only the same pre-existing baseline of
+implicit-`any` errors from before this change (diffed against a captured
+baseline) — zero new errors introduced. Not run against a live database
+or generated Prisma client in this sandbox (same `binaries.prisma.sh` 403
+block as prior sessions).
+
+**Pending manual step — owner must run before this goes live:**
+```sql
+ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS legs JSONB;
+```
