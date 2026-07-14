@@ -36,19 +36,37 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
   const [passport, setPassport] = useState("");
   const [seats, setSeats] = useState("1");
   const [travelClass, setTravelClass] = useState("Economy");
+  const [travellers, setTravellers] = useState([{ fullName: "", passportNo: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ pnr: string; expiresAt: string } | null>(null);
+
+  function setSeatCount(v: string) {
+    setSeats(v);
+    const n = Math.max(1, Number(v) || 1);
+    setTravellers((t) => {
+      const next = [...t];
+      while (next.length < n) next.push({ fullName: "", passportNo: "" });
+      return next.slice(0, n);
+    });
+  }
+
+  function updateTraveller(i: number, patch: Partial<{ fullName: string; passportNo: string }>) {
+    setTravellers((t) => t.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
-    // Save the booking request to the database FIRST — this is the
-    // record of the request, same as a package booking. WhatsApp is
-    // still opened right after so the customer gets an immediate human
-    // response, but the data isn't lost even if they never send that
-    // message.
+    const validTravellers = travellers.filter((t) => t.fullName.trim());
+    if (validTravellers.length !== Number(seats)) {
+      setError("Please enter a full name for every seat.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/group-flights/book", {
         method: "POST",
@@ -62,6 +80,7 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
           passport,
           seats: Number(seats),
           travelClass,
+          travellers: validTravellers,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -70,24 +89,46 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
         setSubmitting(false);
         return;
       }
+
+      setConfirmation({ pnr: data.pnr, expiresAt: data.expiresAt });
+
+      // Auto-open WhatsApp with the PNR pre-filled — this is as close to
+      // "automatic" as it gets without a paid WhatsApp Business API
+      // (which this project doesn't have credentials for). The customer
+      // just taps Send in the app that opens; email above is the part
+      // that's genuinely sent automatically, no click needed.
+      const lines = [
+        `Assalam o Alaikum! My booking is confirmed — PNR ${data.pnr}`,
+        `Flight: ${flight.airline} — ${flight.route}`,
+        `Name: ${firstName} ${lastName}`,
+        `Seats: ${seats} (${travelClass})`,
+      ];
+      window.open(waLink(lines.join("\n")), "_blank", "noopener,noreferrer");
     } catch {
       setError("Could not reach the server — please check your connection and try again.");
-      setSubmitting(false);
-      return;
     }
+    setSubmitting(false);
+  }
 
-    const lines = [
-      "Assalam o Alaikum! I'd like to book a group ticket:",
-      `Flight: ${flight.airline} — ${flight.route}`,
-      `Name: ${firstName} ${lastName}`,
-      `WhatsApp: ${whatsapp}`,
-      email ? `Email: ${email}` : null,
-      `Passport No: ${passport}`,
-      `Seats: ${seats}`,
-      `Class: ${travelClass}`,
-    ].filter(Boolean);
-    window.open(waLink(lines.join("\n")), "_blank", "noopener,noreferrer");
-    onClose();
+  if (confirmation) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg text-center">
+          <p className="text-4xl mb-3">✅</p>
+          <h2 className="font-display text-xl font-semibold mb-1">Booking Received!</h2>
+          <p className="text-sm text-muted mb-4">
+            PNR: <span className="font-semibold text-[var(--text)]">{confirmation.pnr}</span>
+          </p>
+          <p className="text-xs text-muted bg-surface rounded-lg p-3 mb-4">
+            Your seat(s) are held for 2 hours while we confirm your booking. No payment has been
+            taken yet — we've emailed your PNR and will reach out on WhatsApp shortly.
+          </p>
+          <button onClick={onClose} className="w-full rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm">
+            Done
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -95,7 +136,7 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg max-h-[90vh] overflow-y-auto">
         <h2 className="font-display text-xl font-semibold mb-1">Book Your Seat</h2>
         <p className="text-muted text-xs mb-4">
-          Your booking request is saved with us, and also sent to our WhatsApp team for confirmation
+          Seats are held for 2 hours pending confirmation. You'll get a PNR and an email right away.
         </p>
         {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -104,18 +145,42 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
             <input required placeholder="Last Name *" value={lastName} onChange={(e) => setLastName(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm" />
           </div>
           <input required placeholder="WhatsApp Number *" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+          <input required type="email" placeholder="Email *" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
           <input required placeholder="Passport No *" value={passport} onChange={(e) => setPassport(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
-          <input required type="number" min={1} placeholder="No. of Seats *" value={seats} onChange={(e) => setSeats(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
+          <input required type="number" min={1} placeholder="No. of Seats *" value={seats} onChange={(e) => setSeatCount(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
           <select value={travelClass} onChange={(e) => setTravelClass(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm">
             <option>Economy</option>
             <option>Business</option>
             <option>First Class</option>
           </select>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-xs font-semibold mb-2">Passenger Names ({travellers.length})</p>
+            <div className="space-y-2">
+              {travellers.map((t, i) => (
+                <div key={i} className="grid grid-cols-2 gap-2">
+                  <input
+                    required
+                    placeholder={`Passenger ${i + 1} — Full Name`}
+                    value={t.fullName}
+                    onChange={(e) => updateTraveller(i, { fullName: e.target.value })}
+                    className="rounded-lg border border-border px-3 py-2 text-sm"
+                  />
+                  <input
+                    placeholder="Passport No. (optional)"
+                    value={t.passportNo}
+                    onChange={(e) => updateTraveller(i, { passportNo: e.target.value })}
+                    className="rounded-lg border border-border px-3 py-2 text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm">Cancel</button>
             <button type="submit" disabled={submitting} className="flex-1 rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm disabled:opacity-50">
-              {submitting ? "Saving…" : "Confirm via WhatsApp"}
+              {submitting ? "Booking…" : "Confirm Booking"}
             </button>
           </div>
         </form>
