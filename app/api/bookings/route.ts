@@ -85,26 +85,35 @@ export async function POST(req: NextRequest) {
   // this booking actually costs, regardless of what the client displayed.
   const totalPricePkr = adults * rt.pricePerPersonPkr + children * rt.pricePerChildPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant/child, admin-configurable per room type
 
-  const booking = await prisma.booking.create({
-    data: {
-      bookingRef: generateBookingRef(),
-      customerName,
-      phone,
-      email: email || undefined,
-      passport: passport || undefined,
-      specialRequests: specialRequests || undefined,
-      service: pkg.category,
-      packageId: pkg.id,
-      roomTypeLabel: rt.roomType,
-      adults,
-      children,
-      infants,
-      totalPricePkr,
-      status: "pending",
-      travellers: travellers.length > 0 ? { create: travellers } : undefined,
-    },
-    include: { travellers: true },
-  });
+  let booking;
+  try {
+    booking = await prisma.booking.create({
+      data: {
+        bookingRef: generateBookingRef(),
+        customerName,
+        phone,
+        email: email || undefined,
+        passport: passport || undefined,
+        specialRequests: specialRequests || undefined,
+        service: pkg.category,
+        packageId: pkg.id,
+        roomTypeLabel: rt.roomType,
+        adults,
+        children,
+        infants,
+        totalPricePkr,
+        status: "pending",
+        travellers: travellers.length > 0 ? { create: travellers } : undefined,
+      },
+      include: { travellers: true },
+    });
+  } catch (e) {
+    console.error("POST /api/bookings failed:", e);
+    return NextResponse.json(
+      { error: e instanceof Error ? `Could not submit booking: ${e.message}` : "Could not submit booking." },
+      { status: 500 }
+    );
+  }
 
   const notifyEmail = process.env.ADMIN_EMAILS?.split(",")[0]?.trim();
   if (notifyEmail) {
