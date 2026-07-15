@@ -2,317 +2,289 @@
 
 import { useState } from "react";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
+import { compressImage } from "@/lib/imageCompression";
 
-type RequiredDoc = {
-  id: string;
-  name: string;
-  description: string | null;
-  isRequired: boolean;
-};
-
+type RequiredDoc = { id: string; name: string; description: string | null; isRequired: boolean };
 type VisaInfo = {
-  id: string;
-  title: string;
-  country: string;
-  type: string;
-  priceAdult: number | null;
-  priceChild: number | null;
-  priceInfant: number | null;
+  id: string; title: string; country: string; type: string;
+  priceAdult: number | null; priceChild: number | null; priceInfant: number | null;
   requiredDocuments: RequiredDoc[];
 };
+type AgeGroup = "adult" | "child" | "infant";
+type Traveller = { fullName: string; passportNumber: string; ageGroup: AgeGroup; files: Record<string, File> };
 
-type ApplicationDraft = {
-  visa: VisaInfo;
-  fullName: string;
-  passportNumber: string;
-  phone: string;
-  email: string;
-  adults: number;
-  children: number;
-  infants: number;
-  // doc id → File
-  files: Record<string, File>;
-};
-
-function emptyDraft(visa: VisaInfo): ApplicationDraft {
-  return {
-    visa,
-    fullName: "",
-    passportNumber: "",
-    phone: "",
-    email: "",
-    adults: 1,
-    children: 0,
-    infants: 0,
-    files: {},
-  };
+function priceFor(visa: VisaInfo, ageGroup: AgeGroup): number {
+  if (ageGroup === "adult") return visa.priceAdult ?? 0;
+  if (ageGroup === "child") return visa.priceChild ?? 0;
+  return visa.priceInfant ?? 0;
 }
 
-function computePrice(draft: ApplicationDraft): number {
-  const pa = draft.visa.priceAdult ?? 0;
-  const pc = draft.visa.priceChild ?? 0;
-  const pi = draft.visa.priceInfant ?? 0;
-  return draft.adults * pa + draft.children * pc + draft.infants * pi;
-}
-
-// Same shape/validation/flow as the public site's VisaApplyFlow (customer
-// selects a visa → fills applicant + traveler-count fields → uploads the
-// required documents → can stack multiple applications in one batch) —
-// the agent portal mirrors it exactly so an agent applies for a customer
-// the same way the customer would apply for themselves.
+// Step-by-step wizard for agents: visa summary → applicant contact →
+// traveller count → per-traveller details+documents → review → submit →
+// confirmation. Mirrors the public site's visa flow's fields (same
+// contact fields, same required documents) but collects one full
+// document set PER TRAVELLER instead of one shared upload for the whole
+// application, per the owner's spec.
 export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
   const { accessToken, refresh } = useAgentAuth();
-  const [drafts, setDrafts] = useState<ApplicationDraft[]>([emptyDraft(visa)]);
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [counts, setCounts] = useState({ adults: 1, children: 0, infants: 0 });
+  const [travellers, setTravellers] = useState<Traveller[]>([]);
+  const [activeTrav, setActiveTrav] = useState(0);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [batchRef, setBatchRef] = useState<string | null>(null);
+  const [result, setResult] = useState<{ batchRef: string; total: number } | null>(null);
 
-  function updateDraft(idx: number, patch: Partial<ApplicationDraft>) {
-    setDrafts((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
+  function buildTravellers() {
+    const list: Traveller[] = [];
+    for (let i = 0; i < counts.adults; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "adult", files: {} });
+    for (let i = 0; i < counts.children; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "child", files: {} });
+    for (let i = 0; i < counts.infants; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "infant", files: {} });
+    setTravellers(list);
+    setActiveTrav(0);
   }
 
-  function setFile(idx: number, docId: string, file: File | null) {
-    setDrafts((prev) =>
-      prev.map((d, i) => {
-        if (i !== idx) return d;
-        const files = { ...d.files };
-        if (file) files[docId] = file;
-        else delete files[docId];
-        return { ...d, files };
-      })
-    );
+  function updateTrav(idx: number, patch: Partial<Traveller>) {
+    setTravellers((prev) => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)));
   }
 
-  function addAnother() {
-    setDrafts((prev) => [...prev, emptyDraft(visa)]);
-    setActiveIdx(drafts.length);
+  async function setTravFile(idx: number, docId: string, file: File | null) {
+    if (!file) {
+      setTravellers((prev) => prev.map((t, i) => {
+        if (i !== idx) return t;
+        const files = { ...t.files };
+        delete files[docId];
+        return { ...t, files };
+      }));
+      return;
+    }
+    const compressed = await compressImage(file);
+    setTravellers((prev) => prev.map((t, i) => (i === idx ? { ...t, files: { ...t.files, [docId]: compressed } } : t)));
   }
 
-  function removeDraft(idx: number) {
-    if (drafts.length === 1) return; // always keep at least one
-    setDrafts((prev) => prev.filter((_, i) => i !== idx));
-    setActiveIdx((prev) => Math.min(prev, drafts.length - 2));
+  const total = travellers.reduce((sum, t) => sum + priceFor(visa, t.ageGroup), 0);
+  const hasPricing = visa.priceAdult !== null;
+
+  function goToTravellerStep() {
+    if (!phone.trim() || !email.trim()) { setError("Phone and email are required."); return; }
+    setError(null);
+    buildTravellers();
+    setStep(4);
+  }
+
+  function validateTravellers(): string | null {
+    for (let i = 0; i < travellers.length; i++) {
+      const t = travellers[i];
+      if (!t.fullName.trim()) return `Traveller ${i + 1}: Full name is required.`;
+      for (const doc of visa.requiredDocuments) {
+        if (doc.isRequired && !t.files[doc.id]) return `Traveller ${i + 1}: "${doc.name}" is required.`;
+      }
+    }
+    return null;
   }
 
   async function handleSubmit() {
+    const v = validateTravellers();
+    if (v) { setError(v); return; }
     setError(null);
-
-    for (let i = 0; i < drafts.length; i++) {
-      const d = drafts[i];
-      if (!d.fullName.trim()) { setError(`Application ${i + 1}: Full name is required.`); setActiveIdx(i); return; }
-      if (!d.passportNumber.trim()) { setError(`Application ${i + 1}: Passport number is required.`); setActiveIdx(i); return; }
-      if (!d.phone.trim()) { setError(`Application ${i + 1}: Phone is required.`); setActiveIdx(i); return; }
-      if (!d.email.trim()) { setError(`Application ${i + 1}: Email is required.`); setActiveIdx(i); return; }
-      const requiredDocs = d.visa.requiredDocuments.filter((doc) => doc.isRequired);
-      for (const doc of requiredDocs) {
-        if (!d.files[doc.id]) {
-          setError(`Application ${i + 1}: "${doc.name}" is required.`);
-          setActiveIdx(i);
-          return;
-        }
-      }
-    }
-
     setSubmitting(true);
+
     const form = new FormData();
-    drafts.forEach((d, i) => {
-      form.set(`visaId_${i}`, d.visa.id);
-      form.set(`fullName_${i}`, d.fullName.trim());
-      form.set(`passportNumber_${i}`, d.passportNumber.trim());
-      form.set(`phone_${i}`, d.phone.trim());
-      form.set(`email_${i}`, d.email.trim());
-      form.set(`adults_${i}`, String(d.adults));
-      form.set(`children_${i}`, String(d.children));
-      form.set(`infants_${i}`, String(d.infants));
-      Object.entries(d.files).forEach(([docId, file]) => {
-        form.set(`doc_${docId}_${i}`, file);
-      });
+    const lead = travellers[0];
+    form.set("visaId_0", visa.id);
+    form.set("fullName_0", lead.fullName.trim());
+    form.set("passportNumber_0", lead.passportNumber.trim());
+    form.set("phone_0", phone.trim());
+    form.set("email_0", email.trim());
+    form.set("adults_0", String(counts.adults));
+    form.set("children_0", String(counts.children));
+    form.set("infants_0", String(counts.infants));
+    form.set("travellerCount_0", String(travellers.length));
+    travellers.forEach((t, ti) => {
+      form.set(`trav_0_${ti}_fullName`, t.fullName.trim());
+      form.set(`trav_0_${ti}_passportNumber`, t.passportNumber.trim());
+      form.set(`trav_0_${ti}_ageGroup`, t.ageGroup);
+      Object.entries(t.files).forEach(([docId, file]) => form.set(`travdoc_0_${ti}_${docId}`, file));
     });
 
     try {
-      const res = await agentFetch("/api/agent/visa-applications", accessToken, refresh, {
-        method: "POST",
-        body: form,
-      });
+      const res = await agentFetch("/api/agent/visa-applications", accessToken, refresh, { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data.error ?? "Submission failed. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-      setBatchRef(data.batchRef);
+      if (!res.ok) { setError(data.error ?? "Submission failed. Please try again."); setSubmitting(false); return; }
+      setResult({ batchRef: data.batchRef, total });
+      setStep(5);
     } catch {
       setError("Network error. Please try again.");
     }
     setSubmitting(false);
   }
 
-  if (batchRef) {
+  // STEP 5 — Confirmation
+  if (step === 5 && result) {
     return (
-      <div className="ap-card" style={{ padding: "24px", textAlign: "center" }}>
+      <div className="ap-card" style={{ padding: 24, textAlign: "center" }}>
         <p style={{ fontSize: 32, marginBottom: 10 }}>✅</p>
         <p style={{ fontWeight: 700, marginBottom: 4 }}>Application Submitted!</p>
-        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
-          Reference: <strong style={{ fontFamily: "monospace" }}>{batchRef}</strong>
-        </p>
-        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
-          It now shows up for admin review, same as any customer application.
-        </p>
+        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>{visa.title} · {travellers.length} traveller{travellers.length > 1 ? "s" : ""}</p>
+        {hasPricing && <p style={{ fontSize: 15, fontWeight: 700, color: "var(--gold)", margin: "8px 0" }}>Total: PKR {result.total.toLocaleString()}</p>}
+        <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>Reference: <strong style={{ fontFamily: "monospace" }}>{result.batchRef}</strong></p>
+        <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>No payment collected yet — this submits a booking request only. Admin will review and follow up.</p>
         <button
-          onClick={() => { setDrafts([emptyDraft(visa)]); setActiveIdx(0); setBatchRef(null); }}
+          onClick={() => { setStep(1); setPhone(""); setEmail(""); setCounts({ adults: 1, children: 0, infants: 0 }); setTravellers([]); setResult(null); }}
           className="ap-btn ap-btn-ghost"
         >
-          Submit another application
+          Apply for another
         </button>
       </div>
     );
   }
 
-  const draft = drafts[activeIdx];
-  const totalPrice = computePrice(draft);
-  const hasPricing = draft.visa.priceAdult !== null;
-
   return (
-    <div className="ap-card" style={{ padding: "20px" }}>
-      {drafts.length > 1 && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-          {drafts.map((d, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActiveIdx(i)}
-              className="ap-btn ap-btn-ghost"
-              style={{
-                fontSize: 11,
-                padding: "4px 12px",
-                borderRadius: 999,
-                background: i === activeIdx ? "var(--gold)" : undefined,
-                color: i === activeIdx ? "#000" : undefined,
-                borderColor: i === activeIdx ? "var(--gold)" : undefined,
-              }}
-            >
-              App {i + 1}{d.fullName ? ` — ${d.fullName.split(" ")[0]}` : ""}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Applicant Details</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-        <div className="ap-field">
-          <label>Full Name (as on passport)</label>
-          <input required value={draft.fullName} onChange={(e) => updateDraft(activeIdx, { fullName: e.target.value })} />
-        </div>
-        <div className="ap-field">
-          <label>Passport Number</label>
-          <input required value={draft.passportNumber} onChange={(e) => updateDraft(activeIdx, { passportNumber: e.target.value })} placeholder="e.g. AB1234567" />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div className="ap-field">
-            <label>Phone</label>
-            <input required type="tel" value={draft.phone} onChange={(e) => updateDraft(activeIdx, { phone: e.target.value })} placeholder="03xx-xxxxxxx" />
-          </div>
-          <div className="ap-field">
-            <label>Email</label>
-            <input required type="email" value={draft.email} onChange={(e) => updateDraft(activeIdx, { email: e.target.value })} />
-          </div>
-        </div>
+    <div className="ap-card" style={{ padding: 20 }}>
+      {/* Step indicator */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, fontSize: 10, color: "var(--muted)" }}>
+        {["Contact", "Travellers", "Details & Docs", "Review"].map((label, i) => (
+          <span key={label} style={{ fontWeight: step === i + 2 || (i === 0 && step <= 2) ? 700 : 400, color: step >= i + 2 ? "var(--gold)" : "var(--muted)" }}>
+            {i > 0 && " → "}{label}
+          </span>
+        ))}
       </div>
 
-      {/* Traveler counts — required fields the owner asked for, same
-          adults/children/infants pax counters as the public flow. */}
-      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Number of Travelers</p>
-      <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 16 }}>
-        <Counter label="Adults" value={draft.adults} min={1} onChange={(v) => updateDraft(activeIdx, { adults: v })} />
-        <Counter label="Children" value={draft.children} min={0} onChange={(v) => updateDraft(activeIdx, { children: v })} />
-        <Counter label="Infants" value={draft.infants} min={0} onChange={(v) => updateDraft(activeIdx, { infants: v })} />
-      </div>
-
-      {hasPricing && totalPrice > 0 && (
-        <div style={{ background: "var(--bg)", borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 12.5, display: "flex", justifyContent: "space-between" }}>
-          <span>Estimated total</span>
-          <strong style={{ color: "var(--gold)" }}>PKR {totalPrice.toLocaleString()}</strong>
-        </div>
+      {step === 1 && (
+        <>
+          <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{visa.title}</p>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 14, textTransform: "capitalize" }}>{visa.country} · {visa.type} visa</p>
+          {hasPricing && (
+            <div style={{ background: "var(--bg)", borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Adult</span><strong>PKR {(visa.priceAdult ?? 0).toLocaleString()}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Child</span><strong>PKR {(visa.priceChild ?? 0).toLocaleString()}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Infant</span><strong>PKR {(visa.priceInfant ?? 0).toLocaleString()}</strong></div>
+            </div>
+          )}
+          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Customer Contact</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            <div className="ap-field"><label>Phone</label><input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03xx-xxxxxxx" /></div>
+            <div className="ap-field"><label>Email</label><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          </div>
+          {error && <p style={{ fontSize: 12, color: "var(--red)", marginBottom: 10 }}>{error}</p>}
+          <button onClick={goToTravellerStep} className="ap-btn ap-btn-gold" style={{ width: "100%" }}>Continue →</button>
+        </>
       )}
 
-      {/* Required document uploads */}
-      <div style={{ borderTop: "1px solid var(--bdr)", paddingTop: 14, marginBottom: 16 }}>
-        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Upload Documents</p>
-
-        {draft.visa.requiredDocuments.length === 0 ? (
-          <div style={{ border: "1px solid var(--bdr)", borderRadius: 10, padding: 12, background: "var(--bg)" }}>
-            <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>
-              Upload any supporting documents (passport scan, photo, bank statement, etc.)
-            </p>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              multiple
-              style={{ fontSize: 11, width: "100%" }}
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                files.forEach((f, idx) => setFile(activeIdx, `extra_${idx}_${activeIdx}`, f));
-              }}
-            />
+      {step === 2 && (
+        <>
+          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>How many travellers?</p>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 18 }}>
+            <Counter label="Adults" value={counts.adults} min={1} onChange={(v) => setCounts((c) => ({ ...c, adults: v }))} />
+            <Counter label="Children" value={counts.children} min={0} onChange={(v) => setCounts((c) => ({ ...c, children: v }))} />
+            <Counter label="Infants" value={counts.infants} min={0} onChange={(v) => setCounts((c) => ({ ...c, infants: v }))} />
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {draft.visa.requiredDocuments.map((doc) => (
-              <div key={doc.id} style={{ border: "1px solid var(--bdr)", borderRadius: 10, padding: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{doc.name}</span>
-                    {doc.isRequired ? (
-                      <span style={{ marginLeft: 6, fontSize: 11, color: "var(--red)", fontWeight: 700 }}>*required</span>
-                    ) : (
-                      <span style={{ marginLeft: 6, fontSize: 11, color: "var(--muted)" }}>(optional)</span>
-                    )}
-                    {doc.description && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{doc.description}</p>}
-                  </div>
-                  {draft.files[doc.id] && <span style={{ color: "var(--green, #16a34a)", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" }}>✓ Added</span>}
-                </div>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  style={{ fontSize: 11, width: "100%" }}
-                  onChange={(e) => setFile(activeIdx, doc.id, e.target.files?.[0] ?? null)}
-                />
-                {draft.files[doc.id] && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {draft.files[doc.id].name}</p>}
-              </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setStep(1)} className="ap-btn ap-btn-ghost">← Back</button>
+            <button onClick={() => { buildTravellers(); setStep(3); }} className="ap-btn ap-btn-gold" style={{ flex: 1 }}>Continue →</button>
+          </div>
+        </>
+      )}
+
+      {step === 3 && travellers.length > 0 && (
+        <>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+            {travellers.map((t, i) => (
+              <button key={i} type="button" onClick={() => setActiveTrav(i)} className="ap-btn ap-btn-ghost"
+                style={{ fontSize: 11, padding: "4px 10px", borderRadius: 999, background: i === activeTrav ? "var(--gold)" : undefined, color: i === activeTrav ? "#000" : undefined }}>
+                {i + 1}. {t.ageGroup}{t.fullName ? ` — ${t.fullName.split(" ")[0]}` : ""}
+              </button>
             ))}
           </div>
-        )}
-      </div>
 
-      {drafts.length > 1 && (
-        <button type="button" onClick={() => removeDraft(activeIdx)} className="ap-btn ap-btn-ghost" style={{ width: "100%", color: "var(--red)", marginBottom: 12 }}>
-          Remove this application
-        </button>
-      )}
-
-      {error && (
-        <div style={{ background: "var(--red-bg)", border: "1px solid var(--red-bd)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "var(--red)", marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <button type="button" onClick={addAnother} className="ap-btn ap-btn-ghost">
-          + Add Another Visa Application
-        </button>
-
-        {drafts.length > 1 && (
-          <div style={{ background: "var(--bg)", borderRadius: 10, padding: "8px 12px", fontSize: 11, color: "var(--muted)" }}>
-            {drafts.length} applications in this batch
-            {hasPricing && <> · Total PKR {drafts.reduce((s, d) => s + computePrice(d), 0).toLocaleString()}</>}
+          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10, textTransform: "capitalize" }}>Traveller {activeTrav + 1} ({travellers[activeTrav].ageGroup})</p>
+          <div className="ap-field" style={{ marginBottom: 10 }}>
+            <label>Full Name (as on passport)</label>
+            <input required value={travellers[activeTrav].fullName} onChange={(e) => updateTrav(activeTrav, { fullName: e.target.value })} />
           </div>
-        )}
+          <div className="ap-field" style={{ marginBottom: 16 }}>
+            <label>Passport Number</label>
+            <input value={travellers[activeTrav].passportNumber} onChange={(e) => updateTrav(activeTrav, { passportNumber: e.target.value })} placeholder="e.g. AB1234567" />
+          </div>
 
-        <button type="button" onClick={handleSubmit} disabled={submitting} className="ap-btn ap-btn-gold">
-          {submitting ? "Submitting…" : drafts.length > 1 ? `Submit All ${drafts.length} Applications` : "Submit Application"}
-        </button>
-      </div>
+          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Documents for this traveller</p>
+          {visa.requiredDocuments.length === 0 ? (
+            <p style={{ fontSize: 11, color: "var(--muted)" }}>No specific documents configured for this visa.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {visa.requiredDocuments.map((doc) => {
+                const f = travellers[activeTrav].files[doc.id];
+                return (
+                  <div key={doc.id} style={{ border: "1px solid var(--bdr)", borderRadius: 10, padding: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 600 }}>
+                        {doc.name}{doc.isRequired ? <span style={{ color: "var(--red)", marginLeft: 6, fontSize: 11 }}>*required</span> : <span style={{ color: "var(--muted)", marginLeft: 6, fontSize: 11 }}>(optional)</span>}
+                      </span>
+                      {f && <span style={{ color: "#16a34a", fontSize: 11, fontWeight: 700 }}>✓ Added</span>}
+                    </div>
+                    {doc.description && <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>{doc.description}</p>}
+                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ fontSize: 11, width: "100%" }}
+                      onChange={(e) => setTravFile(activeTrav, doc.id, e.target.files?.[0] ?? null)} />
+                    {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {error && <p style={{ fontSize: 12, color: "var(--red)", marginBottom: 10 }}>{error}</p>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setStep(2)} className="ap-btn ap-btn-ghost">← Back</button>
+            <button
+              onClick={() => {
+                if (activeTrav < travellers.length - 1) { setActiveTrav(activeTrav + 1); return; }
+                const v = validateTravellers();
+                if (v) { setError(v); return; }
+                setError(null);
+                setStep(4);
+              }}
+              className="ap-btn ap-btn-gold" style={{ flex: 1 }}
+            >
+              {activeTrav < travellers.length - 1 ? "Next Traveller →" : "Review Application →"}
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 4 && (
+        <>
+          <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Review Application</p>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>{visa.title} · {phone} · {email}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+            {travellers.map((t, i) => {
+              const docCount = Object.keys(t.files).length;
+              return (
+                <div key={i} style={{ border: "1px solid var(--bdr)", borderRadius: 10, padding: 12, fontSize: 12.5 }}>
+                  <strong style={{ textTransform: "capitalize" }}>{i + 1}. {t.fullName} <span style={{ fontWeight: 400, color: "var(--muted)" }}>({t.ageGroup})</span></strong>
+                  <div style={{ color: "var(--muted)", marginTop: 2 }}>Passport: {t.passportNumber || "—"} · PKR {priceFor(visa, t.ageGroup).toLocaleString()}</div>
+                  <div style={{ color: "var(--muted)", marginTop: 2 }}>📎 {docCount} document{docCount === 1 ? "" : "s"} attached</div>
+                </div>
+              );
+            })}
+          </div>
+          {hasPricing && (
+            <div style={{ background: "var(--bg)", borderRadius: 10, padding: 12, marginBottom: 16, display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+              <span>Total</span><strong style={{ color: "var(--gold)" }}>PKR {total.toLocaleString()}</strong>
+            </div>
+          )}
+          {error && <div style={{ background: "var(--red-bg)", border: "1px solid var(--red-bd)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "var(--red)", marginBottom: 12 }}>{error}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setStep(3)} className="ap-btn ap-btn-ghost">← Back</button>
+            <button onClick={handleSubmit} disabled={submitting} className="ap-btn ap-btn-gold" style={{ flex: 1 }}>
+              {submitting ? "Submitting…" : "Submit Application"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

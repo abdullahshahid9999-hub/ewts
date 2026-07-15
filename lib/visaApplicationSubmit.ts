@@ -18,6 +18,14 @@ export class VisaSubmissionError extends Error {
 // only when an agent is submitting on a customer's behalf — null means a
 // direct/B2C application, exactly like Booking.groupFlightId is null for
 // non-group-flight bookings.
+//
+// Per-traveller data (agent wizard only): for application index `i`, if
+// `travellerCount_i` is present, we also read `trav_{i}_{t}_fullName`,
+// `trav_{i}_{t}_passportNumber`, `trav_{i}_{t}_ageGroup` for t in
+// [0, travellerCount_i), plus per-traveller docs at
+// `travdoc_{i}_{t}_{docId}`, creating one VisaApplicant row per traveller
+// with its own documents. The public/B2C flow never sends these fields,
+// so existing application-level-only submissions are unaffected.
 export async function submitVisaApplicationBatch(
   form: FormData,
   opts: { agentId?: string } = {}
@@ -118,6 +126,39 @@ export async function submitVisaApplicationBatch(
       await prisma.visaApplicationDocument.create({
         data: { appId: application.id, docId: null, fileUrl, fileName },
       });
+    }
+
+    // Per-traveller applicants + documents — agent wizard only (see
+    // module doc comment above). Absent entirely for public submissions.
+    const travellerCountRaw = form.get(`travellerCount_${i}`);
+    const travellerCount = travellerCountRaw ? Math.max(0, Number(travellerCountRaw) || 0) : 0;
+    for (let t = 0; t < travellerCount; t++) {
+      const travFullName = ((form.get(`trav_${i}_${t}_fullName`) as string | null) ?? "").trim();
+      if (!travFullName) continue; // skip empty rows defensively
+      const travPassport = ((form.get(`trav_${i}_${t}_passportNumber`) as string | null) ?? "").trim();
+      const ageGroup = ((form.get(`trav_${i}_${t}_ageGroup`) as string | null) ?? "adult").trim();
+
+      const applicant = await prisma.visaApplicant.create({
+        data: {
+          applicationId: application.id,
+          fullName: travFullName,
+          passportNumber: travPassport || null,
+          ageGroup,
+        },
+      });
+
+      for (const doc of visa.requiredDocuments) {
+        const file = form.get(`travdoc_${i}_${t}_${doc.id}`);
+        if (!file || !(file instanceof Blob) || file.size === 0) continue;
+        const ct = file.type || "application/pdf";
+        if (!ALLOWED_DOC_TYPES.includes(ct)) continue;
+        const buf = Buffer.from(await file.arrayBuffer());
+        const fileUrl = await uploadToR2({ buffer: buf, contentType: ct, folder: "visas" });
+        const fileName = (file as File).name ?? doc.name;
+        await prisma.visaApplicationDocument.create({
+          data: { appId: application.id, docId: doc.id, applicantId: applicant.id, fileUrl, fileName },
+        });
+      }
     }
 
     results.push({ id: application.id, visaId, visa: visa.title, totalPricePkr });
