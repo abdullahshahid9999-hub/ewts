@@ -154,7 +154,7 @@ function BookingsInner() {
           <h2>My <span>Bookings</span></h2>
           <p>All your booking history</p>
         </div>
-        <Link href="/agent/bookings/new" className="ap-btn ap-btn-gold">New Booking</Link>
+        <Link href="/agent/new-booking" className="ap-btn ap-btn-gold">New Booking</Link>
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-1">

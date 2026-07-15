@@ -1123,18 +1123,27 @@ Source-column change from before.
 
 `npx tsc --noEmit`: clean against the same known implicit-any baseline.
 
-**Pending manual migration:**
+**Migration status: ✅ Done (owner ran it 2026-07-15).** Note for future
+sessions: even though `schema.prisma` declares these ids as
+`String @default(uuid())`, the actual Postgres columns are native `UUID`
+type, not `TEXT` — any new FK-referencing column added via manual
+`ALTER TABLE`/`CREATE TABLE` must be declared `UUID`, not `TEXT`, or the
+foreign key constraint will fail with "incompatible types: text and uuid".
+The SQL actually run (corrected from the TEXT version first given):
 ```sql
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS agent_id TEXT REFERENCES agents(id);
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES agents(id);
 
-CREATE TABLE IF NOT EXISTS visa_applicants (
-  id TEXT PRIMARY KEY,
-  application_id TEXT NOT NULL REFERENCES visa_applications(id) ON DELETE CASCADE,
+CREATE TABLE visa_applicants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id UUID NOT NULL REFERENCES visa_applications(id) ON DELETE CASCADE,
   full_name TEXT NOT NULL,
   passport_number TEXT,
   age_group TEXT NOT NULL DEFAULT 'adult',
   created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
-ALTER TABLE visa_application_documents ADD COLUMN IF NOT EXISTS applicant_id TEXT REFERENCES visa_applicants(id) ON DELETE CASCADE;
+ALTER TABLE visa_application_documents ADD COLUMN IF NOT EXISTS applicant_id UUID REFERENCES visa_applicants(id) ON DELETE CASCADE;
 ```
+**Rule of thumb for all future manual migrations in this project: any
+column that is or references an `id` should be given as `UUID`, never
+`TEXT`, unless you've confirmed that specific table uses text ids.**

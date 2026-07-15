@@ -215,7 +215,7 @@ function DashboardInner() {
           <h3>Quick Links</h3>
         </div>
         <div style={{ padding: "16px 18px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-          <Link href="/agent/bookings/new" className="ap-btn ap-btn-gold">New Booking</Link>
+          <Link href="/agent/new-booking" className="ap-btn ap-btn-gold">New Booking</Link>
           <Link href="/agent/bookings" className="ap-btn ap-btn-ghost">My Bookings</Link>
           <Link href="/agent/profile" className="ap-btn ap-btn-ghost">My Profile</Link>
         </div>
