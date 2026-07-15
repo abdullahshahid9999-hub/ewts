@@ -195,6 +195,7 @@ model VisaApplication {
 
   visa      VisaService             @relation(fields: [visaId], references: [id])
   agent     Agent?                     @relation(fields: [agentId], references: [id])
+  applicants VisaApplicant[]
   documents VisaApplicationDocument[]
 
   @@map("visa_applications")
@@ -207,14 +208,36 @@ model VisaApplicationDocument {
   id        String   @id @default(uuid())
   appId     String   @map("app_id")
   docId     String?  @map("doc_id")   // nullable: extra uploads not tied to a slot
+  // Nullable — keeps the public/B2C flow (application-level docs, no
+  // per-traveller split) working unchanged. Set when uploaded via the
+  // agent per-traveller wizard.
+  applicantId String? @map("applicant_id")
   fileUrl   String   @map("file_url")
   fileName  String   @map("file_name")
   createdAt DateTime @default(now()) @map("created_at")
 
   application VisaApplication       @relation(fields: [appId], references: [id], onDelete: Cascade)
   document    VisaRequiredDocument? @relation(fields: [docId], references: [id], onDelete: SetNull)
+  applicant   VisaApplicant?        @relation(fields: [applicantId], references: [id], onDelete: Cascade)
 
   @@map("visa_application_documents")
+}
+
+// One row per traveller within a VisaApplication — added so agent
+// submissions can collect a full document set per person (e.g. each of 4
+// family members uploads their own passport), not just a headcount.
+model VisaApplicant {
+  id             String   @id @default(uuid())
+  applicationId  String   @map("application_id")
+  fullName       String   @map("full_name")
+  passportNumber String?  @map("passport_number")
+  ageGroup       String   @default("adult") @map("age_group") // "adult" | "child" | "infant"
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  application VisaApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documents   VisaApplicationDocument[]
+
+  @@map("visa_applicants")
 }
 
 
