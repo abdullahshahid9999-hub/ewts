@@ -1098,3 +1098,43 @@ rather than just descriptive text; an audit trail of status changes.
 ```sql
 ALTER TABLE bookings ADD COLUMN expires_at TIMESTAMP;
 ```
+
+## Agent Visa Wizard: Per-Traveller Documents
+
+Extended the earlier agent visa flow per AGENT-VISA-FLOW-PROMPT.md: added
+`VisaApplicant` (one row per traveller) + `VisaApplicationDocument.applicantId`
+(nullable — public/B2C flow untouched, still application-level-only).
+`lib/visaApplicationSubmit.ts` now also reads `travellerCount_i` /
+`trav_{i}_{t}_*` / `travdoc_{i}_{t}_{docId}` fields when present (agent
+wizard only; public site never sends them) and creates one VisaApplicant
++ its own documents per traveller.
+
+`components/AgentVisaApplyFlow.tsx` rebuilt as a 5-step wizard: contact →
+traveller count → per-traveller name/passport/documents (compressed
+client-side via existing `compressImage`) → review (per-traveller doc
+counts + price breakdown) → confirmation (batchRef, total, "no payment
+collected yet" tone matching `booking-confirmation`). Submits once, at
+the end, to the same `/api/agent/visa-applications` route as before.
+
+Admin (`/admin/visa-applications`) now also shows a "Travellers" section
+per application (name/passport/age group + their own doc links) when
+`applicants` is present — separate commit, minimal, doesn't touch the
+Source-column change from before.
+
+`npx tsc --noEmit`: clean against the same known implicit-any baseline.
+
+**Pending manual migration:**
+```sql
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS agent_id TEXT REFERENCES agents(id);
+
+CREATE TABLE IF NOT EXISTS visa_applicants (
+  id TEXT PRIMARY KEY,
+  application_id TEXT NOT NULL REFERENCES visa_applications(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  passport_number TEXT,
+  age_group TEXT NOT NULL DEFAULT 'adult',
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+ALTER TABLE visa_application_documents ADD COLUMN IF NOT EXISTS applicant_id TEXT REFERENCES visa_applicants(id) ON DELETE CASCADE;
+```
