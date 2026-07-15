@@ -1091,3 +1091,10 @@ close enough but would drift if a note is edited after the decision);
 an email/WhatsApp notification hook firing on Approve/Reject so "the
 applicant will be notified" in the confirm box is actually wired up
 rather than just descriptive text; an audit trail of status changes.
+
+## Group flight B2C booking: real PNR + 2hr seat hold + email (done)
+6-char PNR, atomic seat hold (2hr, auto-release via lazy sweep, no cron), per-traveller names, automatic customer+admin email via Resend. Real automatic WhatsApp needs paid Business API (not set up) — used auto-open wa.me instead (one tap, not zero-click).
+**DB migration:**
+```sql
+ALTER TABLE bookings ADD COLUMN expires_at TIMESTAMP;
+```
