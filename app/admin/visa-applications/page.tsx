@@ -29,6 +29,7 @@ type Application = {
   updatedAt: string;
   visa: { title: string; country: string; type: string };
   agent: { fullName: string; agentCode: string } | null;
+  applicants?: { id: string; fullName: string; passportNumber: string | null; ageGroup: string; documents: { id: string; fileUrl: string; fileName: string }[] }[];
   documents: AppDoc[];
 };
 
@@ -286,6 +287,29 @@ function VisaApplicationsInner() {
                                 📞 {app.phone}<br />
                                 ✉️ {app.email}
                               </div>
+
+                              {app.applicants && app.applicants.length > 0 && (
+                                <>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 14, marginBottom: 8 }}>
+                                    Travellers ({app.applicants.length})
+                                  </div>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    {app.applicants.map((a, i) => (
+                                      <div key={a.id} style={{ fontSize: 12 }}>
+                                        <strong>{i + 1}. {a.fullName}</strong>{" "}
+                                        <span style={{ color: "var(--a-muted)", textTransform: "capitalize" }}>({a.ageGroup}{a.passportNumber ? ` · ${a.passportNumber}` : ""})</span>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
+                                          {a.documents.map((doc) => (
+                                            <a key={doc.id} href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--a-gold)", fontWeight: 600 }}>
+                                              📎 {doc.fileName}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
 
                               {app.documents.length > 0 && (
                                 <>
