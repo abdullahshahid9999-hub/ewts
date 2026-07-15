@@ -224,7 +224,7 @@ function FinanceInner() {
                 <thead>
                   <tr>
                     <th>Agent</th><th>Tier</th><th>Balance</th><th>Credit Limit</th><th>Outstanding</th>
-                    <th>Booked in Range</th><th>Net in Range</th><th>Status</th>
+                    <th>Booked in Range</th><th>Net in Range</th><th>Status</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -238,6 +238,7 @@ function FinanceInner() {
                       <td>{a.rangeBookingCount} / {pkr(a.rangeSellPrice)}</td>
                       <td>{pkr(a.rangeNet)}</td>
                       <td><span className={`adp-pill adp-p-${a.status}`}>{a.status}</span></td>
+                      <td><a href={`/admin/agents/${a.id}`} className="adp-btn adp-btn-s" style={{ textDecoration: "none", fontSize: 11 }}>💰 Ledger</a></td>
                     </tr>
                   ))}
                 </tbody>

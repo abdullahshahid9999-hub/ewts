@@ -193,7 +193,10 @@ function AgentsInner() {
                     {editingId === a.id ? (
                       <button onClick={() => saveEdit(a.id)} className="adp-btn adp-btn-s">Save</button>
                     ) : (
-                      <button onClick={() => startEdit(a)} className="adp-btn adp-btn-s">Edit</button>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button onClick={() => startEdit(a)} className="adp-btn adp-btn-s">Edit</button>
+                        <a href={`/admin/agents/${a.id}`} className="adp-btn adp-btn-s" style={{ textDecoration: "none" }}>💰 Ledger</a>
+                      </div>
                     )}
                   </td>
                 </tr>

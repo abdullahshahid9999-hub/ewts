@@ -28,6 +28,7 @@ const NAV = [
   {
     section: "Finance",
     items: [
+      { href: "/agent/finance", icon: "💰", label: "Finance & Ledger" },
       { href: "/agent/topup", icon: "💳", label: "Topup" },
       { href: "/agent/bank-accounts", icon: "🏦", label: "Bank Accounts" },
     ],
