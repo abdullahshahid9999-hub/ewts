@@ -1047,3 +1047,47 @@ block as prior sessions).
 ```sql
 ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS legs JSONB;
 ```
+
+## Visa Applications Admin: Cleaner Approve/Reject UX
+
+Owner's complaint: after approving or rejecting an application, the full
+status pipeline (Under Review, More Info Needed, and even the opposite of
+Approved/Rejected) kept showing as buttons — confusing clutter once a
+decision was already made. Root cause was `STATUS_PIPELINE.filter((s) =>
+s !== app.status)`, which only ever removed the *current* status, not the
+other now-irrelevant ones.
+
+Fixed in `app/admin/visa-applications/page.tsx`:
+- **Contextual next steps** (`NEXT_STEPS` map) — only sensible transitions
+  are offered per current status (e.g. from `under_review`: Approve,
+  Reject, More Info Needed only — no backward-to-pending option).
+- **Terminal-state banner** — once `approved`/`rejected`, the button
+  pipeline is replaced entirely by a clean colored banner (✅/❌ + decided
+  timestamp + note if any) with a single low-emphasis "↺ Reopen for
+  Review" action instead of a wall of buttons, for the rare correction.
+- **Reject now requires a reason** too (previously only More Info Needed
+  did) — reuses the same note-gate flow, so the applicant always knows
+  why. Refactored the old `pendingStatus === app.id` boolean-overload
+  hack into a proper `pendingAction: {appId, status}` so Reject and More
+  Info Needed share the note editor cleanly instead of just being
+  hardcoded to `more_info_needed`.
+- **Approve gets a one-step inline confirm** (`confirmTarget`) since it's
+  the one instant, no-note action that goes straight to the applicant —
+  small "Approve this application?" / Yes / Cancel box instead of firing
+  on the first click.
+- **Quick action icons** (✓ / ✕) added directly on the collapsed table
+  row for pending/under_review/more_info_needed applications, so triage
+  doesn't require expanding first — clicking one auto-expands the row and
+  jumps straight into the confirm/note flow (`startAction` helper, shared
+  by both the collapsed-row icons and the detail-panel buttons).
+
+No API or schema changes — `PATCH /api/admin/visa-applications/[id]`
+already accepted any valid status + optional note. `npx tsc --noEmit`
+diffed clean against the same baseline as before.
+
+**Ideas not implemented (for later if wanted):** a dedicated
+`decidedAt` timestamp column (currently reusing `updatedAt`, which is
+close enough but would drift if a note is edited after the decision);
+an email/WhatsApp notification hook firing on Approve/Reject so "the
+applicant will be notified" in the confirm box is actually wired up
+rather than just descriptive text; an audit trail of status changes.

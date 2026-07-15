@@ -26,6 +26,7 @@ type Application = {
   status: string;
   adminNote: string | null;
   createdAt: string;
+  updatedAt: string;
   visa: { title: string; country: string; type: string };
   documents: AppDoc[];
 };
@@ -39,7 +40,21 @@ const STATUSES = [
   { value: "more_info_needed", label: "More Info Needed" },
 ];
 
-const STATUS_PIPELINE = ["pending", "under_review", "approved", "rejected", "more_info_needed"];
+// Only sensible next steps are offered from each current status — this is
+// what stops "aur options" (leftover pipeline buttons) from showing once
+// a decision has already been made. Approved/rejected are terminal and
+// handled by their own banner further down, not by this map.
+const NEXT_STEPS: Record<string, string[]> = {
+  pending: ["under_review", "approved", "rejected", "more_info_needed"],
+  under_review: ["approved", "rejected", "more_info_needed"],
+  more_info_needed: ["under_review", "approved", "rejected"],
+  approved: [],
+  rejected: [],
+};
+
+// Rejecting without saying why leaves the applicant (and future-admin-you)
+// guessing, same as More Info Needed already required a note for.
+const REQUIRES_NOTE = ["rejected", "more_info_needed"];
 
 function statusPill(s: string) {
   const map: Record<string, string> = {
@@ -60,7 +75,15 @@ function VisaApplicationsInner() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [noteTarget, setNoteTarget] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
-  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+  // When set, saving the note also transitions the application to this
+  // status (used for Reject / More Info Needed, which always require a
+  // reason). Null means the note textarea is just being edited/saved on
+  // its own, with no status change attached.
+  const [pendingAction, setPendingAction] = useState<{ appId: string; status: string } | null>(null);
+  // Approve has no note to type (nothing forces a pause before clicking),
+  // so it gets its own lightweight "are you sure" step instead of firing
+  // instantly — it's a decision the applicant sees right away.
+  const [confirmTarget, setConfirmTarget] = useState<{ appId: string; status: string } | null>(null);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +112,29 @@ function VisaApplicationsInner() {
     if (!res.ok) { setError(data.error ?? "Could not update."); return; }
     setNoteTarget(null);
     setNoteText("");
+    setPendingAction(null);
+    setConfirmTarget(null);
     load();
+  }
+
+  // Opens the expanded row (if not already) and jumps straight into the
+  // right flow for a status — used by both the detail-panel buttons and
+  // the quick action icons on the collapsed row, so triage doesn't
+  // require expanding first just to click Approve/Reject.
+  function startAction(appId: string, targetStatus: string, currentNote: string | null) {
+    setExpandedId(appId);
+    if (REQUIRES_NOTE.includes(targetStatus)) {
+      setNoteTarget(appId);
+      setNoteText(targetStatus === "more_info_needed" ? (currentNote ?? "") : "");
+      setPendingAction({ appId, status: targetStatus });
+      setConfirmTarget(null);
+    } else if (targetStatus === "approved") {
+      setConfirmTarget({ appId, status: targetStatus });
+      setNoteTarget(null);
+      setPendingAction(null);
+    } else {
+      updateStatus(appId, targetStatus);
+    }
   }
 
   const pendingCount = apps.filter((a) => a.status === "pending").length;
@@ -184,9 +229,31 @@ function VisaApplicationsInner() {
                         {app.batchRef}
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
-                          {expandedId === app.id ? "▲ hide" : "▼ details"}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
+                          {NEXT_STEPS[app.status]?.includes("approved") && (
+                            <button
+                              title="Approve"
+                              onClick={(e) => { e.stopPropagation(); startAction(app.id, "approved", app.adminNote); }}
+                              className="adp-btn adp-btn-s"
+                              style={{ padding: "4px 8px", background: "var(--a-green)", color: "#fff" }}
+                            >
+                              ✓
+                            </button>
+                          )}
+                          {NEXT_STEPS[app.status]?.includes("rejected") && (
+                            <button
+                              title="Reject"
+                              onClick={(e) => { e.stopPropagation(); startAction(app.id, "rejected", app.adminNote); }}
+                              className="adp-btn adp-btn-s"
+                              style={{ padding: "4px 8px", background: "var(--a-red)", color: "#fff" }}
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
+                            {expandedId === app.id ? "▲ hide" : "▼ details"}
+                          </span>
+                        </div>
                       </td>
                     </tr>
 
@@ -234,55 +301,106 @@ function VisaApplicationsInner() {
                               )}
                             </div>
 
-                            {/* Right: status pipeline actions */}
+                            {/* Right: status actions */}
                             <div>
                               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
-                                Update Status
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                {STATUS_PIPELINE.filter((s) => s !== app.status).map((s) => (
-                                  s === "more_info_needed" ? (
-                                    // More Info Needed always forces a note first
-                                    <button
-                                      key={s}
-                                      disabled={acting}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setNoteTarget(app.id);
-                                        setNoteText(app.adminNote ?? "");
-                                        setPendingStatus(app.id);
-                                      }}
-                                      className="adp-btn adp-btn-s"
-                                      style={{ justifyContent: "flex-start", background: "#FFF7ED", color: "#C2410C", border: "1px solid #FED7AA" }}
-                                    >
-                                      📋 More Info Needed (add note)
-                                    </button>
-                                  ) : (
-                                    <button
-                                      key={s}
-                                      disabled={acting}
-                                      onClick={(e) => { e.stopPropagation(); updateStatus(app.id, s); }}
-                                      className="adp-btn adp-btn-s"
-                                      style={{
-                                        justifyContent: "flex-start",
-                                        textTransform: "capitalize",
-                                        background: s === "approved" ? "var(--a-green)" : s === "rejected" ? "var(--a-red)" : undefined,
-                                        color: (s === "approved" || s === "rejected") ? "#fff" : undefined,
-                                      }}
-                                    >
-                                      → Mark as {s.replace(/_/g, " ")}
-                                    </button>
-                                  )
-                                ))}
+                                {app.status === "approved" || app.status === "rejected" ? "Decision" : "Update Status"}
                               </div>
 
-                              {/* Add/update note */}
+                              {app.status === "approved" || app.status === "rejected" ? (
+                                // TERMINAL STATE — this is the fix for "approve/reject ke
+                                // baad bhi options aate hain": once a decision is made, the
+                                // full button pipeline goes away and is replaced by a single
+                                // clear banner, with just one low-emphasis way back
+                                // (Reopen) in case of a mistake — not five more buttons.
+                                <div
+                                  style={{
+                                    borderRadius: 10,
+                                    padding: "12px 14px",
+                                    background: app.status === "approved" ? "#F0FDF4" : "#FEF2F2",
+                                    border: `1px solid ${app.status === "approved" ? "#BBF7D0" : "#FECACA"}`,
+                                  }}
+                                >
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: app.status === "approved" ? "#15803D" : "#B91C1C", display: "flex", alignItems: "center", gap: 6 }}>
+                                    {app.status === "approved" ? "✅ Approved" : "❌ Rejected"}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: "var(--a-muted)", marginTop: 2 }}>
+                                    Decided {new Date(app.updatedAt).toLocaleString("en-PK", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                  </div>
+                                  {app.adminNote && (
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#374151" }}>📝 {app.adminNote}</div>
+                                  )}
+                                  <button
+                                    disabled={acting}
+                                    onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "under_review"); }}
+                                    className="adp-btn adp-btn-s"
+                                    style={{ marginTop: 10, fontSize: 11, background: "none" }}
+                                  >
+                                    ↺ Reopen for Review
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    {NEXT_STEPS[app.status]?.map((s) => (
+                                      <button
+                                        key={s}
+                                        disabled={acting}
+                                        onClick={(e) => { e.stopPropagation(); startAction(app.id, s, app.adminNote); }}
+                                        className="adp-btn adp-btn-s"
+                                        style={{
+                                          justifyContent: "flex-start",
+                                          textTransform: "capitalize",
+                                          background: s === "approved" ? "var(--a-green)" : s === "rejected" ? "var(--a-red)" : s === "more_info_needed" ? "#FFF7ED" : undefined,
+                                          color: (s === "approved" || s === "rejected") ? "#fff" : s === "more_info_needed" ? "#C2410C" : undefined,
+                                          border: s === "more_info_needed" ? "1px solid #FED7AA" : undefined,
+                                        }}
+                                      >
+                                        {s === "approved" ? "✓ Approve" : s === "rejected" ? "✕ Reject" : s === "more_info_needed" ? "📋 More Info Needed (add note)" : `→ Mark as ${s.replace(/_/g, " ")}`}
+                                      </button>
+                                    ))}
+                                  </div>
+
+                                  {/* Inline confirm — Approve is one click with no note to
+                                      slow it down otherwise, so it gets a short "are you
+                                      sure" instead of firing immediately. */}
+                                  {confirmTarget?.appId === app.id && (
+                                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                                      <div style={{ fontSize: 12, color: "#15803D", marginBottom: 8 }}>
+                                        Approve this application? The applicant will be notified.
+                                      </div>
+                                      <div style={{ display: "flex", gap: 6 }}>
+                                        <button
+                                          disabled={acting}
+                                          onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "approved"); }}
+                                          className="adp-btn adp-btn-s"
+                                          style={{ background: "var(--a-green)", color: "#fff" }}
+                                        >
+                                          Yes, Approve
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }}
+                                          className="adp-btn adp-btn-s"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Note editor — shared by the Reject / More Info Needed
+                                  flows (status change gated on a reason via pendingAction)
+                                  and by a plain "Add/Edit note" with no status change. */}
                               <div style={{ marginTop: 12 }}>
                                 {noteTarget === app.id ? (
                                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)" }}>
-                                      {pendingStatus === app.id
-                                        ? "📋 Write what info is needed from the applicant:"
+                                      {pendingAction?.appId === app.id
+                                        ? pendingAction.status === "rejected"
+                                          ? "❌ Reason for rejection (visible to applicant):"
+                                          : "📋 Write what info is needed from the applicant:"
                                         : "📝 Admin note (visible to applicant):"}
                                     </div>
                                     <textarea
@@ -290,29 +408,36 @@ function VisaApplicationsInner() {
                                       value={noteText}
                                       onChange={(e) => setNoteText(e.target.value)}
                                       onClick={(e) => e.stopPropagation()}
-                                      placeholder={pendingStatus === app.id
-                                        ? "e.g. Please provide a clear bank statement for last 3 months and a recent salary slip..."
-                                        : "Internal note for applicant..."}
+                                      placeholder={
+                                        pendingAction?.appId === app.id
+                                          ? pendingAction.status === "rejected"
+                                            ? "e.g. Bank statement does not meet the minimum balance requirement for this visa type..."
+                                            : "e.g. Please provide a clear bank statement for last 3 months and a recent salary slip..."
+                                          : "Internal note for applicant..."
+                                      }
                                       style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 8, fontSize: 12, resize: "vertical" }}
                                     />
-                                    {pendingStatus === app.id && !noteText.trim() && (
-                                      <p style={{ fontSize: 11, color: "var(--a-red)" }}>Note is required when requesting more info.</p>
+                                    {pendingAction?.appId === app.id && !noteText.trim() && (
+                                      <p style={{ fontSize: 11, color: "var(--a-red)" }}>
+                                        A reason is required when {pendingAction.status === "rejected" ? "rejecting" : "requesting more info"}.
+                                      </p>
                                     )}
                                     <div style={{ display: "flex", gap: 6 }}>
                                       <button
-                                        disabled={acting || (pendingStatus === app.id && !noteText.trim())}
+                                        disabled={acting || (pendingAction?.appId === app.id && !noteText.trim())}
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const newStatus = pendingStatus === app.id ? "more_info_needed" : app.status;
+                                          const newStatus = pendingAction?.appId === app.id ? pendingAction.status : app.status;
                                           updateStatus(app.id, newStatus, noteText);
-                                          setPendingStatus(null);
                                         }}
                                         className="adp-btn adp-btn-g adp-btn-s"
                                       >
-                                        {pendingStatus === app.id ? "Send to Applicant" : "Save Note"}
+                                        {pendingAction?.appId === app.id
+                                          ? pendingAction.status === "rejected" ? "Reject & Send Reason" : "Send to Applicant"
+                                          : "Save Note"}
                                       </button>
                                       <button
-                                        onClick={(e) => { e.stopPropagation(); setNoteTarget(null); setPendingStatus(null); }}
+                                        onClick={(e) => { e.stopPropagation(); setNoteTarget(null); setPendingAction(null); }}
                                         className="adp-btn adp-btn-s"
                                       >
                                         Cancel
@@ -321,7 +446,7 @@ function VisaApplicationsInner() {
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); setNoteTarget(app.id); setNoteText(app.adminNote ?? ""); setPendingStatus(null); }}
+                                    onClick={(e) => { e.stopPropagation(); setNoteTarget(app.id); setNoteText(app.adminNote ?? ""); setPendingAction(null); setConfirmTarget(null); }}
                                     className="adp-btn adp-btn-s"
                                     style={{ fontSize: 11 }}
                                   >
