@@ -6,72 +6,52 @@ const SERVICES = [
   {
     key: "visa",
     label: "Visa Services",
-    arabic: "خدمات التأشيرة",
-    description: "Apply for tourist, business, Umrah & work visas for 50+ countries.",
     cta: "Apply Now",
     href: "/agent/visa",
-    icon: "📄",
     bg: "from-[#1a3a5c] to-[#0f2240]",
     accent: "#4A9EDB",
     image: "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=600&q=80",
     imageAlt: "Dubai skyline – Visa Services",
-    badge: "50+ Countries",
   },
   {
     key: "group_ticket",
     label: "Group Flights",
-    arabic: "تذاكر المجموعة",
-    description: "Confirmed seat allocations on all major airlines — economy & business class.",
     cta: "Book Now",
     href: "/agent/group-flights",
-    icon: "✈️",
     bg: "from-[#1c2e4a] to-[#0d1b2e]",
     accent: "#D4A843",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80",
     imageAlt: "Airplane in flight – Group Tickets",
-    badge: "Instant Issuance",
   },
   {
     key: "umrah",
     label: "Umrah Packages",
-    arabic: "باقات العمرة",
-    description: "Economy to premium Umrah packages with hotels, flights & ziyarat included.",
     cta: "Book Slot",
     href: "/agent/umrah",
-    icon: "🕌",
     bg: "from-[#1a2e1a] to-[#0e1e0e]",
     accent: "#5CB85C",
     image: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=600&q=80",
     imageAlt: "Masjid al-Haram Makkah – Umrah Packages",
-    badge: "Season 2025",
   },
   {
     key: "insurance",
     label: "Travel Insurance",
-    arabic: "تأمين السفر",
-    description: "Comprehensive travel insurance — medical, cancellation & baggage cover.",
     cta: "Get Insured",
     href: "/agent/insurance",
-    icon: "🛡️",
     bg: "from-[#2e1a3a] to-[#1a0d24]",
     accent: "#A78BFA",
     image: "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=600&q=80",
     imageAlt: "Canada travel – Insurance Services",
-    badge: "All Destinations",
   },
   {
     key: "tours",
     label: "World Tours",
-    arabic: "جولات عالمية",
-    description: "Dubai, Thailand, Bali, Malaysia and more — flights, hotels & guided tours.",
     cta: "Book Now",
     href: "/agent/tours",
-    icon: "🌍",
     bg: "from-[#3a2a1a] to-[#241a0d]",
     accent: "#E8A94A",
     image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80",
     imageAlt: "World tour destinations",
-    badge: "Multiple Destinations",
   },
 ];
 
@@ -97,18 +77,12 @@ export default function NewBookingPage() {
                 <div className="nb-card-img-wrap">
                   <img src={s.image} alt={s.imageAlt} className="nb-card-img" />
                   <div className={`nb-card-img-overlay bg-gradient-to-b ${s.bg}`} />
-                  <span className="nb-card-badge" style={{ background: s.accent + "22", color: s.accent, border: `1px solid ${s.accent}44` }}>
-                    {s.badge}
-                  </span>
-                  <span className="nb-card-icon">{s.icon}</span>
                 </div>
 
                 {/* Body */}
                 <div className="nb-card-body">
                   <div>
-                    <p className="nb-card-arabic">{s.arabic}</p>
                     <h2 className="nb-card-label">{s.label}</h2>
-                    <p className="nb-card-desc">{s.description}</p>
                   </div>
                   <div className="nb-card-cta" style={{ background: s.accent }}>
                     {s.cta} →
@@ -165,12 +139,13 @@ export default function NewBookingPage() {
             border: 1px solid var(--border, #e5e7eb);
             background: #fff;
             text-decoration: none;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
           }
           .nb-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+            transform: translateY(-6px) scale(1.035);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.16);
+            z-index: 1;
           }
 
           /* Image area */
@@ -184,35 +159,15 @@ export default function NewBookingPage() {
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: transform 0.3s ease;
+            transition: transform 0.35s ease;
           }
           .nb-card:hover .nb-card-img {
-            transform: scale(1.05);
+            transform: scale(1.1);
           }
           .nb-card-img-overlay {
             position: absolute;
             inset: 0;
             opacity: 0.55;
-          }
-          .nb-card-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 20px;
-            backdrop-filter: blur(4px);
-          }
-          .nb-card-icon {
-            position: absolute;
-            bottom: 10px;
-            right: 12px;
-            font-size: 28px;
-            line-height: 1;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
           }
 
           /* Body */
@@ -224,26 +179,13 @@ export default function NewBookingPage() {
             flex: 1;
             gap: 14px;
           }
-          .nb-card-arabic {
-            font-size: 10px;
-            color: var(--gray, #9ca3af);
-            margin-bottom: 3px;
-            font-family: 'Amiri', serif;
-            direction: rtl;
-          }
           .nb-card-label {
             font-family: var(--font-display, Georgia, serif);
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 700;
             color: var(--navy, #0A1930);
-            margin: 0 0 6px;
-            line-height: 1.2;
-          }
-          .nb-card-desc {
-            font-size: 12px;
-            color: var(--gray, #6b7280);
-            line-height: 1.55;
             margin: 0;
+            line-height: 1.2;
           }
           .nb-card-cta {
             display: block;
