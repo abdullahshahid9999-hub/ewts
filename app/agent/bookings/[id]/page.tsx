@@ -239,8 +239,14 @@ function BookingDetailInner() {
       </div>
 
       <div className="no-print" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        <button onClick={() => setPrintMode("fare")} className="ap-btn ap-btn-ghost">Print with Fare</button>
-        <button onClick={() => setPrintMode("nofare")} className="ap-btn ap-btn-ghost">Print without Fare</button>
+        {booking.serviceType === "group_ticket" ? (
+          <a href={`/agent/bookings/${id}/print`} className="ap-btn ap-btn-ghost">Print Ticket</a>
+        ) : (
+          <>
+            <button onClick={() => setPrintMode("fare")} className="ap-btn ap-btn-ghost">Print with Fare</button>
+            <button onClick={() => setPrintMode("nofare")} className="ap-btn ap-btn-ghost">Print without Fare</button>
+          </>
+        )}
         {canIssue && (
           <button onClick={() => setShowIssueModal(true)} className="ap-btn ap-btn-gold">Issue Booking</button>
         )}
