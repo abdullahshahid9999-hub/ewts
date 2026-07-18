@@ -197,11 +197,16 @@ function BookingsInner() {
                     <td><span className={`ap-pill ap-p-${b.status}`}>{b.status.replace("_", " ")}</span></td>
                     <td>PKR {b.commission.toLocaleString()}</td>
                     <td>{new Date(b.createdAt).toLocaleDateString()}</td>
-                    <td>
+                    <td style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {(b.status === "pending" || b.status === "confirmed") && (
                         <button onClick={() => setIssuingId(b.id)} className="ap-btn ap-btn-ghost" style={{ padding: "5px 10px", fontSize: "11px" }}>
                           Request Issuance
                         </button>
+                      )}
+                      {b.serviceType === "group_ticket" && (
+                        <Link href={`/agent/bookings/${b.id}/print`} className="ap-btn ap-btn-ghost" style={{ padding: "5px 10px", fontSize: "11px" }}>
+                          Print Ticket
+                        </Link>
                       )}
                     </td>
                   </tr>

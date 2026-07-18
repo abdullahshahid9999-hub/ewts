@@ -11,6 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const status = body?.status;
+  const ticketNumber = typeof body?.ticketNumber === "string" ? body.ticketNumber.trim() : undefined;
   if (!VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
@@ -18,11 +19,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.agentBooking.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  // Seats are now only touched at ISSUE time (not cancellation) — a
-  // cancelled booking that was never issued never decremented a seat in
-  // the first place, so there's nothing to restore on cancel. See
-  // agent/bookings POST for the matching read-only sold-out guard.
   const isBeingIssued = status === "issued" && existing.status !== "issued";
+
+  if (isBeingIssued && existing.serviceType === "group_ticket" && !ticketNumber) {
+    return NextResponse.json(
+      { error: "A ticket number is required to issue a group-ticket booking." },
+      { status: 400 }
+    );
+  }
   const decrementsSeat =
     isBeingIssued && existing.serviceType === "group_ticket" && existing.groupFlightId;
 
@@ -64,7 +68,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         });
       }
 
-      return tx.agentBooking.update({ where: { id }, data: { status } });
+      return tx.agentBooking.update({
+        where: { id },
+        data: { status, ticketNumber: ticketNumber || undefined },
+      });
     })
     .catch((e) => {
       if (e instanceof Error && e.message === "SOLD_OUT") return null;

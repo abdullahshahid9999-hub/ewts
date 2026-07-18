@@ -11,7 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const booking = await prisma.agentBooking.findUnique({
     where: { id },
-    include: { groupFlight: true, package: true },
+    include: { groupFlight: true, package: true, agent: { select: { fullName: true, phone: true, logoUrl: true } } },
   });
   if (!booking || booking.agentId !== agent.id) {
     return NextResponse.json({ error: "Booking not found." }, { status: 404 });
