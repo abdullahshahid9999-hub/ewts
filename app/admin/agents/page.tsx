@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
+import { compressImage } from "@/lib/imageCompression";
 
 type CommissionRate = { id: string; serviceType: string; rateType: string; value: number };
 type Agent = {
@@ -16,6 +17,7 @@ type Agent = {
   creditLimit: number;
   tier: string;
   status: string;
+  logoUrl: string | null;
   commissionRates: CommissionRate[];
 };
 
@@ -32,6 +34,20 @@ function AgentsInner() {
   const [rateForm, setRateForm] = useState<{ agentId: string; serviceType: string; rateType: string; value: string }>({
     agentId: "", serviceType: "umrah", rateType: "percentage", value: "",
   });
+  const [uploadingLogoId, setUploadingLogoId] = useState<string | null>(null);
+
+  async function uploadLogo(agentId: string, file: File) {
+    setUploadingLogoId(agentId);
+    setError(null);
+    const compressed = await compressImage(file);
+    const form = new FormData();
+    form.set("logo", compressed);
+    const res = await adminFetch(`/api/admin/agents/${agentId}/logo`, accessToken, refresh, { method: "PATCH", body: form });
+    const data = await res.json().catch(() => ({}));
+    setUploadingLogoId(null);
+    if (!res.ok) { setError(data.error ?? "Could not upload logo."); return; }
+    load();
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -157,7 +173,26 @@ function AgentsInner() {
               {agents.map((a) => (
                 <tr key={a.id}>
                   <td><strong>{a.agentCode}</strong></td>
-                  <td>{a.fullName}</td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {a.logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.logoUrl} alt={a.fullName} style={{ width: 28, height: 28, objectFit: "contain", borderRadius: 4, border: "1px solid var(--a-border)" }} />
+                      ) : (
+                        <span style={{ width: 28, height: 28, borderRadius: 4, background: "var(--a-surface-2, #f2f2f2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "var(--a-muted)" }}>—</span>
+                      )}
+                      <span>{a.fullName}</span>
+                    </div>
+                    <label style={{ fontSize: 10, color: "var(--a-gold)", cursor: "pointer", marginTop: 2, display: "inline-block" }}>
+                      {uploadingLogoId === a.id ? "Uploading…" : a.logoUrl ? "Change logo" : "Upload logo"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        style={{ display: "none" }}
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(a.id, f); e.target.value = ""; }}
+                      />
+                    </label>
+                  </td>
                   {editingId === a.id ? (
                     <>
                       <td><input value={editForm.balance} onChange={(e) => setEditForm((f) => ({ ...f, balance: e.target.value }))} className="adp-si" style={{ width: "90px" }} /></td>
