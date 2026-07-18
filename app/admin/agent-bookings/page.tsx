@@ -58,11 +58,17 @@ function AgentBookingsInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function updateStatus(id: string, newStatus: string) {
+  async function updateStatus(id: string, newStatus: string, serviceType?: string) {
+    let ticketNumber: string | undefined;
+    if (newStatus === "issued" && serviceType === "group_ticket") {
+      const entered = window.prompt("Enter the ticket number for this booking (e.g. 214-2121045-786):");
+      if (!entered || !entered.trim()) return; // don't allow issuing without one
+      ticketNumber = entered.trim();
+    }
     await adminFetch(`/api/admin/agent-bookings/${id}`, accessToken, refresh, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify({ status: newStatus, ticketNumber }),
     });
     load();
   }
@@ -120,7 +126,7 @@ function AgentBookingsInner() {
                     <td><span className={`adp-pill adp-p-${b.status}`}>{b.status.replace("_", " ")}</span></td>
                     <td style={{ display: "flex", gap: "6px" }}>
                       {b.status === "issue_requested" && (
-                        <button onClick={() => updateStatus(b.id, "issued")} className="adp-btn adp-btn-s" style={{ color: "var(--a-green)" }}>Mark Issued</button>
+                        <button onClick={() => updateStatus(b.id, "issued", b.serviceType)} className="adp-btn adp-btn-s" style={{ color: "var(--a-green)" }}>Mark Issued</button>
                       )}
                       {b.status !== "cancelled" && b.status !== "issued" && (
                         <button onClick={() => updateStatus(b.id, "cancelled")} className="adp-btn adp-btn-r">Cancel</button>

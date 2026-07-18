@@ -442,7 +442,11 @@ model AgentBooking {
   customerName      String?   @map("customer_name")
   customerPhone     String?   @map("customer_phone")
   customerEmail     String?   @map("customer_email")
-  travellers        Json?     // [{fullName, passportNo, cnic}] — same shape as the public Traveller model, kept as JSON here since AgentBooking is a sales record, not the same table
+  travellers        Json?     // [{fullName, passportNo, passportExpiry, dob, cnic}] — same shape as the public Traveller model, kept as JSON here since AgentBooking is a sales record, not the same table. passportExpiry/dob are optional additions for the printed ticket layout — older rows without them just show "—".
+  // Set by admin at the moment of actual issuance (status -> "issued").
+  // Null before that — this is what makes the printed ticket's "Not
+  // Confirmed" vs "Confirmed" state real rather than faked client-side.
+  ticketNumber      String?   @map("ticket_number")
   roomTypeLabel     String?   @map("room_type_label") // snapshot, same reasoning as Booking.roomTypeLabel
   insurancePlanLabel String?  @map("insurance_plan_label") // snapshot: "Company — Plan"
   adults            Int?      @default(1)

@@ -12,11 +12,11 @@ const NAV = [
   {
     section: "My Bookings",
     items: [
-      { href: "/agent/bookings?service=umrah", icon: "🕌", label: "Umrah Packages" },
-      { href: "/agent/bookings?service=group_ticket", icon: "✈️", label: "Group Flights" },
-      { href: "/agent/bookings?service=insurance", icon: "🛡️", label: "Insurance" },
-      { href: "/agent/bookings?service=world_tour", icon: "🌍", label: "World Tour" },
-      { href: "/agent/bookings?service=visa_services", icon: "📄", label: "Visa Services" },
+      { href: "/agent/bookings/umrah", icon: "🕌", label: "Umrah Packages" },
+      { href: "/agent/bookings/group-tickets", icon: "✈️", label: "Group Flights" },
+      { href: "/agent/bookings/insurance", icon: "🛡️", label: "Insurance" },
+      { href: "/agent/bookings/tours", icon: "🌍", label: "World Tour" },
+      { href: "/agent/bookings/visa", icon: "📄", label: "Visa Services" },
     ],
   },
   {

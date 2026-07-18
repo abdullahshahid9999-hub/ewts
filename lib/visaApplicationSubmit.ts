@@ -68,12 +68,36 @@ export async function submitVisaApplicationBatch(
     const priceInfant = visa.priceInfant ?? 0;
     const totalPricePkr = adults * priceAdult + children * priceChild + infants * priceInfant;
 
-    // Validate required docs are present
+    // Validate required docs are present. Two modes: the public/B2C flow
+    // attaches documents at the application level (doc_{docId}_{i}); the
+    // agent wizard attaches them per-traveller instead
+    // (travdoc_{i}_{t}_{docId}) since each traveller needs their own set.
+    // Checking only the application-level key here was the bug — it
+    // rejected agent submissions that had correctly attached every
+    // traveller's documents, because those never populate doc_{docId}_{i}.
+    const travellerCountRaw = form.get(`travellerCount_${i}`);
+    const travellerCount = travellerCountRaw ? Math.max(0, Number(travellerCountRaw) || 0) : 0;
     const requiredDocs = visa.requiredDocuments.filter((d) => d.isRequired);
-    for (const doc of requiredDocs) {
-      const file = form.get(`doc_${doc.id}_${i}`);
-      if (!file || !(file instanceof Blob) || file.size === 0) {
-        throw new VisaSubmissionError(`Application ${i + 1}: "${doc.name}" is a required document — please attach it.`);
+
+    if (travellerCount > 0) {
+      for (let t = 0; t < travellerCount; t++) {
+        const travFullName = ((form.get(`trav_${i}_${t}_fullName`) as string | null) ?? "").trim();
+        if (!travFullName) continue; // empty row, skipped later too — nothing to validate
+        for (const doc of requiredDocs) {
+          const file = form.get(`travdoc_${i}_${t}_${doc.id}`);
+          if (!file || !(file instanceof Blob) || file.size === 0) {
+            throw new VisaSubmissionError(
+              `Application ${i + 1}, Traveller ${t + 1}: "${doc.name}" is a required document — please attach it.`
+            );
+          }
+        }
+      }
+    } else {
+      for (const doc of requiredDocs) {
+        const file = form.get(`doc_${doc.id}_${i}`);
+        if (!file || !(file instanceof Blob) || file.size === 0) {
+          throw new VisaSubmissionError(`Application ${i + 1}: "${doc.name}" is a required document — please attach it.`);
+        }
       }
     }
 
@@ -130,8 +154,6 @@ export async function submitVisaApplicationBatch(
 
     // Per-traveller applicants + documents — agent wizard only (see
     // module doc comment above). Absent entirely for public submissions.
-    const travellerCountRaw = form.get(`travellerCount_${i}`);
-    const travellerCount = travellerCountRaw ? Math.max(0, Number(travellerCountRaw) || 0) : 0;
     for (let t = 0; t < travellerCount; t++) {
       const travFullName = ((form.get(`trav_${i}_${t}_fullName`) as string | null) ?? "").trim();
       if (!travFullName) continue; // skip empty rows defensively
