@@ -1159,3 +1159,38 @@ Print Invoice is stubbed exactly as instructed — "Ticket not issued yet." befo
 ```sql
 ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS ticket_number TEXT;
 ```
+## My Bookings: Dedicated Per-Type Pages
+
+Split the old flat `/agent/bookings` (one page, one generic table, same 5
+status tabs for every service) into 5 dedicated pages, per the owner's
+ask — sidebar now links straight to each:
+
+- `/agent/bookings/group-tickets` — flight/route detail column, pax
+  count, and a new **Expired** status tab (a pending booking whose
+  seat-hold window lapsed — previously invisible, silently mixed into
+  "Pending"). API (`/api/agent/bookings`) now treats `status=expired` as
+  a pseudo-status for `category=group_ticket` only (`status: pending,
+  expiresAt < now`), and excludes lapsed rows from the real "Pending" tab
+  so it only shows bookings an agent can still act on.
+- `/agent/bookings/umrah`, `/tours`, `/insurance` — same 5 statuses as
+  before, but each shows its own relevant detail column (package+room,
+  package, plan) instead of one generic column for everything.
+- `/agent/bookings/visa` — **bug fix**: the old "Visa Services" filter
+  was dead (API never recognized `visa_services` as a category, and real
+  agent visa submissions live in `VisaApplication`, a different table
+  with a different status vocabulary, not `AgentBooking`). New page hits
+  a new `GET /api/agent/visa-applications` (agent-authed, filtered by
+  `agentId`) with its own real status tabs (pending / under_review /
+  approved / rejected / more_info_needed).
+
+Built one shared `components/AgentBookingsByType.tsx` (parametrized by
+category) for the 4 `AgentBooking`-backed pages instead of duplicating
+table/filter chrome 4x. Extracted the OTP issue-request modal into
+`components/AgentIssueRequestModal.tsx`, shared by all of these plus the
+old flat page (which still exists, unchanged in behavior otherwise,
+reachable from the dashboard's "My Bookings" button as an all-services
+overview — just dropped its now-redundant/previously-dead "Visa
+Services" dropdown option).
+
+No schema changes, no new migration needed. `npx tsc --noEmit`: clean
+against the same known baseline.
