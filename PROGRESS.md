@@ -1147,3 +1147,15 @@ ALTER TABLE visa_application_documents ADD COLUMN IF NOT EXISTS applicant_id UUI
 **Rule of thumb for all future manual migrations in this project: any
 column that is or references an `id` should be given as `UUID`, never
 `TEXT`, unless you've confirmed that specific table uses text ids.**
+
+## Print Ticket (agent group-ticket bookings) — complete
+Matches the reference layout exactly: top bar (agent logo, booking ref, ticket number, barcode), booked-by/contact/reserved/ticketed row, Passenger Name table, Travel Itinerary table (multi-leg aware via existing `legsFromFlight`), Terms & Conditions. Status pill reads "Not Confirmed" (amber) until `status === 'issued'`, then "Confirmed" (green) with the real ticket number. Per-agent branding (logo/name/phone) pulled from the booking's own `Agent`, not hardcoded.
+
+**Honest deviation**: admin enters the ticket number via a plain `window.prompt()` when clicking "Mark Issued" on a group-ticket booking, not a dedicated form field/modal — functional and required (won't issue without one), but not a polished UI. Fine for now; upgrade to a proper input if it feels clunky in practice.
+
+Print Invoice is stubbed exactly as instructed — "Ticket not issued yet." before issuance, a placeholder message after, with a `// TODO` comment. Not building a real invoice layout until the owner sends that reference.
+
+**DB migration:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS ticket_number TEXT;
+```
