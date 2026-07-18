@@ -302,18 +302,23 @@ function TopupInner() {
 }
 
 function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(value).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); });
+  }
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
       <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
         {label}
       </span>
-      <span style={{
-        fontSize: 12, fontWeight: 600, color: "var(--text)",
-        fontFamily: mono ? "var(--font-mono, monospace)" : undefined,
-        textAlign: "right",
-      }}>
-        {value}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", fontFamily: mono ? "var(--font-mono, monospace)" : undefined, textAlign: "right" }}>
+          {value}
+        </span>
+        <button onClick={copy} style={{ background: copied ? "var(--green-bg)" : "var(--surface)", border: `1px solid ${copied ? "var(--green-bd)" : "var(--bdr)"}`, borderRadius: 5, padding: "1px 7px", fontSize: 9, fontWeight: 700, cursor: "pointer", color: copied ? "var(--green)" : "var(--muted)", whiteSpace: "nowrap", transition: "all .15s" }}>
+          {copied ? "✓" : "Copy"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -81,16 +81,38 @@ function BankAccountsInner() {
 }
 
 function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <span style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
-      <span style={{
-        fontSize: 13, fontWeight: 600, color: "var(--text)",
-        fontFamily: mono ? "var(--font-mono, monospace)" : undefined,
-        letterSpacing: mono ? "0.04em" : undefined,
-      }}>
-        {value}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{
+          fontSize: 13, fontWeight: 600, color: "var(--text)", flex: 1,
+          fontFamily: mono ? "var(--font-mono, monospace)" : undefined,
+          letterSpacing: mono ? "0.04em" : undefined,
+        }}>
+          {value}
+        </span>
+        <button
+          onClick={copy}
+          title={`Copy ${label}`}
+          style={{
+            background: copied ? "var(--green-bg)" : "var(--surface)",
+            border: `1px solid ${copied ? "var(--green-bd)" : "var(--bdr)"}`,
+            borderRadius: 6, padding: "2px 8px", fontSize: 10,
+            fontWeight: 700, cursor: "pointer", color: copied ? "var(--green)" : "var(--muted)",
+            transition: "all .15s", whiteSpace: "nowrap",
+          }}
+        >
+          {copied ? "✓ Copied" : "Copy"}
+        </button>
+      </div>
     </div>
   );
 }
