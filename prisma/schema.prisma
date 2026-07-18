@@ -447,6 +447,11 @@ model AgentBooking {
   // Null before that — this is what makes the printed ticket's "Not
   // Confirmed" vs "Confirmed" state real rather than faked client-side.
   ticketNumber      String?   @map("ticket_number")
+  // Set server-side (new Date()) at the exact moment status flips to
+  // "issued" — see app/api/admin/agent-bookings/[id]/route.ts. Null until
+  // then; printed docs show it blank/"Not Confirmed" pre-issuance, same
+  // as ticketNumber.
+  issuedAt          DateTime? @map("issued_at")
   roomTypeLabel     String?   @map("room_type_label") // snapshot, same reasoning as Booking.roomTypeLabel
   insurancePlanLabel String?  @map("insurance_plan_label") // snapshot: "Company — Plan"
   adults            Int?      @default(1)
