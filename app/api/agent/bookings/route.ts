@@ -52,7 +52,22 @@ export async function GET(req: NextRequest) {
   if (category && category !== "all" && VALID_SERVICE_TYPES.includes(category as typeof VALID_SERVICE_TYPES[number])) {
     where.serviceType = category;
   }
-  if (status && status !== "all" && VALID_STATUSES.includes(status as typeof VALID_STATUSES[number])) {
+
+  // "Expired" isn't a real stored status — it's a pending group-ticket
+  // booking whose seat-hold window has lapsed (see computeExpiresAt).
+  // Only meaningful for group_ticket, so it's only honored when that's
+  // the active category (the dedicated Group Tickets page always sends
+  // it explicitly).
+  const now = new Date();
+  if (category === "group_ticket" && status === "expired") {
+    where.status = "pending";
+    where.expiresAt = { lt: now };
+  } else if (category === "group_ticket" && status === "pending") {
+    // Exclude lapsed holds from "Pending" so it only shows bookings an
+    // agent can still act on — lapsed ones live under "Expired" instead.
+    where.status = "pending";
+    where.expiresAt = { gte: now };
+  } else if (status && status !== "all" && VALID_STATUSES.includes(status as typeof VALID_STATUSES[number])) {
     where.status = status;
   }
 
@@ -72,7 +87,7 @@ export async function GET(req: NextRequest) {
   const bookings = await prisma.agentBooking.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { groupFlight: true },
+    include: { groupFlight: true, package: { select: { name: true } } },
   });
 
   // Lightweight summary of the currently-filtered set, mainly for the
