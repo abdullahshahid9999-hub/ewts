@@ -2,7 +2,7 @@
 
 import { useAgentAuth } from "@/lib/agentAuthClient";
 
-export default function AgentTopbar({ onMenuToggle }: { onMenuToggle: () => void }) {
+export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMenuToggle: () => void; dark?: boolean; onToggleDark?: () => void }) {
   const { agent, logout } = useAgentAuth();
   const balance = agent ? Number(agent.balance ?? 0) : 0;
 
@@ -21,6 +21,9 @@ export default function AgentTopbar({ onMenuToggle }: { onMenuToggle: () => void
           {balance < 0 ? "-" : ""}PKR {Math.abs(balance).toLocaleString()}
         </span>
       </div>
+      {onToggleDark && (
+        <button className={`ap-dark-toggle${dark ? " on" : ""}`} onClick={onToggleDark} aria-label="Toggle dark mode" title={dark ? "Light mode" : "Dark mode"} />
+      )}
       <button onClick={logout} className="ap-sb-out" style={{ width: "auto", padding: "6px 12px" }}>
         Sign Out
       </button>

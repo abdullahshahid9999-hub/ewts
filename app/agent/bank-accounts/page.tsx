@@ -110,7 +110,7 @@ function Field({ label, value, mono = false }: { label: string; value: string; m
             transition: "all .15s", whiteSpace: "nowrap",
           }}
         >
-          {copied ? "✓ Copied" : "Copy"}
+          {copied ? "✓" : "📋"}
         </button>
       </div>
     </div>

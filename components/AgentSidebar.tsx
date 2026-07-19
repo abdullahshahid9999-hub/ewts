@@ -47,7 +47,7 @@ function tierClass(tier: string) {
   return "ap-tier-standard";
 }
 
-export default function AgentSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function AgentSidebar({ open, onClose, dark, onToggleDark }: { open: boolean; onClose: () => void; dark?: boolean; onToggleDark?: () => void }) {
   const { agent, logout } = useAgentAuth();
   const pathname = usePathname();
 
@@ -96,6 +96,14 @@ export default function AgentSidebar({ open, onClose }: { open: boolean; onClose
         ))}
       </div>
       <div className="ap-sb-footer">
+        {onToggleDark && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 18px", marginBottom: 4 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
+              {dark ? "🌙 Dark Mode" : "☀️ Light Mode"}
+            </span>
+            <button className={`ap-dark-toggle${dark ? " on" : ""}`} onClick={onToggleDark} aria-label="Toggle dark mode" />
+          </div>
+        )}
         <button className="ap-sb-out" onClick={logout}>Sign Out</button>
       </div>
     </aside>

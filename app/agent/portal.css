@@ -293,3 +293,45 @@
   .ap-tbar { left: 0; padding: 0 12px; gap: 6px; }
   .ap-sg { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── DARK MODE ── */
+.ap-dark {
+  --bg: #0D1117;
+  --white: #161B22;
+  --surface: #21262D;
+  --surface2: #30363D;
+  --text: #E6EDF3;
+  --text2: #8B949E;
+  --muted: #6E7681;
+  --bdr: #30363D;
+  --bdr2: #3D444D;
+  --green-bg: #0D2615;
+  --green-bd: #1A4728;
+  --red-bg: #2D1117;
+  --red-bd: #5C1F29;
+  --gold-bg: rgba(212,168,67,0.12);
+}
+.ap-dark .ap-main { background: var(--bg); }
+.ap-dark .ap-card { background: var(--white); border-color: var(--bdr); }
+.ap-dark .ap-table thead th { background: var(--surface); color: var(--muted); border-color: var(--bdr); }
+.ap-dark .ap-table tbody tr:hover { background: var(--surface); }
+.ap-dark .ap-table td, .ap-dark .ap-table th { border-color: var(--bdr); }
+.ap-dark .ap-tw { background: var(--white); }
+.ap-dark .ap-tbar { background: var(--white); border-color: var(--bdr); }
+.ap-dark .ap-field input, .ap-dark .ap-field select, .ap-dark .ap-field textarea { background: var(--surface); color: var(--text); border-color: var(--bdr); }
+.ap-dark .ap-btn { color: var(--text); }
+.ap-dark .ap-btn-ghost { border-color: var(--bdr); }
+
+/* Dark mode toggle button */
+.ap-dark-toggle {
+  width: 32px; height: 18px; border-radius: 9px;
+  background: rgba(255,255,255,0.15); border: none; cursor: pointer;
+  position: relative; transition: background .2s; flex-shrink: 0;
+  display: flex; align-items: center; padding: 0 3px;
+}
+.ap-dark-toggle.on { background: var(--gold); }
+.ap-dark-toggle::after {
+  content: ""; width: 12px; height: 12px; border-radius: 50%;
+  background: #fff; transition: transform .2s;
+}
+.ap-dark-toggle.on::after { transform: translateX(14px); }

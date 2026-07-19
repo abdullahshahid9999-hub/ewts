@@ -316,7 +316,7 @@ function Row({ label, value, mono = false }: { label: string; value: string; mon
           {value}
         </span>
         <button onClick={copy} style={{ background: copied ? "var(--green-bg)" : "var(--surface)", border: `1px solid ${copied ? "var(--green-bd)" : "var(--bdr)"}`, borderRadius: 5, padding: "1px 7px", fontSize: 9, fontWeight: 700, cursor: "pointer", color: copied ? "var(--green)" : "var(--muted)", whiteSpace: "nowrap", transition: "all .15s" }}>
-          {copied ? "✓" : "Copy"}
+          {copied ? "✓" : "📋"}
         </button>
       </div>
     </div>

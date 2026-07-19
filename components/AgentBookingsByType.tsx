@@ -88,6 +88,7 @@ export default function AgentBookingsByType({
   const { accessToken, refresh } = useAgentAuth();
   const statusTabs = category === "group_ticket" ? STATUS_TABS_GROUP_TICKET : STATUS_TABS_DEFAULT;
   const [status, setStatus] = useState("all");
+  const [search, setSearch] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,21 +126,48 @@ export default function AgentBookingsByType({
         ))}
       </div>
 
+      {/* Search bar */}
+      <div style={{ marginBottom: 12 }}>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="🔍  Search by ref, passenger name, flight route…"
+          style={{
+            width: "100%", padding: "8px 14px",
+            border: "1.5px solid var(--bdr)", borderRadius: 10,
+            fontSize: 12, outline: "none", background: "var(--white)",
+            color: "var(--text)",
+          }}
+        />
+      </div>
+
       <div className="ap-card">
         <div className="ap-tw">
           {loading ? (
             <p className="etd">Loading…</p>
           ) : error ? (
             <p className="etd" style={{ color: "var(--red)" }}>{error}</p>
-          ) : bookings.length === 0 ? (
-            <p className="etd">No bookings match these filters.</p>
-          ) : (
+          ) : (() => {
+            const q = search.trim().toLowerCase();
+            const filtered = q
+              ? bookings.filter(b =>
+                  b.bookingRef.toLowerCase().includes(q) ||
+                  (b.customerName ?? "").toLowerCase().includes(q) ||
+                  (b.groupFlight?.route ?? "").toLowerCase().includes(q) ||
+                  (b.groupFlight?.airline ?? "").toLowerCase().includes(q) ||
+                  (b.groupFlight?.flightNo ?? "").toLowerCase().includes(q) ||
+                  (b.package?.name ?? "").toLowerCase().includes(q)
+                )
+              : bookings;
+            if (filtered.length === 0) return <p className="etd">No bookings match{q ? ` "${search}"` : " these filters"}.</p>;
+            return (
             <table className="ap-table">
               <thead>
                 <tr><th>Ref</th><th>{detailLabel}</th><th>Pax</th><th>Status</th><th>Commission</th><th>Created</th><th></th></tr>
               </thead>
               <tbody>
-                {bookings.map((b) => {
+                {filtered.map((b) => {
                   const isLapsed = category === "group_ticket" && b.status === "pending" && b.expiresAt && new Date(b.expiresAt) < new Date();
                   return (
                     <tr key={b.id}>
@@ -167,7 +195,8 @@ export default function AgentBookingsByType({
                 })}
               </tbody>
             </table>
-          )}
+            );
+          })()}
         </div>
       </div>
 
