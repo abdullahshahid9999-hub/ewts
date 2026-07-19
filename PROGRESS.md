@@ -1194,3 +1194,73 @@ Services" dropdown option).
 
 No schema changes, no new migration needed. `npx tsc --noEmit`: clean
 against the same known baseline.
+
+## Print Invoice + issuedAt + Agent Logo Upload + Commission Verification
+
+**1. `AgentBooking.issuedAt`** — set server-side (`new Date()`) in the same
+`$transaction` as the status/ticketNumber update in
+`app/api/admin/agent-bookings/[id]/route.ts`, only when `isBeingIssued`.
+PrintTicket's "Ticketed On" now reads this instead of `updatedAt` (more
+precise — `updatedAt` could be touched by unrelated edits later).
+
+**2. Print Invoice** — built `components/PrintInvoice.tsx`, extracted
+`components/print/PrintShared.tsx` (TopBar/SecondRow/PassengerTable/
+Barcode/fmt) so PrintTicket and PrintInvoice share the header/passenger
+sections instead of duplicating ~100 lines. Print page
+(`app/agent/bookings/[id]/print`) now has a Ticket/Invoice toggle;
+Invoice stays blocked with "Ticket not issued yet." pre-issuance, exactly
+as before.
+
+**Honest finding on "Per Person Fare" (as instructed, not guessing):**
+`AgentBooking` only stores ONE `sellPrice` and ONE `commission` for the
+*whole* booking — `calculateCommission()` (`lib/commission.ts`) computes
+commission as a flat fixed amount OR a percentage of the total sellPrice,
+never broken out by Adult/Child/Infant. `GroupFlight.price` is also a
+single field, not per-passenger-type. There is no stored per-type fare
+anywhere in this system to pull a real "Adult fare vs Child fare" from.
+So the Pricing & Fares table's per-row Per Person Fare / Commission is a
+**uniform per-head split** of the one snapshotted total
+(`sellPrice / totalPax`, `commission / totalPax`) — not a true
+age-based fare breakdown. The **Grand Total row is NOT a sum of the
+(rounded) per-row figures** — it's `sellPrice - commission` directly from
+the snapshot, so it always exactly matches the real numbers regardless of
+the row-level approximation. If real per-type pricing is wanted later,
+`GroupFlight`/booking creation would need dedicated adult/child/infant
+fare fields (similar to `VisaService.priceAdult/priceChild/priceInfant`) —
+that's a bigger change than this task's scope.
+
+**3. Agent logo upload** — field already existed (`Agent.logoUrl`), just
+had no UI:
+- Admin (`/admin/agents`): per-row upload/change-logo control in the
+  agents table (compressed client-side, `PATCH /api/admin/agents/[id]/logo`,
+  R2 `folder: "agents"`), thumbnail shown next to the name.
+- Agent (`/agent/profile`): same upload, agent-editable, via new
+  `PATCH /api/agent/profile` (logo-only — balance/tier/creditLimit
+  still untouched by this or any agent-facing route).
+- Already flows into PrintTicket/PrintInvoice automatically (both pull
+  `Agent.logoUrl`), no changes needed there.
+
+**4. Commission workflow — verified end to end, already correct:**
+rate set (`AgentCommissionRate`) → `calculateCommission()` snapshots
+`commission` on `AgentBooking` at creation (fixed or % of sellPrice,
+never recalculated later) → on issuance, `netOwed = sellPrice -
+commission` decrements `Agent.balance` and creates a matching
+`AgentTransaction` audit row, all inside the same `$transaction` as the
+status/ticketNumber/issuedAt update and the seat decrement. Print
+Invoice pulls the same snapshotted `sellPrice`/`commission` fields
+directly — no independent recalculation, so there's only ever one
+commission number in the system.
+
+**Edge case noticed, not fixed (flagging rather than guessing at scope):**
+`isBeingIssued` is `status === "issued" && existing.status !== "issued"`.
+If a booking goes issued → cancelled → issued again, this would fire a
+second time and double-debit the agent's balance. Not currently
+prevented. Worth a guard (e.g. only allow the issued transition once,
+track via `issuedAt !== null`) if this path is ever used in practice.
+
+`npx tsc --noEmit`: clean against the same known baseline throughout.
+
+**Pending manual migration:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS issued_at TIMESTAMPTZ;
+```

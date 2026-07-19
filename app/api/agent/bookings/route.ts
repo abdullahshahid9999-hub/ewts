@@ -190,45 +190,61 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This flight is sold out — no seats remaining." }, { status: 409 });
     }
 
-    booking = await prisma.agentBooking.create({
-      data: {
-        agentId: agent.id,
-        serviceType,
-        groupFlightId,
-        sellPrice,
-        commission,
-        customerName,
-        customerPhone,
-        customerEmail,
-        travellers: travellers.length > 0 ? travellers : undefined,
-        bookingRef: generateBookingRef(),
-        status: "pending",
-        expiresAt: computeExpiresAt(serviceType),
-      },
-    });
+    try {
+      booking = await prisma.agentBooking.create({
+        data: {
+          agentId: agent.id,
+          serviceType,
+          groupFlightId,
+          sellPrice,
+          commission,
+          customerName,
+          customerPhone,
+          customerEmail,
+          travellers: travellers.length > 0 ? travellers : undefined,
+          bookingRef: generateBookingRef(),
+          status: "pending",
+          expiresAt: computeExpiresAt(serviceType),
+        },
+      });
+    } catch (e) {
+      console.error("POST /api/agent/bookings (group_ticket) failed:", e);
+      return NextResponse.json(
+        { error: e instanceof Error ? `Could not create booking: ${e.message}` : "Could not create booking." },
+        { status: 500 }
+      );
+    }
   } else {
-    booking = await prisma.agentBooking.create({
-      data: {
-        agentId: agent.id,
-        serviceType,
-        groupFlightId,
-        packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
-        sellPrice,
-        commission,
-        customerName,
-        customerPhone,
-        customerEmail,
-        travellers: travellers.length > 0 ? travellers : undefined,
-        roomTypeLabel,
-        insurancePlanLabel,
-        adults: Number.isFinite(adults) ? adults : undefined,
-        children: Number.isFinite(children) ? children : undefined,
-        infants: Number.isFinite(infants) ? infants : undefined,
-        bookingRef: generateBookingRef(),
-        status: "pending",
-        expiresAt: computeExpiresAt(serviceType),
-      },
-    });
+    try {
+      booking = await prisma.agentBooking.create({
+        data: {
+          agentId: agent.id,
+          serviceType,
+          groupFlightId,
+          packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
+          sellPrice,
+          commission,
+          customerName,
+          customerPhone,
+          customerEmail,
+          travellers: travellers.length > 0 ? travellers : undefined,
+          roomTypeLabel,
+          insurancePlanLabel,
+          adults: Number.isFinite(adults) ? adults : undefined,
+          children: Number.isFinite(children) ? children : undefined,
+          infants: Number.isFinite(infants) ? infants : undefined,
+          bookingRef: generateBookingRef(),
+          status: "pending",
+          expiresAt: computeExpiresAt(serviceType),
+        },
+      });
+    } catch (e) {
+      console.error("POST /api/agent/bookings failed:", e);
+      return NextResponse.json(
+        { error: e instanceof Error ? `Could not create booking: ${e.message}` : "Could not create booking." },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ booking }, { status: 201 });

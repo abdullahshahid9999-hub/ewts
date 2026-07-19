@@ -70,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       return tx.agentBooking.update({
         where: { id },
-        data: { status, ticketNumber: ticketNumber || undefined },
+        data: { status, ticketNumber: ticketNumber || undefined, issuedAt: isBeingIssued ? new Date() : undefined },
       });
     })
     .catch((e) => {

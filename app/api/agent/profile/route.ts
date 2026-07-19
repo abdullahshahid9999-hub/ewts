@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAgent } from "@/lib/apiAuth";
 import { verifyPassword, hashPassword } from "@/lib/auth";
+import { uploadToR2 } from "@/lib/r2";
 
 // Route Handlers are cached by Next.js by default — without this, admin
 // panel list pages can keep showing stale data after a create/update
@@ -25,8 +26,28 @@ export async function GET(req: NextRequest) {
       tier: agent.tier,
       balance: agent.balance,
       creditLimit: agent.creditLimit,
+      logoUrl: agent.logoUrl,
     },
   });
+}
+
+// Agent-editable logo only — balance/tier/creditLimit/etc. stay
+// admin-only and are never touched by this handler.
+export async function PATCH(req: NextRequest) {
+  const agent = await requireAgent(req);
+  if (!agent) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+
+  const form = await req.formData().catch(() => null);
+  const file = form?.get("logo");
+  if (!file || !(file instanceof Blob) || file.size === 0) {
+    return NextResponse.json({ error: "No logo file provided." }, { status: 400 });
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const logoUrl = await uploadToR2({ buffer, contentType: file.type || "image/png", folder: "agents" });
+
+  await prisma.agent.update({ where: { id: agent.id }, data: { logoUrl } });
+  return NextResponse.json({ logoUrl });
 }
 
 // Password change while logged in — requires the current password, not

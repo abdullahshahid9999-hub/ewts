@@ -5,14 +5,18 @@ import { useParams } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 import PrintTicket, { PrintTicketBooking } from "@/components/PrintTicket";
+import PrintInvoice, { PrintInvoiceBooking } from "@/components/PrintInvoice";
+
+type FullBooking = PrintTicketBooking & PrintInvoiceBooking;
 
 function PrintPageInner() {
   const params = useParams();
   const id = params.id as string;
   const { accessToken, refresh } = useAgentAuth();
-  const [booking, setBooking] = useState<PrintTicketBooking | null>(null);
+  const [booking, setBooking] = useState<FullBooking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"ticket" | "invoice">("ticket");
   const [invoiceMsg, setInvoiceMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,12 +29,12 @@ function PrintPageInner() {
   }, [id, accessToken, refresh]);
 
   function handlePrintInvoice() {
-    // TODO: replace with real invoice layout once owner provides reference
     if (booking?.status !== "issued") {
       setInvoiceMsg("Ticket not issued yet.");
       return;
     }
-    setInvoiceMsg("Invoice layout not built yet — owner will provide the reference.");
+    setInvoiceMsg(null);
+    setView("invoice");
   }
 
   if (loading) return <p style={{ padding: 40, textAlign: "center" }}>Loading…</p>;
@@ -42,13 +46,18 @@ function PrintPageInner() {
   return (
     <div style={{ background: "#eef1f5", minHeight: "100vh" }}>
       <div className="no-print" style={{ display: "flex", gap: 10, justifyContent: "center", padding: "20px 0" }}>
-        <button onClick={() => window.print()} className="ap-btn ap-btn-gold">Print Ticket</button>
-        <button onClick={handlePrintInvoice} className="ap-btn ap-btn-ghost">Print Invoice</button>
+        <button onClick={() => { setView("ticket"); setInvoiceMsg(null); }} className={view === "ticket" ? "ap-btn ap-btn-gold" : "ap-btn ap-btn-ghost"}>
+          Ticket
+        </button>
+        <button onClick={handlePrintInvoice} className={view === "invoice" ? "ap-btn ap-btn-gold" : "ap-btn ap-btn-ghost"}>
+          Invoice
+        </button>
+        <button onClick={() => window.print()} className="ap-btn ap-btn-gold">Print</button>
       </div>
       {invoiceMsg && (
         <p className="no-print" style={{ textAlign: "center", fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>{invoiceMsg}</p>
       )}
-      <PrintTicket booking={booking} />
+      {view === "ticket" ? <PrintTicket booking={booking} /> : <PrintInvoice booking={booking} />}
     </div>
   );
 }
