@@ -100,8 +100,25 @@ function PrintPageInner() {
           </button>
         </div>
 
-        {/* Print / Cancel — right-aligned action buttons */}
+        {/* Print / Dashboard / Cancel — right-aligned action buttons */}
         <div style={{ display: "flex", gap: 10 }}>
+          <a
+            href="/agent/dashboard"
+            className="ap-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              background: "#fff",
+              border: "1px solid var(--border, #e2e2e2)",
+              color: "var(--muted, #666)",
+              borderRadius: 8,
+              padding: "9px 16px",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            Dashboard
+          </a>
           <button
             onClick={() => router.back()}
             className="ap-btn"
@@ -133,8 +150,9 @@ function PrintPageInner() {
               padding: "9px 18px",
               fontWeight: 700,
             }}
+            title="Opens the print dialog — choose 'Save as PDF' as the destination to download"
           >
-            🖨️ Print
+            🖨️ Print / Download PDF
           </button>
         </div>
       </div>

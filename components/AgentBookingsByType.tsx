@@ -183,7 +183,10 @@ export default function AgentBookingsByType({
                       </td>
                       <td>PKR {b.commission.toLocaleString()}</td>
                       <td>{new Date(b.createdAt).toLocaleDateString()}</td>
-                      <td>
+                      <td style={{ display: "flex", gap: 6 }}>
+                        <Link href={`/agent/bookings/${b.id}`} className="ap-btn ap-btn-ghost" style={{ padding: "5px 10px", fontSize: 11 }}>
+                          View
+                        </Link>
                         {!isLapsed && (b.status === "pending" || b.status === "confirmed") && (
                           <button onClick={() => setIssuingId(b.id)} className="ap-btn ap-btn-ghost" style={{ padding: "5px 10px", fontSize: 11 }}>
                             Request Issuance
