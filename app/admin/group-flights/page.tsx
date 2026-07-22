@@ -248,6 +248,7 @@ function GroupFlightsInner() {
                       <td>{f.price}</td>
                       <td>{f.seats}</td>
                       <td style={{ display: "flex", gap: "6px" }}>
+                        <a href={`/admin/group-flights/${f.id}/bookings`} className="adp-btn adp-btn-s">Bookings</a>
                         <button onClick={() => startEdit(f)} className="adp-btn adp-btn-s">Edit</button>
                         <button onClick={() => handleDelete(f.id)} className="adp-btn adp-btn-r">Delete</button>
                       </td>
