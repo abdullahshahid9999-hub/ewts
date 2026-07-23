@@ -3,13 +3,20 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GroupTicketsClient from "@/components/GroupTicketsClient";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
 
 export const revalidate = 120;
 
-async function getFlights() {
+async function getFlights(q?: string) {
   try {
     return await prisma.groupFlight.findMany({
-      where: { status: "active" },
+      where: {
+        status: "active",
+        ...(q ? { OR: [
+          { airline: { contains: q, mode: "insensitive" } },
+          { route: { contains: q, mode: "insensitive" } },
+        ] } : {}),
+      },
       orderBy: { createdAt: "desc" },
     });
   } catch {
@@ -17,8 +24,9 @@ async function getFlights() {
   }
 }
 
-export default async function GroupTicketsPage() {
-  const flights = await getFlights();
+export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const flights = await getFlights(q);
 
   return (
     <>
@@ -48,6 +56,7 @@ export default async function GroupTicketsPage() {
           Choose Your <span className="italic text-gold">Category</span>
         </h2>
         <p className="text-muted text-sm mb-10">Click a category to see available group flights</p>
+        <div className="text-left mb-6"><SearchResultsNotice q={q} basePath="/group-tickets" /></div>
         <h3 className="font-display text-xl font-semibold mb-6">
           Available <span className="italic text-gold">Departures</span>
         </h3>

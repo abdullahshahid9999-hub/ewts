@@ -5,12 +5,19 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import InsuranceCalculator from "@/components/InsuranceCalculator";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
 
 export const revalidate = 120;
 
-async function getCompanies() {
+async function getCompanies(q?: string) {
   try {
     return await prisma.insuranceCompany.findMany({
+      where: q ? {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { plans: { some: { name: { contains: q, mode: "insensitive" } } } },
+        ],
+      } : undefined,
       orderBy: { name: "asc" },
       include: {
         plans: {
@@ -26,8 +33,9 @@ async function getCompanies() {
 
 const BADGES = ["All Destinations", "Trusted Coverage", "Buy on WhatsApp", "Instant Quote"];
 
-export default async function InsurancePage() {
-  const companies = await getCompanies();
+export default async function InsurancePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const companies = await getCompanies(q);
 
   return (
     <>
@@ -70,9 +78,10 @@ export default async function InsurancePage() {
           East &amp; West Travel Services acts as an agent.
         </p>
 
+        <SearchResultsNotice q={q} basePath="/insurance" />
         {companies.length === 0 ? (
           <p className="text-muted text-center">
-            No insurance plans are listed right now — WhatsApp us for details.
+            {q ? `No insurer or plan matches "${q}" — WhatsApp us for details.` : "No insurance plans are listed right now — WhatsApp us for details."}
           </p>
         ) : (
           companies.map((company) => (

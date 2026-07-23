@@ -4,13 +4,20 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
 
 export const revalidate = 120;
 
-async function getVisas() {
+async function getVisas(q?: string) {
   try {
     return await prisma.visaService.findMany({
-      where: { status: "active" },
+      where: {
+        status: "active",
+        ...(q ? { OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { country: { contains: q, mode: "insensitive" } },
+        ] } : {}),
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true, title: true, country: true, type: true,
@@ -38,8 +45,9 @@ const STEPS = [
   { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
 ];
 
-export default async function VisaPage() {
-  const visas = await getVisas();
+export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const visas = await getVisas(q);
 
   return (
     <>
@@ -86,12 +94,13 @@ export default async function VisaPage() {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-16">
+        <SearchResultsNotice q={q} basePath="/visa" />
         {visas.length === 0 ? (
           <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
             <p className="text-4xl mb-4">🛂</p>
-            <h3 className="font-display text-xl font-semibold mb-2">No Visa Services Listed</h3>
+            <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Visas" : "No Visa Services Listed"}</h3>
             <p className="text-muted text-sm mb-6">
-              Tell us your destination and we&apos;ll confirm requirements and pricing directly.
+              {q ? `We couldn't find a visa service matching "${q}". ` : ""}Tell us your destination and we&apos;ll confirm requirements and pricing directly.
             </p>
             <a
               href={waLink("Assalam o Alaikum! I'd like details about visa services.")}
