@@ -70,6 +70,12 @@ model PackageRoomType {
   maxInfants        Int     @default(0) @map("max_infants")
   minAdultsRequired Int?    @map("min_adults_required") // e.g. Triple Room needs >=3 adults booked together
   sortOrder         Int     @default(0) @map("sort_order")
+  // Total bookable slots for this room type on this departure. NULL means
+  // unlimited/untracked (existing room types before this feature keep
+  // working exactly as before — no capacity limit enforced until admin
+  // sets one). When set, each booking's traveller count is deducted from
+  // it, with the same 2-hour hold+release pattern as group-flight seats.
+  availableSlots    Int?    @map("available_slots")
 
   package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
@@ -431,7 +437,11 @@ model AgentBooking {
   // broad category, so opening one specific tour showed every booking in
   // that category regardless of which actual package it was for.
   packageId         String?   @map("package_id")
-  status            String    @default("pending") // pending | confirmed | issue_requested | issued | cancelled
+  status            String    @default("pending") // pending | confirmed | issue_requested | issued | cancelled | expired
+  // 2-hour hold for group-ticket seats / umrah room-type slots reserved
+  // at booking creation — released back to inventory if not confirmed by
+  // this time. Same mechanism as the public Booking model's hold.
+  expiresAt         DateTime? @map("expires_at")
   sellPrice         Int       @map("sell_price")
   // Snapshot of the agent's commission rate AT THE TIME this booking was
   // created (computed via lib/commission.ts from AgentCommissionRate).
