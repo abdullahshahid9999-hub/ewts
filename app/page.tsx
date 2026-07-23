@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustpilotBadge from "@/components/TrustpilotBadge";
+import SearchWidget from "@/components/landing/SearchWidget";
 import { waLink } from "@/lib/whatsapp";
 
 export const revalidate = 120;
@@ -106,13 +107,10 @@ const DEST_CHIPS = [
   "Bali Indonesia", "Family Packages", "Visa Services",
 ];
 
-function HeroImg({ src, label, className = "" }: { src: string; label: string; className?: string }) {
+function TrustStrip() {
   return (
-    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
-      <Image src={src} alt={label} fill className="object-cover" />
-      <span className="absolute bottom-3 left-3 z-10 text-xs font-semibold text-white bg-black/50 px-2.5 py-1 rounded">
-        {label}
-      </span>
+    <div className="flex justify-center py-6" style={{ background: "var(--lp-sand)" }}>
+      <TrustpilotBadge />
     </div>
   );
 }
@@ -124,69 +122,49 @@ export default async function Home() {
     <>
       <Navbar />
 
-      {/* HERO — dark navy, two-column (text left, image collage right), matches live site */}
-      <section className="bg-navy text-white">
-        <div className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <span className="inline-flex items-center gap-2 text-gold text-xs font-semibold tracking-wide uppercase bg-white/5 border border-gold/30 rounded-full px-4 py-2 mb-6">
-              📍 Faisalabad&apos;s Trusted Travel Partner
-            </span>
-            <h1 className="font-display text-5xl md:text-6xl font-semibold leading-tight mb-6">
-              Your Journey<br />
-              <span className="italic text-gold">Starts Here</span>
-            </h1>
-            <p className="text-white/70 text-lg mb-8 max-w-lg">
-              From the sacred lands of Makkah to the shores of Bali — we craft
-              every journey with care, trust, and 20+ years of experience. No
-              shortcuts. No hidden charges.
-            </p>
-            <div className="flex items-center gap-4 flex-wrap mb-10">
-              <a
-                href={waLink("Assalam o Alaikum! I'd like to explore your travel services.")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
-              >
-                Explore Services
-              </a>
-              <a
-                href={waLink("Assalam o Alaikum!")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border border-white/20 hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
-              >
-                WhatsApp Us
-              </a>
-            </div>
-            <TrustpilotBadge className="mb-6" />
-            <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-white/10 pt-6">
-              {HERO_STATS.map((s) => (
-                <div key={s.label}>
-                  <div className="font-display text-2xl font-semibold">{s.value}</div>
-                  <div className="text-xs text-white/50 uppercase tracking-wide">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* HERO — new direction: warm parchment + deep emerald-ink + brass,
+          background travel photo, ticket-stub search card as the single
+          signature element. Scoped to .lp classes so nothing outside the
+          landing page is affected. */}
+      <section className="lp relative overflow-hidden">
+        <div className="absolute inset-0">
+          <Image src="/images/makarem_1.jpeg" alt="" fill className="object-cover" priority />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(14,42,38,0.88) 0%, rgba(14,42,38,0.72) 45%, var(--lp-sand) 100%)" }} />
+        </div>
 
-          <div className="relative grid grid-cols-2 gap-4 h-[420px]">
-            <HeroImg src="/images/makarem_1.jpeg" label="Makarem Ajyad Makkah" className="row-span-2" />
-            <HeroImg src="/images/pullman_1.jpeg" label="Madinah" />
-            <HeroImg src="/images/makarem_2.jpeg" label="Premium Rooms" />
-            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:-left-4 bg-gold text-black rounded-xl px-4 py-3 shadow-lg text-center">
-              <div className="font-display text-lg font-bold leading-none">4.9★</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide">Customer Rating</div>
-            </div>
+        <div className="relative max-w-4xl mx-auto px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 text-center">
+          <span className="lp-rise lp-rise-1 inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase px-4 py-2 rounded-full mb-7" style={{ color: "var(--lp-brass-light)", background: "rgba(255,253,248,0.08)", border: "1px solid rgba(212,169,79,0.35)" }}>
+            📍 Faisalabad&apos;s Trusted Travel Partner · Umrah Ministry Approved
+          </span>
+          <h1 className="lp-rise lp-rise-1 font-display text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight mb-5" style={{ color: "var(--lp-ivory)" }}>
+            Where would you<br />
+            <span className="italic" style={{ color: "var(--lp-brass-light)" }}>like to go?</span>
+          </h1>
+          <p className="lp-rise lp-rise-1 text-base sm:text-lg mb-10 max-w-xl mx-auto" style={{ color: "rgba(255,253,248,0.75)" }}>
+            Umrah, flights, tours, visas, and insurance — search once, and we&apos;ll
+            take care of the rest, the halal way.
+          </p>
+
+          <SearchWidget />
+
+          <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-10 gap-y-4 mt-12">
+            {HERO_STATS.map((s) => (
+              <div key={s.label}>
+                <div className="font-display text-2xl font-semibold" style={{ color: "var(--lp-ivory)" }}>{s.value}</div>
+                <div className="text-xs uppercase tracking-wide" style={{ color: "rgba(255,253,248,0.55)" }}>{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Destination chip strip */}
-        <div className="border-t border-white/10 py-5">
+        <div className="relative py-5" style={{ borderTop: "1px solid var(--lp-border)" }}>
           <div className="max-w-6xl mx-auto px-6 flex flex-wrap gap-3 justify-center">
             {DEST_CHIPS.map((chip) => (
               <span
                 key={chip}
-                className="text-xs font-semibold px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80"
+                className="text-xs font-semibold px-4 py-2 rounded-full"
+                style={{ background: "var(--lp-ivory)", border: "1px solid var(--lp-border)", color: "var(--lp-ink)" }}
               >
                 {chip}
               </span>
@@ -194,6 +172,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <TrustStrip />
 
       {/* FEATURED PACKAGES */}
       <section className="max-w-6xl mx-auto px-6 py-20">
