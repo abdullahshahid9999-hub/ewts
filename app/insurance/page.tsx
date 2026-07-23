@@ -33,8 +33,8 @@ async function getCompanies(q?: string) {
 
 const BADGES = ["All Destinations", "Trusted Coverage", "Buy on WhatsApp", "Instant Quote"];
 
-export default async function InsurancePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
+export default async function InsurancePage({ searchParams }: { searchParams: Promise<{ q?: string; travellers?: string }> }) {
+  const { q, travellers } = await searchParams;
   const companies = await getCompanies(q);
 
   return (
@@ -65,7 +65,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
 
       {/* QUOTE CALCULATOR */}
       <section className="max-w-6xl mx-auto px-6 py-14">
-        <InsuranceCalculator />
+        <InsuranceCalculator initialDestination={q} initialTravellers={travellers} />
       </section>
 
       {/* AVAILABLE PLANS */}

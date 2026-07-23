@@ -5,15 +5,19 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import SearchResultsNotice from "@/components/SearchResultsNotice";
+import { paxQueryString } from "@/lib/searchState";
 
 export const revalidate = 120;
 
-async function getPackages(q?: string) {
+async function getPackages(q?: string, tier?: string, airline?: string, duration?: string) {
   try {
     return await prisma.package.findMany({
       where: {
         category: "tours",
         status: "active",
+        ...(tier ? { tier } : {}),
+        ...(airline ? { airline } : {}),
+        ...(duration ? { duration } : {}),
         ...(q ? { OR: [
           { name: { contains: q, mode: "insensitive" } },
           { destination: { contains: q, mode: "insensitive" } },
@@ -26,9 +30,11 @@ async function getPackages(q?: string) {
   }
 }
 
-export default async function ToursPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
-  const packages = await getPackages(q);
+export default async function ToursPage({ searchParams }: { searchParams: Promise<{ q?: string; tier?: string; airline?: string; duration?: string; adults?: string; children?: string; infants?: string }> }) {
+  const sp = await searchParams;
+  const { q, tier, airline, duration } = sp;
+  const packages = await getPackages(q, tier, airline, duration);
+  const paxQS = paxQueryString(sp);
 
   return (
     <>
@@ -115,7 +121,7 @@ export default async function ToursPage({ searchParams }: { searchParams: Promis
                       )}
                     </span>
                     {pkg.slug ? (
-                      <Link href={`/tours/${pkg.slug}`} className="text-sm font-semibold text-gold hover:underline">
+                      <Link href={`/tours/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-gold hover:underline">
                         View Details →
                       </Link>
                     ) : (

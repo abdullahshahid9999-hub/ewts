@@ -7,11 +7,12 @@ import SearchResultsNotice from "@/components/SearchResultsNotice";
 
 export const revalidate = 120;
 
-async function getFlights(q?: string) {
+async function getFlights(q?: string, airline?: string, direct?: string) {
   try {
-    return await prisma.groupFlight.findMany({
+    const flights = await prisma.groupFlight.findMany({
       where: {
         status: "active",
+        ...(airline ? { airline } : {}),
         ...(q ? { OR: [
           { airline: { contains: q, mode: "insensitive" } },
           { route: { contains: q, mode: "insensitive" } },
@@ -19,14 +20,20 @@ async function getFlights(q?: string) {
       },
       orderBy: { createdAt: "desc" },
     });
+    // "Direct only" can't be a Prisma where-clause since legs is JSON —
+    // filtered in-memory instead (list sizes here are small).
+    if (direct === "1") {
+      return flights.filter((f) => !Array.isArray(f.legs) || (f.legs as unknown[]).length <= 1);
+    }
+    return flights;
   } catch {
     return [];
   }
 }
 
-export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
-  const flights = await getFlights(q);
+export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string; airline?: string; direct?: string }> }) {
+  const { q, airline, direct } = await searchParams;
+  const flights = await getFlights(q, airline, direct);
 
   return (
     <>

@@ -5,14 +5,16 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import SearchResultsNotice from "@/components/SearchResultsNotice";
+import { paxQueryString } from "@/lib/searchState";
 
 export const revalidate = 120;
 
-async function getVisas(q?: string) {
+async function getVisas(q?: string, type?: string) {
   try {
     return await prisma.visaService.findMany({
       where: {
         status: "active",
+        ...(type ? { type } : {}),
         ...(q ? { OR: [
           { title: { contains: q, mode: "insensitive" } },
           { country: { contains: q, mode: "insensitive" } },
@@ -45,9 +47,11 @@ const STEPS = [
   { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
 ];
 
-export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
-  const visas = await getVisas(q);
+export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; adults?: string; children?: string; infants?: string }> }) {
+  const sp = await searchParams;
+  const { q, type } = sp;
+  const visas = await getVisas(q, type);
+  const paxQS = paxQueryString(sp);
 
   return (
     <>
@@ -145,7 +149,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
                       {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
                     </span>
                     <Link
-                      href={`/visa/${v.id}`}
+                      href={`/visa/${v.id}${paxQS ? `?${paxQS}` : ""}`}
                       className="text-sm font-bold bg-gold text-black px-4 py-1.5 rounded-lg hover:bg-gold-light transition-colors"
                     >
                       View &amp; Apply
