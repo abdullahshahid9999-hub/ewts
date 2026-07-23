@@ -38,6 +38,111 @@
   --font-body: var(--font-jakarta);
 }
 
+/* ============================================================
+   LANDING PAGE — new visual direction, scoped to .lp-* classes
+   only. Deliberately NOT touching --navy/--gold above: the
+   admin panel, agent portal, and printed documents all key off
+   those globally, so a site-wide palette swap happens in a
+   later phase once the new direction is approved here first.
+
+   Palette: deep emerald-ink (not navy) + warm brass (richer,
+   less flat than the existing gold) + oxblood accent (used
+   rarely) + parchment background — evokes mosque tilework and
+   traditional textile warmth rather than generic corporate
+   navy/gold.
+   ============================================================ */
+.lp {
+  --lp-ink: #0E2A26;
+  --lp-ink-light: #163B35;
+  --lp-sand: #F7F2E6;
+  --lp-ivory: #FFFDF8;
+  --lp-brass: #B8862E;
+  --lp-brass-light: #D4A94F;
+  --lp-oxblood: #6E2A2A;
+  --lp-text: #1B2B27;
+  --lp-muted: #5B6B65;
+  --lp-border: rgba(14, 42, 38, 0.12);
+  background: var(--lp-sand);
+  color: var(--lp-text);
+}
+
+.lp-eyebrow {
+  font-family: var(--font-jakarta);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-brass);
+}
+
+/* Ticket-stub notch — the search card's one deliberate visual
+   risk: a nod to a physical boarding-pass stub, cut into the
+   right edge with a scalloped row of semicircles instead of a
+   plain rounded rectangle. */
+.lp-ticket {
+  position: relative;
+  background: var(--lp-ivory);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px -20px rgba(14, 42, 38, 0.35);
+}
+.lp-ticket::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -1px;
+  width: 28px;
+  background-image: radial-gradient(circle 9px, var(--lp-sand) 9px, transparent 10px);
+  background-size: 28px 28px;
+  background-position: center;
+  background-repeat: repeat-y;
+}
+
+.lp-tab {
+  font-family: var(--font-jakarta);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--lp-muted);
+  padding: 10px 18px;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+.lp-tab.active {
+  background: var(--lp-ink);
+  color: var(--lp-ivory);
+}
+.lp-tab:not(.active):hover {
+  background: rgba(14, 42, 38, 0.06);
+}
+
+.lp-search-btn {
+  background: var(--lp-brass);
+  color: var(--lp-ivory);
+  font-weight: 700;
+  border-radius: 14px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.lp-search-btn:hover {
+  background: var(--lp-brass-light);
+  transform: translateY(-1px);
+}
+
+@keyframes lp-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.lp-rise {
+  animation: lp-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lp-rise-1 { animation-delay: 0.05s; }
+.lp-rise-2 { animation-delay: 0.15s; }
+.lp-rise-3 { animation-delay: 0.25s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-rise { animation: none; }
+}
+
 body {
   background: linear-gradient(180deg, #FAFAF7 0%, var(--bg) 340px);
   color: var(--text);
