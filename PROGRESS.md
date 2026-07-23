@@ -1264,3 +1264,60 @@ track via `issuedAt !== null`) if this path is ever used in practice.
 ```sql
 ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS issued_at TIMESTAMPTZ;
 ```
+
+## Full-Site UX Overhaul — Phase 1: New Landing Page + Real Search
+
+Owner asked for a full mobile-responsive + UI/UX pass across B2C, B2B
+(agent portal), and Admin, starting with a "most beautiful" landing page
+with a Wizz/Kayak-style unified multi-service search widget. Agreed
+approach (owner confirmed): phase-wise, landing page first for review
+before continuing; real filtering (not just routing) from day one; new
+visual direction is welcome, not just current navy/gold re-executed;
+full site scope includes Admin too.
+
+**New design direction (Phase 1, landing page only):** deep emerald-ink
+(`#0E2A26`) + warm brass (`#B8862E`) + parchment/sand (`#F7F2E6`) +
+oxblood accent used rarely — evokes mosque tilework/traditional textile
+warmth, deliberately distinct from generic navy-corporate travel-site
+look and from the AI-generated-design "tells" (cream+terracotta,
+near-black+neon, broadsheet). Kept existing fonts (Cormorant display +
+Plus Jakarta Sans body) — already distinctive choices, not worth
+churning. Signature element: the search card is a literal ticket-stub
+shape (scalloped notch cut into the right edge, CSS radial-gradient
+trick), not a generic rounded rectangle — ties concretely to the travel
+subject.
+
+**Scoped, not global:** all new tokens/classes are `.lp-*`, added
+additively in `app/globals.css` — the existing `--navy`/`--gold` used
+throughout the admin panel, agent portal, and printed
+tickets/invoices is untouched. This was deliberate: changing the global
+palette now would have cascaded into dozens of already-built admin/agent
+screens before the new direction was even approved. Once the owner signs
+off on this look, propagating it site-wide is a separate, explicit later
+step (Phase 3/4).
+
+**`components/landing/SearchWidget.tsx`** — 5 service tabs (Umrah,
+Flights, Tours, Visa, Insurance), horizontally scrollable on mobile so
+all 5 stay reachable, one text input whose placeholder changes per tab,
+submits to that service's real listing page with `?q=`.
+
+**Real filtering, all 5 public listing pages** (`app/umrah`, `/tours`,
+`/group-tickets`, `/visa`, `/insurance`) — each now reads
+`searchParams.q` server-side and adds a case-insensitive `contains`
+`OR` clause (name/destination for packages, airline/route for group
+flights, title/country for visa, company-or-plan-name for insurance).
+New shared `components/SearchResultsNotice.tsx` shows "Showing results
+for '…' · Clear search" and each page's existing empty-state card now
+has query-aware copy ("No Matching Packages" vs the generic message) —
+reused the existing empty-state design rather than building a new one.
+
+`npx tsc --noEmit`: clean against the same known baseline (only line-
+number shifts of the pre-existing implicit-any errors, zero new ones).
+
+**Next (pending owner's review of this phase):**
+- Phase 2: propagate the new direction site-wide if approved (or iterate
+  further on it first)
+- Phase 3: mobile-responsive audit, B2C public site
+- Phase 4: mobile-responsive audit, Agent portal (B2B) + Admin panel
+
+No schema changes, no migration needed for this phase.
