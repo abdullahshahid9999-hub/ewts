@@ -21,6 +21,35 @@ async function getFeaturedPackages() {
   }
 }
 
+// Distinct real values pulled from the DB (not hardcoded) — so filters
+// never offer an option that doesn't actually exist, and new tiers/
+// airlines/durations admin adds later show up automatically.
+async function getFilterOptions() {
+  const empty = {
+    umrah: { tiers: [], airlines: [], durations: [] },
+    tours: { tiers: [], airlines: [], durations: [] },
+    groupTickets: { airlines: [] },
+    visa: { types: [], countries: [] },
+  };
+  try {
+    const [umrahPkgs, tourPkgs, flights, visas] = await Promise.all([
+      prisma.package.findMany({ where: { category: "umrah", status: "active" }, select: { tier: true, airline: true, duration: true } }),
+      prisma.package.findMany({ where: { category: "tours", status: "active" }, select: { tier: true, airline: true, duration: true } }),
+      prisma.groupFlight.findMany({ where: { status: "active" }, select: { airline: true } }),
+      prisma.visaService.findMany({ where: { status: "active" }, select: { type: true, country: true } }),
+    ]);
+    const uniq = (arr: (string | null)[]) => Array.from(new Set(arr.filter((v): v is string => !!v))).sort();
+    return {
+      umrah: { tiers: uniq(umrahPkgs.map((p) => p.tier)), airlines: uniq(umrahPkgs.map((p) => p.airline)), durations: uniq(umrahPkgs.map((p) => p.duration)) },
+      tours: { tiers: uniq(tourPkgs.map((p) => p.tier)), airlines: uniq(tourPkgs.map((p) => p.airline)), durations: uniq(tourPkgs.map((p) => p.duration)) },
+      groupTickets: { airlines: uniq(flights.map((f) => f.airline)) },
+      visa: { types: uniq(visas.map((v) => v.type)), countries: uniq(visas.map((v) => v.country)) },
+    };
+  } catch {
+    return empty;
+  }
+}
+
 const HERO_STATS = [
   { value: "5,000+", label: "Travelers Served" },
   { value: "20+", label: "Years in Business" },
@@ -117,6 +146,7 @@ function TrustStrip() {
 
 export default async function Home() {
   const packages = await getFeaturedPackages();
+  const filterOptions = await getFilterOptions();
 
   return (
     <>
@@ -132,11 +162,11 @@ export default async function Home() {
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(14,42,38,0.88) 0%, rgba(14,42,38,0.72) 45%, var(--lp-sand) 100%)" }} />
         </div>
 
-        <div className="relative max-w-4xl mx-auto px-6 pt-16 pb-20 sm:pt-24 sm:pb-28 text-center">
+        <div className="relative max-w-5xl mx-auto px-6 pt-16 pb-20 sm:pt-28 sm:pb-32 lg:pt-36 lg:pb-40 text-center">
           <span className="lp-rise lp-rise-1 inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase px-4 py-2 rounded-full mb-7" style={{ color: "var(--lp-brass-light)", background: "rgba(255,253,248,0.08)", border: "1px solid rgba(212,169,79,0.35)" }}>
             📍 Faisalabad&apos;s Trusted Travel Partner · Umrah Ministry Approved
           </span>
-          <h1 className="lp-rise lp-rise-1 font-display text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight mb-5" style={{ color: "var(--lp-ivory)" }}>
+          <h1 className="lp-rise lp-rise-1 font-display text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-tight mb-5" style={{ color: "var(--lp-ivory)" }}>
             Where would you<br />
             <span className="italic" style={{ color: "var(--lp-brass-light)" }}>like to go?</span>
           </h1>
@@ -145,7 +175,7 @@ export default async function Home() {
             take care of the rest, the halal way.
           </p>
 
-          <SearchWidget />
+          <SearchWidget options={filterOptions} />
 
           <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-10 gap-y-4 mt-12">
             {HERO_STATS.map((s) => (
