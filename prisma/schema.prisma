@@ -468,7 +468,6 @@ model AgentBooking {
   children          Int?      @default(0)
   infants           Int?      @default(0)
   bookingRef        String    @unique @map("booking_ref")
-  expiresAt         DateTime? @map("expires_at")
   issueRequestedAt  DateTime? @map("issue_requested_at")
   issueRequestedBy  String?   @map("issue_requested_by")
   createdAt         DateTime  @default(now()) @map("created_at")
