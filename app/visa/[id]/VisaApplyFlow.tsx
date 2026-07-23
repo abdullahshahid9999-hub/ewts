@@ -34,16 +34,16 @@ type ApplicationDraft = {
   files: Record<string, File>;
 };
 
-function emptyDraft(visa: VisaInfo): ApplicationDraft {
+function emptyDraft(visa: VisaInfo, initial?: { adults?: number; children?: number; infants?: number }): ApplicationDraft {
   return {
     visa,
     fullName: "",
     passportNumber: "",
     phone: "",
     email: "",
-    adults: 1,
-    children: 0,
-    infants: 0,
+    adults: initial?.adults ?? 1,
+    children: initial?.children ?? 0,
+    infants: initial?.infants ?? 0,
     files: {},
   };
 }
@@ -55,10 +55,10 @@ function computePrice(draft: ApplicationDraft): number {
   return draft.adults * pa + draft.children * pc + draft.infants * pi;
 }
 
-export default function VisaApplyFlow({ visa }: { visa: VisaInfo }) {
+export default function VisaApplyFlow({ visa, initialAdults, initialChildren, initialInfants }: { visa: VisaInfo; initialAdults?: number; initialChildren?: number; initialInfants?: number }) {
   const [mode, setMode] = useState<"idle" | "form" | "success">("idle");
   // The cart: list of application drafts
-  const [drafts, setDrafts] = useState<ApplicationDraft[]>([emptyDraft(visa)]);
+  const [drafts, setDrafts] = useState<ApplicationDraft[]>([emptyDraft(visa, { adults: initialAdults, children: initialChildren, infants: initialInfants })]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

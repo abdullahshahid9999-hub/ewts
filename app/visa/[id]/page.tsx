@@ -22,7 +22,11 @@ async function getVisa(id: string) {
   }
 }
 
-export default async function VisaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function VisaDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ adults?: string; children?: string; infants?: string }> }) {
+  const sp = await searchParams;
+  const initialAdults = sp.adults ? parseInt(sp.adults, 10) || 1 : undefined;
+  const initialChildren = sp.children ? parseInt(sp.children, 10) || 0 : undefined;
+  const initialInfants = sp.infants ? parseInt(sp.infants, 10) || 0 : undefined;
   const { id } = await params;
   const visa = await getVisa(id);
   if (!visa) notFound();
@@ -151,7 +155,7 @@ export default async function VisaDetailPage({ params }: { params: Promise<{ id:
               </>
             ) : null}
 
-            <VisaApplyFlow visa={{
+            <VisaApplyFlow initialAdults={initialAdults} initialChildren={initialChildren} initialInfants={initialInfants} visa={{
               id: visa.id,
               title: visa.title,
               country: visa.country,
