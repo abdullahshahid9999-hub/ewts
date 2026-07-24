@@ -32,10 +32,10 @@ type PackageWithRoomTypes = {
 
 function tierPillClass(tier: string) {
   const t = tier.toLowerCase();
-  if (t === "gold") return "bg-gold text-black";
-  if (t === "platinum") return "bg-[var(--navy)] text-white";
+  if (t === "gold") return "bg-[var(--lp-brass)] text-black";
+  if (t === "platinum") return "bg-[var(--lp-ink)] text-white";
   if (t === "silver") return "bg-gray-200 text-gray-700";
-  return "bg-gold/20 text-[var(--navy)]";
+  return "bg-[var(--lp-brass)]/20 text-[var(--lp-ink)]";
 }
 
 function parseList(text: string | null): string[] {
@@ -70,12 +70,12 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
   return (
     <>
       {/* HEADER */}
-      <section className="bg-[var(--navy)] text-white px-6 pt-16 pb-10">
+      <section className="bg-[var(--lp-ink)] text-white px-6 pt-16 pb-10">
         <div className="max-w-5xl mx-auto">
           <p className="text-white/50 text-sm mb-4">
-            <Link href="/" className="hover:text-gold">Home</Link>
+            <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
             <span className="mx-2">/</span>
-            <Link href={backHref} className="hover:text-gold capitalize">{pkg.category}</Link>
+            <Link href={backHref} className="hover:text-[var(--lp-brass)] capitalize">{pkg.category}</Link>
             <span className="mx-2">/</span>
             <span>{pkg.name}</span>
           </p>
@@ -100,7 +100,7 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
           {pkg.imageUrl ? (
             <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--navy)] to-[#1a2b45] text-white/50 text-sm">
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--lp-ink)] to-[#1a2b45] text-white/50 text-sm">
               {pkg.name}
             </div>
           )}
@@ -145,7 +145,7 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
             <div className="flex flex-wrap gap-3">
               {sectors.map((sec, i) => (
                 <div key={i} className="bg-surface border border-border rounded-xl px-4 py-3 text-sm">
-                  <p className="text-xs font-semibold text-gold uppercase mb-1">{sec.type}</p>
+                  <p className="text-xs font-semibold text-[var(--lp-brass)] uppercase mb-1">{sec.type}</p>
                   <p className="font-semibold">{sec.city}</p>
                   <p className="text-muted text-xs">
                     {sec.date}{sec.time ? ` · ${sec.time}` : ""}
@@ -164,7 +164,7 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
               {itinerary.map((step, i) => (
                 <div key={i} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-gold text-black font-bold flex items-center justify-center text-sm shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[var(--lp-brass)] text-black font-bold flex items-center justify-center text-sm shrink-0">
                       {i + 1}
                     </div>
                     {i < itinerary.length - 1 && <div className="w-px flex-1 bg-border mt-2" />}

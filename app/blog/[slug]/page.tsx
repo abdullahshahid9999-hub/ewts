@@ -40,9 +40,9 @@ export default async function BlogPostPage({
           page; no real live blog post was fetchable to match against (see
           PROGRESS.md), so this follows the established site pattern rather
           than copying unseen content. */}
-      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-14">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
         {post.category && (
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
             {post.category}
           </p>
         )}
@@ -50,9 +50,9 @@ export default async function BlogPostPage({
           {post.title}
         </h1>
         <p className="text-white/50 text-sm">
-          <Link href="/" className="hover:text-gold">Home</Link>
+          <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
           <span className="mx-2">/</span>
-          <Link href="/blog" className="hover:text-gold">Blog</Link>
+          <Link href="/blog" className="hover:text-[var(--lp-brass)]">Blog</Link>
           <span className="mx-2">/</span>
           <span>{post.title}</span>
         </p>
@@ -78,14 +78,14 @@ export default async function BlogPostPage({
         )}
 
         <div className="mt-12 pt-8 border-t border-border flex items-center justify-between flex-wrap gap-4">
-          <Link href="/blog" className="text-sm font-semibold text-gold hover:underline">
+          <Link href="/blog" className="text-sm font-semibold text-[var(--lp-brass)] hover:underline">
             ← Back to all articles
           </Link>
           <a
             href={waLink(`Assalam o Alaikum! I read "${post.title}" on your website and have a question.`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-5 py-2.5 rounded-lg shadow-md transition-colors text-sm"
+            className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-5 py-2.5 rounded-lg shadow-md transition-colors text-sm"
           >
             Ask Us on WhatsApp
           </a>

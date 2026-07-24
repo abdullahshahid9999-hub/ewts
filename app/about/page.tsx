@@ -84,7 +84,7 @@ const AWARDS = [
 function ImagePlaceholder({ caption, className = "" }: { caption: string; className?: string }) {
   return (
     <div
-      className={`flex items-center justify-center bg-gradient-to-br from-[var(--navy)] to-[#1a2b45] text-center px-4 ${className}`}
+      className={`flex items-center justify-center bg-gradient-to-br from-[var(--lp-ink)] to-[#1a2b45] text-center px-4 ${className}`}
     >
       <span className="text-white/70 text-xs font-medium">{caption}</span>
     </div>
@@ -97,8 +97,8 @@ export default function AboutPage() {
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--navy)] text-white text-center px-6 pt-20 pb-24">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-20 pb-24">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
           Pakistan&apos;s Trusted Travel Partner Since 2004
         </p>
         <h1 className="font-display text-5xl md:text-6xl font-semibold mb-8">
@@ -109,11 +109,11 @@ export default function AboutPage() {
             href={waLink("Hi, I want to know more about your travel services.")}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+            className="bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
           >
             Contact Us
           </a>
-          <a href="#about-intro" className="border border-white/30 hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors">
+          <a href="#about-intro" className="border border-white/30 hover:border-[var(--lp-brass)] px-6 py-3 rounded-lg font-semibold transition-colors">
             Explore
           </a>
         </div>
@@ -124,7 +124,7 @@ export default function AboutPage() {
       <section id="about-intro" className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {STATS.map((s) => (
           <div key={s.label}>
-            <p className="font-display text-3xl font-semibold text-gold mb-1">{s.value}</p>
+            <p className="font-display text-3xl font-semibold text-[var(--lp-brass)] mb-1">{s.value}</p>
             <p className="font-semibold mb-2">{s.label}</p>
             <p className="text-muted text-sm">{s.desc}</p>
           </div>
@@ -151,9 +151,9 @@ export default function AboutPage() {
       <section className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <ImagePlaceholder caption="East & West Travel Services Office" className="h-80 rounded-2xl" />
         <div>
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">Who We Are</p>
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">Who We Are</p>
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-6">
-            Beyond Travel: <span className="italic text-gold">A Sacred Commitment</span>
+            Beyond Travel: <span className="italic text-[var(--lp-brass)]">A Sacred Commitment</span>
           </h2>
           <p className="text-muted mb-4">
             East &amp; West Travel Services was founded in 2004 on one simple principle — every
@@ -164,13 +164,13 @@ export default function AboutPage() {
             care, trust, and 20+ years of expertise. We are not just a travel agency — we are
             your travel partner.
           </p>
-          <blockquote className="border-l-4 border-gold pl-4 italic text-lg mb-6">
+          <blockquote className="border-l-4 border-[var(--lp-brass)] pl-4 italic text-lg mb-6">
             &quot;We don&apos;t just book tickets; we build memories that last a lifetime.&quot;
           </blockquote>
           <ul className="space-y-2">
             {CREDENTIALS.map((c) => (
               <li key={c} className="flex items-start gap-2 text-sm">
-                <span className="text-gold mt-0.5">—</span>
+                <span className="text-[var(--lp-brass)] mt-0.5">—</span>
                 <span>{c}</span>
               </li>
             ))}
@@ -181,9 +181,9 @@ export default function AboutPage() {
       {/* WHAT WE DO */}
       <section className="bg-[var(--surface)] py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">What We Do</p>
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">What We Do</p>
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4 text-center">
-            More Than Just a <span className="italic text-gold">Travel Agency</span>
+            More Than Just a <span className="italic text-[var(--lp-brass)]">Travel Agency</span>
           </h2>
           <p className="text-muted text-center max-w-2xl mx-auto mb-12">
             Full-service travel — from Umrah pilgrimages to exotic honeymoons, visa processing to air ticketing.
@@ -201,9 +201,9 @@ export default function AboutPage() {
 
       {/* 20 YEARS TIMELINE */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Journey</p>
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Journey</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4 text-center">
-          20 Years of Serving <span className="italic text-gold">Pakistan</span>
+          20 Years of Serving <span className="italic text-[var(--lp-brass)]">Pakistan</span>
         </h2>
         <p className="text-muted text-center max-w-2xl mx-auto mb-12">
           From a small office in Faisalabad to one of the city&apos;s most trusted travel agencies.
@@ -212,7 +212,7 @@ export default function AboutPage() {
           {TIMELINE.map((t) => (
             <div key={t.year} className="bg-white border border-border rounded-2xl p-5 text-center">
               <p className="text-2xl mb-2">{t.icon}</p>
-              <p className="font-display text-lg font-semibold text-gold mb-1">{t.year}</p>
+              <p className="font-display text-lg font-semibold text-[var(--lp-brass)] mb-1">{t.year}</p>
               <p className="font-semibold text-sm mb-1">{t.label}</p>
               <p className="text-muted text-xs">{t.desc}</p>
             </div>
@@ -221,11 +221,11 @@ export default function AboutPage() {
       </section>
 
       {/* EVERYTHING YOU NEED TO TRAVEL */}
-      <section className="bg-[var(--navy)] text-white py-20 px-6">
+      <section className="bg-[var(--lp-ink)] text-white py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Services</p>
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Services</p>
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
-            Everything You Need to <span className="italic text-gold">Travel</span>
+            Everything You Need to <span className="italic text-[var(--lp-brass)]">Travel</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SERVICES.map((s) => (
@@ -240,9 +240,9 @@ export default function AboutPage() {
 
       {/* TEAM */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Expertise Team</p>
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Expertise Team</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
-          The People Behind Your <span className="italic text-gold">Journey</span>
+          The People Behind Your <span className="italic text-[var(--lp-brass)]">Journey</span>
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {TEAM.map((t) => (
@@ -258,9 +258,9 @@ export default function AboutPage() {
       {/* CERTIFICATIONS */}
       <section className="bg-[var(--surface)] py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Certifications</p>
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Certifications</p>
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
-            Certified, Trusted, <span className="italic text-gold">Professional</span>
+            Certified, Trusted, <span className="italic text-[var(--lp-brass)]">Professional</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {CERTIFICATIONS.map((c) => (
@@ -275,15 +275,15 @@ export default function AboutPage() {
 
       {/* AWARDS */}
       <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3 text-center">Awards &amp; Recognition</p>
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Awards &amp; Recognition</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
-          Recognized for <span className="italic text-gold">Excellence</span>
+          Recognized for <span className="italic text-[var(--lp-brass)]">Excellence</span>
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {AWARDS.map((a) => (
             <div key={a.title} className="bg-white border border-border rounded-2xl p-6 text-center">
               <p className="text-3xl mb-2">{a.icon}</p>
-              <p className="text-gold font-semibold text-sm mb-1">{a.year}</p>
+              <p className="text-[var(--lp-brass)] font-semibold text-sm mb-1">{a.year}</p>
               <p className="font-semibold mb-2">{a.title}</p>
               <p className="text-muted text-xs">{a.desc}</p>
             </div>
@@ -292,21 +292,21 @@ export default function AboutPage() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="bg-[var(--navy)] text-white text-center py-20 px-6">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">Ready to Travel?</p>
+      <section className="bg-[var(--lp-ink)] text-white text-center py-20 px-6">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">Ready to Travel?</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4">
-          Start Your Journey with Us <span className="italic text-gold">Today</span>
+          Start Your Journey with Us <span className="italic text-[var(--lp-brass)]">Today</span>
         </h2>
         <p className="text-white/70 mb-8">Join 5,000+ satisfied travelers who trust East &amp; West Travel Services.</p>
         <div className="flex items-center justify-center gap-4">
-          <Link href="/umrah" className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors">
+          <Link href="/umrah" className="bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors">
             Explore Umrah Packages
           </Link>
           <a
             href={waLink("Assalam o Alaikum!")}
             target="_blank"
             rel="noopener noreferrer"
-            className="border border-white/30 hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors"
+            className="border border-white/30 hover:border-[var(--lp-brass)] px-6 py-3 rounded-lg font-semibold transition-colors"
           >
             WhatsApp Us
           </a>

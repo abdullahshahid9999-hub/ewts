@@ -26,18 +26,18 @@ export default async function BlogIndexPage() {
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-14">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
           Travel Stories &amp; Tips
         </p>
         <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
-          Our Travel <span className="italic text-gold">Blog</span>
+          Our Travel <span className="italic text-[var(--lp-brass)]">Blog</span>
         </h1>
         <p className="text-white/70 max-w-xl mx-auto mb-4">
           Destinations, tips, Umrah guides, and travel inspiration — all in one place.
         </p>
         <p className="text-white/50 text-sm">
-          <Link href="/" className="hover:text-gold">Home</Link>
+          <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
           <span className="mx-2">/</span>
           <span>Blog</span>
         </p>
@@ -56,7 +56,7 @@ export default async function BlogIndexPage() {
               href={waLink("Assalam o Alaikum! I have a travel question.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+              className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
             >
               WhatsApp Us
             </a>
@@ -76,7 +76,7 @@ export default async function BlogIndexPage() {
                 </div>
                 <div className="p-5">
                   {post.category && (
-                    <p className="text-gold text-xs font-semibold uppercase tracking-wide mb-2">
+                    <p className="text-[var(--lp-brass)] text-xs font-semibold uppercase tracking-wide mb-2">
                       {post.category}
                     </p>
                   )}

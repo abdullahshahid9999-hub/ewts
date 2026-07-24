@@ -116,10 +116,10 @@ export default function InsuranceCalculator({ onViewPlans, initialDestination, i
                       {r.coverageDetails && <div className="text-xs text-muted">{r.coverageDetails}</div>}
                     </div>
                     <div className="text-right">
-                      <div className="font-display text-gold font-semibold">Rs. {r.pricePkr.toLocaleString()}</div>
+                      <div className="font-display text-[var(--lp-brass)] font-semibold">Rs. {r.pricePkr.toLocaleString()}</div>
                       <button
                         onClick={() => { setBookingRateId(bookingRateId === r.id ? null : r.id); setBookError(null); }}
-                        className="text-xs font-semibold text-gold hover:underline"
+                        className="text-xs font-semibold text-[var(--lp-brass)] hover:underline"
                       >
                         {bookingRateId === r.id ? "Cancel" : "Book Now"}
                       </button>
@@ -138,7 +138,7 @@ export default function InsuranceCalculator({ onViewPlans, initialDestination, i
                       <button
                         onClick={() => handleBook(r.id)}
                         disabled={bookSubmitting}
-                        className="w-full bg-gold hover:bg-gold-light text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
+                        className="w-full bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-60"
                       >
                         {bookSubmitting ? "Submitting…" : "Confirm Booking"}
                       </button>
@@ -154,7 +154,7 @@ export default function InsuranceCalculator({ onViewPlans, initialDestination, i
             </p>
           )}
 
-          <button onClick={() => setSubmitted(false)} className="text-sm font-semibold text-gold hover:underline">
+          <button onClick={() => setSubmitted(false)} className="text-sm font-semibold text-[var(--lp-brass)] hover:underline">
             Edit Details
           </button>
         </div>
@@ -196,7 +196,7 @@ export default function InsuranceCalculator({ onViewPlans, initialDestination, i
             <label className="block text-sm font-medium mb-1">Email (optional)</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-border px-3 py-2 text-sm" />
           </div>
-          <button type="submit" disabled={loading} className="w-full bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-60">
+          <button type="submit" disabled={loading} className="w-full bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors disabled:opacity-60">
             {loading ? "Searching…" : "VIEW PLANS"}
           </button>
           <p className="text-muted text-xs text-center">Your info is secure and never shared</p>

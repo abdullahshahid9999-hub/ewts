@@ -58,10 +58,10 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
       <Navbar />
 
       {/* HERO */}
-      <section id="calcSection" className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-10">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">Travel Insurance</p>
+      <section id="calcSection" className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-10">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">Travel Insurance</p>
         <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
-          Travel with <span className="italic text-gold">Complete Peace of Mind</span>
+          Travel with <span className="italic text-[var(--lp-brass)]">Complete Peace of Mind</span>
         </h1>
         <p className="text-white/70 max-w-2xl mx-auto mb-6">
           Compare insurance plans for Umrah, Hajj, Europe, USA and worldwide travel. Get your
@@ -73,7 +73,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
           ))}
         </div>
         <p className="text-white/50 text-sm mt-6">
-          <Link href="/" className="hover:text-gold">Home</Link>
+          <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
           <span className="mx-2">/</span>
           <span>Travel Insurance</span>
         </p>
@@ -87,7 +87,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
       {/* AVAILABLE PLANS */}
       <section className="max-w-6xl mx-auto px-6 pb-16 space-y-14">
         <h2 className="font-display text-2xl font-semibold text-center mb-2">
-          Available <span className="italic text-gold">Plans</span>
+          Available <span className="italic text-[var(--lp-brass)]">Plans</span>
         </h2>
         <p className="text-muted text-xs text-center max-w-xl mx-auto -mt-8 mb-8">
           Prices are estimates. Final premium confirmed on WhatsApp. Coverage terms apply.
@@ -133,7 +133,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
                           {plan.rates.map((rate) => (
                             <li key={rate.id} className="flex items-center justify-between border-t border-border pt-2 first:border-t-0 first:pt-0">
                               <span className="text-muted text-sm">{rate.coverageDetails ?? "Standard coverage"}</span>
-                              <span className="font-display font-semibold text-gold">PKR {rate.pricePkr.toLocaleString()}</span>
+                              <span className="font-display font-semibold text-[var(--lp-brass)]">PKR {rate.pricePkr.toLocaleString()}</span>
                             </li>
                           ))}
                         </ul>
@@ -142,7 +142,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
                         href={waLink(`Assalam o Alaikum! I'd like details about the ${company.name} - ${plan.name} insurance plan.`)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-semibold text-gold hover:underline"
+                        className="text-sm font-semibold text-[var(--lp-brass)] hover:underline"
                       >
                         Enquire →
                       </a>
@@ -163,7 +163,7 @@ export default async function InsurancePage({ searchParams }: { searchParams: Pr
           href={waLink("Assalam o Alaikum! I have a question.")}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+          className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
         >
           Chat on WhatsApp
         </a>

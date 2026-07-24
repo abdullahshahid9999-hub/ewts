@@ -21,19 +21,19 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
         <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight">
           <Image src="/images/logo.jpg" alt="East & West Travel" width={36} height={36} className="rounded-md" />
-          East <span className="text-gold italic">&amp;</span> West <span className="font-normal">Travels</span>
+          East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travels</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-text2">
-          <Link href="/" className="hover:text-gold transition-colors">Home</Link>
-          <Link href="/about" className="hover:text-gold transition-colors">About Us</Link>
+          <Link href="/" className="hover:text-[var(--lp-brass)] transition-colors">Home</Link>
+          <Link href="/about" className="hover:text-[var(--lp-brass)] transition-colors">About Us</Link>
 
           <div
             className="relative"
             onMouseEnter={() => setServicesOpen(true)}
             onMouseLeave={() => setServicesOpen(false)}
           >
-            <button className="hover:text-gold transition-colors flex items-center gap-1">
+            <button className="hover:text-[var(--lp-brass)] transition-colors flex items-center gap-1">
               Services <span className="text-xs">▾</span>
             </button>
             {servicesOpen && (
@@ -43,7 +43,7 @@ export default function Navbar() {
                     <Link
                       key={s.href}
                       href={s.href}
-                      className="block px-4 py-2.5 text-sm hover:bg-surface hover:text-gold transition-colors"
+                      className="block px-4 py-2.5 text-sm hover:bg-surface hover:text-[var(--lp-brass)] transition-colors"
                     >
                       {s.label}
                     </Link>
@@ -53,7 +53,7 @@ export default function Navbar() {
             )}
           </div>
 
-          <Link href="/blog" className="hover:text-gold transition-colors">Blog</Link>
+          <Link href="/blog" className="hover:text-[var(--lp-brass)] transition-colors">Blog</Link>
         </nav>
 
         <a

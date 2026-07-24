@@ -123,7 +123,7 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
             Your seat(s) are held for 2 hours while we confirm your booking. No payment has been
             taken yet — we've emailed your PNR and will reach out on WhatsApp shortly.
           </p>
-          <button onClick={onClose} className="w-full rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm">
+          <button onClick={onClose} className="w-full rounded-lg bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-3 py-2 text-sm">
             Done
           </button>
         </div>
@@ -179,7 +179,7 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
 
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-border px-3 py-2 text-sm">Cancel</button>
-            <button type="submit" disabled={submitting} className="flex-1 rounded-lg bg-gold hover:bg-gold-light text-black font-bold px-3 py-2 text-sm disabled:opacity-50">
+            <button type="submit" disabled={submitting} className="flex-1 rounded-lg bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-3 py-2 text-sm disabled:opacity-50">
               {submitting ? "Booking…" : "Confirm Booking"}
             </button>
           </div>
@@ -235,7 +235,7 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
               key={r.value}
               onClick={() => setRegion(r.value)}
               className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-colors ${
-                region === r.value ? "bg-gold border-gold text-black" : "border-border text-muted hover:border-gold"
+                region === r.value ? "bg-[var(--lp-brass)] border-[var(--lp-brass)] text-black" : "border-border text-muted hover:border-[var(--lp-brass)]"
               }`}
             >
               {r.label}
@@ -248,7 +248,7 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
               key={t.value}
               onClick={() => setTripType(t.value)}
               className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-colors ${
-                tripType === t.value ? "bg-[var(--navy)] border-[var(--navy)] text-white" : "border-border text-muted hover:border-[var(--navy)]"
+                tripType === t.value ? "bg-[var(--lp-ink)] border-[var(--lp-ink)] text-white" : "border-border text-muted hover:border-[var(--lp-ink)]"
               }`}
             >
               {t.label}
@@ -296,7 +296,7 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm min-w-[700px]">
                         <thead>
-                          <tr className="bg-gold text-black text-xs uppercase tracking-wide">
+                          <tr className="bg-[var(--lp-brass)] text-black text-xs uppercase tracking-wide">
                             <th className="px-4 py-3 text-left">Flight</th>
                             <th className="px-4 py-3 text-left">Date</th>
                             <th className="px-4 py-3 text-left">Time</th>
@@ -321,12 +321,12 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                               <td className={`px-4 py-3 font-semibold ${f.meal === "No" ? "text-red-500" : "text-green-600"}`}>
                                 {f.meal ?? "—"}
                               </td>
-                              <td className="px-4 py-3 font-display font-semibold text-gold whitespace-nowrap">{f.price}</td>
+                              <td className="px-4 py-3 font-display font-semibold text-[var(--lp-brass)] whitespace-nowrap">{f.price}</td>
                               <td className="px-4 py-3">
                                 <button
                                   onClick={() => setBookingFlight(f)}
                                   disabled={f.seats <= 0}
-                                  className="bg-[var(--navy)] hover:bg-gold hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                  className="bg-[var(--lp-ink)] hover:bg-[var(--lp-brass)] hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                   {f.seats > 0 ? "Book Now" : "Sold Out"}
                                 </button>

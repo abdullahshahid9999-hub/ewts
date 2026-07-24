@@ -19,7 +19,7 @@ function InvalidAccess() {
         </p>
         <Link
           href="/umrah"
-          className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+          className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
         >
           Browse Umrah Packages
         </Link>

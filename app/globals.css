@@ -51,7 +51,7 @@
    traditional textile warmth rather than generic corporate
    navy/gold.
    ============================================================ */
-.lp {
+:root {
   --lp-ink: #0E2A26;
   --lp-ink-light: #163B35;
   --lp-sand: #F7F2E6;
@@ -62,6 +62,9 @@
   --lp-text: #1B2B27;
   --lp-muted: #5B6B65;
   --lp-border: rgba(14, 42, 38, 0.12);
+}
+
+.lp {
   background: var(--lp-sand);
   color: var(--lp-text);
 }

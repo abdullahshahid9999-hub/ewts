@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 text-sm text-text2">
         <div>
           <div className="font-display text-xl font-semibold mb-2">
-            East <span className="text-gold italic">&amp;</span> West
+            East <span className="text-[var(--lp-brass)] italic">&amp;</span> West
           </div>
           <p className="text-muted mb-4">
             Faisalabad&apos;s trusted travel partner since 2003 — serving
@@ -18,7 +18,7 @@ export default function Footer() {
               href="https://www.facebook.com/p/East-West-Travel-Services-100063816463202/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted hover:text-gold"
+              className="text-muted hover:text-[var(--lp-brass)]"
             >
               Facebook
             </a>
@@ -26,11 +26,11 @@ export default function Footer() {
               href={waLink("Assalam o Alaikum!")}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted hover:text-gold"
+              className="text-muted hover:text-[var(--lp-brass)]"
             >
               WhatsApp
             </a>
-            <a href="mailto:eastwestpk@hotmail.com" className="text-muted hover:text-gold">
+            <a href="mailto:eastwestpk@hotmail.com" className="text-muted hover:text-[var(--lp-brass)]">
               Email
             </a>
           </div>
@@ -43,22 +43,22 @@ export default function Footer() {
         <div>
           <div className="font-semibold text-text mb-3">Our Services</div>
           <ul className="space-y-2 text-muted">
-            <li><Link href="/umrah" className="hover:text-gold">Umrah &amp; Hajj</Link></li>
-            <li><Link href="/visa" className="hover:text-gold">Visa Services</Link></li>
-            <li><Link href="/tours" className="hover:text-gold">Tour Packages</Link></li>
-            <li><Link href="/group-tickets" className="hover:text-gold">Group Tickets</Link></li>
-            <li><Link href="/insurance" className="hover:text-gold">Travel Insurance</Link></li>
+            <li><Link href="/umrah" className="hover:text-[var(--lp-brass)]">Umrah &amp; Hajj</Link></li>
+            <li><Link href="/visa" className="hover:text-[var(--lp-brass)]">Visa Services</Link></li>
+            <li><Link href="/tours" className="hover:text-[var(--lp-brass)]">Tour Packages</Link></li>
+            <li><Link href="/group-tickets" className="hover:text-[var(--lp-brass)]">Group Tickets</Link></li>
+            <li><Link href="/insurance" className="hover:text-[var(--lp-brass)]">Travel Insurance</Link></li>
           </ul>
         </div>
 
         <div>
           <div className="font-semibold text-text mb-3">Quick Links</div>
           <ul className="space-y-2 text-muted">
-            <li><Link href="/" className="hover:text-gold">Home</Link></li>
-            <li><Link href="/about" className="hover:text-gold">About Us</Link></li>
-            <li><Link href="/blog" className="hover:text-gold">Travel Blog</Link></li>
-            <li><Link href="/contact" className="hover:text-gold">Contact</Link></li>
-            <li><Link href="/insurance" className="hover:text-gold">Insurance Quote</Link></li>
+            <li><Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link></li>
+            <li><Link href="/about" className="hover:text-[var(--lp-brass)]">About Us</Link></li>
+            <li><Link href="/blog" className="hover:text-[var(--lp-brass)]">Travel Blog</Link></li>
+            <li><Link href="/contact" className="hover:text-[var(--lp-brass)]">Contact</Link></li>
+            <li><Link href="/insurance" className="hover:text-[var(--lp-brass)]">Insurance Quote</Link></li>
           </ul>
         </div>
 
@@ -67,12 +67,12 @@ export default function Footer() {
           <ul className="space-y-2 text-muted">
             <li>G-07, Chaudhry Arcade, New Civil Lines, Faisalabad</li>
             <li>
-              <a href={waLink("Assalam o Alaikum!")} target="_blank" rel="noopener noreferrer" className="hover:text-gold">
+              <a href={waLink("Assalam o Alaikum!")} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--lp-brass)]">
                 +92 333 651 5349
               </a>
             </li>
             <li>
-              <a href="mailto:eastwestpk@hotmail.com" className="hover:text-gold">eastwestpk@hotmail.com</a>
+              <a href="mailto:eastwestpk@hotmail.com" className="hover:text-[var(--lp-brass)]">eastwestpk@hotmail.com</a>
             </li>
             <li>Mon – Sat: 9:00 AM – 8:00 PM</li>
           </ul>
@@ -83,9 +83,9 @@ export default function Footer() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
           <span>© {new Date().getFullYear()} East &amp; West Travel Services. All rights reserved.</span>
           <div className="flex gap-4">
-            <Link href="/about" className="hover:text-gold">About</Link>
-            <Link href="/contact" className="hover:text-gold">Contact</Link>
-            <Link href="/insurance" className="hover:text-gold">Insurance</Link>
+            <Link href="/about" className="hover:text-[var(--lp-brass)]">About</Link>
+            <Link href="/contact" className="hover:text-[var(--lp-brass)]">Contact</Link>
+            <Link href="/insurance" className="hover:text-[var(--lp-brass)]">Insurance</Link>
           </div>
         </div>
       </div>

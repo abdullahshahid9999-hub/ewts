@@ -48,18 +48,18 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--navy)] text-white text-center px-6 pt-16 pb-14">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
           Spiritual Journeys
         </p>
         <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
-          Umrah &amp; Hajj <span className="italic text-gold">Packages</span>
+          Umrah &amp; Hajj <span className="italic text-[var(--lp-brass)]">Packages</span>
         </h1>
         <p className="text-white/70 max-w-xl mx-auto mb-4">
           Perform your sacred duty with comfort and complete peace of mind
         </p>
         <p className="text-white/50 text-sm">
-          <Link href="/" className="hover:text-gold">Home</Link>
+          <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
           <span className="mx-2">/</span>
           <span>Umrah &amp; Hajj</span>
         </p>
@@ -91,7 +91,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   href={waLink("Assalam o Alaikum! Please share Umrah package details.")}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                  className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
                 >
                   Ask on WhatsApp
                 </a>
@@ -108,9 +108,9 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                         <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
                       )}
                       <div className="absolute top-3 left-3 flex gap-2">
-                        <span className="bg-[var(--navy)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
+                        <span className="bg-[var(--lp-ink)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
                         {pkg.featured && (
-                          <span className="bg-gold text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
+                          <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
                         )}
                       </div>
                     </div>
@@ -127,12 +127,12 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                         </p>
                       )}
                       <div className="mt-auto flex items-center justify-between pt-2">
-                        <span className="font-display text-xl font-semibold text-gold">
+                        <span className="font-display text-xl font-semibold text-[var(--lp-brass)]">
                           {pkg.price}
                           <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
                         </span>
                         {pkg.slug ? (
-                          <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-gold hover:underline">
+                          <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-[var(--lp-brass)] hover:underline">
                             View Details →
                           </Link>
                         ) : (
@@ -140,7 +140,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                             href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-semibold text-gold hover:underline"
+                            className="text-sm font-semibold text-[var(--lp-brass)] hover:underline"
                           >
                             Book This Package on WhatsApp →
                           </a>
@@ -162,7 +162,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
           href={waLink("Assalam o Alaikum! I have a question.")}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+          className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
         >
           Chat on WhatsApp
         </a>

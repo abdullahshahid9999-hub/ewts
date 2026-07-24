@@ -39,12 +39,12 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
       <Navbar />
 
       {/* HERO */}
-      <section className="relative bg-[var(--navy)] text-white overflow-hidden">
+      <section className="relative bg-[var(--lp-ink)] text-white overflow-hidden">
         {visa.countryImage && (
           <Image src={visa.countryImage} alt={visa.country} fill className="object-cover opacity-20" />
         )}
         <div className="relative z-10 text-center px-6 pt-16 pb-12">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">
             <Link href="/visa" className="hover:underline">Visa Services</Link> / {visa.country}
           </p>
           <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
@@ -143,7 +143,7 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
             {hasPricing ? (
               <>
                 <p className="text-muted text-xs uppercase tracking-widest font-semibold mb-1">Starting from</p>
-                <p className="font-display text-3xl font-semibold text-gold mb-1">
+                <p className="font-display text-3xl font-semibold text-[var(--lp-brass)] mb-1">
                   PKR {(visa.priceAdult ?? 0).toLocaleString()}
                 </p>
                 <p className="text-muted text-xs mb-4">per adult</p>
@@ -151,7 +151,7 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
             ) : visa.price ? (
               <>
                 <p className="text-muted text-xs uppercase tracking-widest font-semibold mb-1">Price</p>
-                <p className="font-display text-3xl font-semibold text-gold mb-4">{visa.price}</p>
+                <p className="font-display text-3xl font-semibold text-[var(--lp-brass)] mb-4">{visa.price}</p>
               </>
             ) : null}
 
@@ -203,7 +203,7 @@ function PriceCard({ label, amount }: { label: string; amount: number }) {
   return (
     <div className="bg-surface rounded-xl p-4">
       <p className="text-xs text-muted uppercase font-semibold mb-1">{label}</p>
-      <p className="font-display text-xl font-semibold text-gold">
+      <p className="font-display text-xl font-semibold text-[var(--lp-brass)]">
         {amount > 0 ? `PKR ${amount.toLocaleString()}` : "Free"}
       </p>
     </div>

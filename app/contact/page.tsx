@@ -93,10 +93,10 @@ export default function ContactPage() {
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--navy)] text-white text-center px-6 pt-20 pb-16">
-        <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-4">Get In Touch</p>
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-20 pb-16">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">Get In Touch</p>
         <h1 className="font-display text-4xl md:text-5xl font-semibold mb-6">
-          Let&apos;s Plan Your <span className="italic text-gold">Dream Journey</span>
+          Let&apos;s Plan Your <span className="italic text-[var(--lp-brass)]">Dream Journey</span>
         </h1>
         <p className="text-white/70 max-w-2xl mx-auto">
           Our travel experts are ready to craft the perfect journey for you. Reach out via
@@ -108,7 +108,7 @@ export default function ContactPage() {
       <section className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
         {TRUST_STRIP.map((t) => (
           <div key={t.title}>
-            <p className="font-display font-semibold text-gold">{t.title}</p>
+            <p className="font-display font-semibold text-[var(--lp-brass)]">{t.title}</p>
             <p className="text-muted text-xs mt-1">{t.desc}</p>
           </div>
         ))}
@@ -118,7 +118,7 @@ export default function ContactPage() {
         {/* GET IN TOUCH DETAILS */}
         <section>
           <h2 className="font-display text-2xl font-semibold mb-1">
-            Get In <span className="italic text-gold">Touch</span>
+            Get In <span className="italic text-[var(--lp-brass)]">Touch</span>
           </h2>
           <p className="text-muted text-sm mb-6">Multiple ways to reach us — we respond quickly!</p>
 
@@ -132,7 +132,7 @@ export default function ContactPage() {
             </div>
             <div>
               <h3 className="font-semibold text-sm mb-1">Email Address</h3>
-              <a href="mailto:eastwestpk@hotmail.com" className="text-gold hover:underline text-sm">
+              <a href="mailto:eastwestpk@hotmail.com" className="text-[var(--lp-brass)] hover:underline text-sm">
                 eastwestpk@hotmail.com
               </a>
             </div>
@@ -160,7 +160,7 @@ export default function ContactPage() {
                   href={`https://wa.me/${w.number}?text=${encodeURIComponent("Assalam o Alaikum! I need help with a travel package.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-lg border border-border px-3 py-2 text-sm hover:border-gold"
+                  className="rounded-lg border border-border px-3 py-2 text-sm hover:border-[var(--lp-brass)]"
                 >
                   <span className="block font-semibold">{w.display}</span>
                   <span className="text-muted text-xs">{w.label}</span>
@@ -172,9 +172,9 @@ export default function ContactPage() {
           <div>
             <h3 className="font-semibold text-sm mb-3">Follow Us</h3>
             <div className="flex gap-4 text-sm">
-              <a href="https://www.instagram.com/eastwest_pk/" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Instagram</a>
-              <a href="https://www.facebook.com/p/East-West-Travel-Services-100063816463202/" target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">Facebook</a>
-              <a href={waLink("Assalam o Alaikum!")} target="_blank" rel="noopener noreferrer" className="text-gold hover:underline">WhatsApp</a>
+              <a href="https://www.instagram.com/eastwest_pk/" target="_blank" rel="noopener noreferrer" className="text-[var(--lp-brass)] hover:underline">Instagram</a>
+              <a href="https://www.facebook.com/p/East-West-Travel-Services-100063816463202/" target="_blank" rel="noopener noreferrer" className="text-[var(--lp-brass)] hover:underline">Facebook</a>
+              <a href={waLink("Assalam o Alaikum!")} target="_blank" rel="noopener noreferrer" className="text-[var(--lp-brass)] hover:underline">WhatsApp</a>
             </div>
           </div>
         </section>
@@ -182,7 +182,7 @@ export default function ContactPage() {
         {/* INQUIRY FORM */}
         <section className="bg-white border border-border rounded-2xl p-6">
           <h2 className="font-display text-2xl font-semibold mb-1">
-            Send Us an <span className="italic text-gold">Inquiry</span>
+            Send Us an <span className="italic text-[var(--lp-brass)]">Inquiry</span>
           </h2>
           <p className="text-muted text-sm mb-6">
             Fill the form below and we&apos;ll get back to you within 24 hours.
@@ -195,7 +195,7 @@ export default function ContactPage() {
                 Thank you for reaching out. Our team will contact you within <strong>24 hours</strong>.
               </p>
               <p className="text-muted text-sm mb-4">For a faster response, WhatsApp us directly:</p>
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="text-gold font-semibold hover:underline">
+              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="text-[var(--lp-brass)] font-semibold hover:underline">
                 +92 333 651 5349
               </a>
             </div>
@@ -274,7 +274,7 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="w-full bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                className="w-full bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
               >
                 Send Inquiry
               </button>
@@ -296,7 +296,7 @@ export default function ContactPage() {
           href="https://maps.google.com/?q=New+Civil+Lines+Faisalabad"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mb-4 text-gold text-sm font-semibold hover:underline"
+          className="inline-block mb-4 text-[var(--lp-brass)] text-sm font-semibold hover:underline"
         >
           Get Directions →
         </a>

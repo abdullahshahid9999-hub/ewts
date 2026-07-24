@@ -22,7 +22,7 @@ export default async function BookingConfirmationPage({
             This page shows a confirmation after completing a booking — looks like you landed
             here directly.
           </p>
-          <Link href="/umrah" className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors">
+          <Link href="/umrah" className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors">
             Browse Packages
           </Link>
         </section>
@@ -61,7 +61,7 @@ export default async function BookingConfirmationPage({
           {total && (
             <div className="flex justify-between text-sm pt-2 border-t border-border mt-2">
               <span className="text-muted">Total</span>
-              <span className="font-display font-semibold text-gold">Rs. {Number(total).toLocaleString()}</span>
+              <span className="font-display font-semibold text-[var(--lp-brass)]">Rs. {Number(total).toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -76,11 +76,11 @@ export default async function BookingConfirmationPage({
             href={waLink(whatsappMessage)}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+            className="bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
           >
             Message Us on WhatsApp
           </a>
-          <Link href="/" className="border border-border hover:border-gold px-6 py-3 rounded-lg font-semibold transition-colors">
+          <Link href="/" className="border border-border hover:border-[var(--lp-brass)] px-6 py-3 rounded-lg font-semibold transition-colors">
             Back to Home
           </Link>
         </div>
