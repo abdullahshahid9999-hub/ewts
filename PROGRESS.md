@@ -1384,3 +1384,51 @@ Group-ticket seats and Umrah/Tours room-type slots now decrement atomically at b
 ALTER TABLE agent_bookings ADD COLUMN expires_at TIMESTAMP;
 ALTER TABLE package_room_types ADD COLUMN available_slots INTEGER;
 ```
+
+## Landing Page Phase 1.2: Dropdown-only search, meaningful sidebar filters
+
+Owner feedback: free-text search intimidates customers ("kya likhun?"),
+widget felt too "AI generic," and filters needed to be real/structured
+with instant auto-apply — no submit button — plus a left sidebar on
+desktop and a drawer on mobile.
+
+**SearchWidget v3** — the destination field is now a `<select>` dropdown
+of real, existing values per service (never free text): Umrah/Tours
+destinations, Group Tickets routes, Visa countries, Insurance uses the
+same region list as `InsuranceCalculator` (extracted to
+`lib/insuranceDestinations.ts` so both stay identical forever). Detailed
+filters (tier/airline/duration/direct/type) moved OFF the widget — it's
+now just: service tabs + destination dropdown + pax counter + Search.
+Widget styling refined (gradient ticket card, custom select chevron,
+underline-style active tab instead of a flat pill) to read less
+templated.
+
+**`components/FilterSidebar.tsx`** (new, reusable) — desktop: sticky
+left column. Mobile: a "Filters" button (badge shows active count)
+opening a slide-in drawer. Every checkbox calls `router.replace()`
+on change (`lib` pattern lives inline in the component) — **no submit
+button anywhere**, exactly as asked. Wrapped in `<Suspense>` per Next.js
+convention for client components using `useSearchParams()`.
+
+**`lib/filterFacets.ts`** — one shared source of distinct DB values
+(`getUmrahFacets`, `getToursFacets`, `getGroupTicketFacets`,
+`getVisaFacets`), used by both the homepage widget's dropdowns and each
+listing page's sidebar checkboxes, so they can never drift out of sync.
+`parseMulti()` is the shared convention for multi-select query params
+(`?tier=Gold,Platinum`, comma-separated, parsed with `{ in: [...] }` in
+Prisma).
+
+**Per-page sidebars:**
+- Umrah/Tours: Package Type (tier), Airline, Duration — all checkboxes,
+  multi-select.
+- Group Tickets: Airline (multi-select) + "Direct flights only" toggle
+  (in-memory filter, `legs` is JSON so can't be a Prisma `where`).
+- Visa: Visa Type (multi-select).
+- Insurance: Insurance Provider (company name, multi-select) — added
+  minimally without restructuring the page's company/plan grouping.
+
+`npx tsc --noEmit`: clean against the same known baseline (only line-
+number shifts of the pre-existing implicit-any errors — zero new/real
+errors introduced by this work).
+
+No schema changes, no migration needed for this phase.
