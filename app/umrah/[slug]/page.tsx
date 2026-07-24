@@ -19,10 +19,16 @@ async function getPackage(slug: string) {
 
 export default async function UmrahDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ adults?: string; children?: string; infants?: string }>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const initialAdults = sp.adults ? parseInt(sp.adults, 10) || 1 : undefined;
+  const initialChildren = sp.children ? parseInt(sp.children, 10) || 0 : undefined;
+  const initialInfants = sp.infants ? parseInt(sp.infants, 10) || 0 : undefined;
   const pkg = await getPackage(slug);
 
   if (!pkg) notFound();
@@ -30,7 +36,7 @@ export default async function UmrahDetailPage({
   return (
     <>
       <Navbar />
-      <PackageDetailView pkg={pkg} />
+      <PackageDetailView pkg={pkg} initialAdults={initialAdults} initialChildren={initialChildren} initialInfants={initialInfants} />
       <Footer />
     </>
   );

@@ -1,16 +1,30 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import InsuranceCalculator from "@/components/InsuranceCalculator";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
+import FilterSidebar from "@/components/FilterSidebar";
+import { parseMulti } from "@/lib/filterFacets";
 
 export const revalidate = 120;
 
-async function getCompanies() {
+async function getCompanies(q?: string, company?: string) {
+  const companies = parseMulti(company);
   try {
     return await prisma.insuranceCompany.findMany({
+      where: {
+        ...(companies.length ? { name: { in: companies } } : {}),
+        ...(q ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { plans: { some: { name: { contains: q, mode: "insensitive" } } } },
+          ],
+        } : {}),
+      },
       orderBy: { name: "asc" },
       include: {
         plans: {
@@ -24,10 +38,20 @@ async function getCompanies() {
   }
 }
 
+async function getAllCompanyNames() {
+  try {
+    const rows = await prisma.insuranceCompany.findMany({ select: { name: true }, orderBy: { name: "asc" } });
+    return rows.map((r) => r.name);
+  } catch {
+    return [];
+  }
+}
+
 const BADGES = ["All Destinations", "Trusted Coverage", "Buy on WhatsApp", "Instant Quote"];
 
-export default async function InsurancePage() {
-  const companies = await getCompanies();
+export default async function InsurancePage({ searchParams }: { searchParams: Promise<{ q?: string; travellers?: string; company?: string }> }) {
+  const { q, travellers, company } = await searchParams;
+  const [companies, allCompanyNames] = await Promise.all([getCompanies(q, company), getAllCompanyNames()]);
 
   return (
     <>
@@ -57,7 +81,7 @@ export default async function InsurancePage() {
 
       {/* QUOTE CALCULATOR */}
       <section className="max-w-6xl mx-auto px-6 py-14">
-        <InsuranceCalculator />
+        <InsuranceCalculator initialDestination={q} initialTravellers={travellers} />
       </section>
 
       {/* AVAILABLE PLANS */}
@@ -70,9 +94,15 @@ export default async function InsurancePage() {
           East &amp; West Travel Services acts as an agent.
         </p>
 
+        <SearchResultsNotice q={q} basePath="/insurance" />
+        <div className="flex gap-8 items-start">
+          <Suspense fallback={null}>
+            <FilterSidebar groups={[{ key: "company", label: "Insurance Provider", options: allCompanyNames }]} />
+          </Suspense>
+          <div className="flex-1 min-w-0 space-y-14">
         {companies.length === 0 ? (
           <p className="text-muted text-center">
-            No insurance plans are listed right now — WhatsApp us for details.
+            {q ? `No insurer or plan matches "${q}" — WhatsApp us for details.` : "No insurance plans are listed right now — WhatsApp us for details."}
           </p>
         ) : (
           companies.map((company) => (
@@ -123,6 +153,8 @@ export default async function InsurancePage() {
             </div>
           ))
         )}
+          </div>
+        </div>
       </section>
 
       <section className="bg-[var(--surface)] text-center py-16 px-6">

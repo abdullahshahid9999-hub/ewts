@@ -46,6 +46,9 @@ export async function PATCH(
   if (body?.minAdultsRequired !== undefined) {
     data.minAdultsRequired = body.minAdultsRequired === null || body.minAdultsRequired === "" ? null : Number(body.minAdultsRequired);
   }
+  if (body?.availableSlots !== undefined) {
+    data.availableSlots = body.availableSlots === null || body.availableSlots === "" ? null : Number(body.availableSlots);
+  }
   if (body?.sortOrder !== undefined) {
     const n = Number(body.sortOrder);
     if (Number.isFinite(n)) data.sortOrder = n;

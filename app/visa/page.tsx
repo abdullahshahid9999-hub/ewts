@@ -1,16 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
+import { paxQueryString } from "@/lib/searchState";
+import { getVisaFacets, parseMulti } from "@/lib/filterFacets";
+import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
-async function getVisas() {
+async function getVisas(q?: string, type?: string) {
+  const types = parseMulti(type);
   try {
     return await prisma.visaService.findMany({
-      where: { status: "active" },
+      where: {
+        status: "active",
+        ...(types.length ? { type: { in: types } } : {}),
+        ...(q ? { OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { country: { contains: q, mode: "insensitive" } },
+        ] } : {}),
+      },
       orderBy: { createdAt: "desc" },
       select: {
         id: true, title: true, country: true, type: true,
@@ -38,8 +51,11 @@ const STEPS = [
   { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
 ];
 
-export default async function VisaPage() {
-  const visas = await getVisas();
+export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; adults?: string; children?: string; infants?: string }> }) {
+  const sp = await searchParams;
+  const { q, type } = sp;
+  const [visas, facets] = await Promise.all([getVisas(q, type), getVisaFacets()]);
+  const paxQS = paxQueryString(sp);
 
   return (
     <>
@@ -86,12 +102,18 @@ export default async function VisaPage() {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-16">
+        <SearchResultsNotice q={q} basePath="/visa" />
+        <div className="flex gap-8 items-start">
+          <Suspense fallback={null}>
+            <FilterSidebar groups={[{ key: "type", label: "Visa Type", options: facets.types }]} />
+          </Suspense>
+          <div className="flex-1 min-w-0">
         {visas.length === 0 ? (
           <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
             <p className="text-4xl mb-4">🛂</p>
-            <h3 className="font-display text-xl font-semibold mb-2">No Visa Services Listed</h3>
+            <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Visas" : "No Visa Services Listed"}</h3>
             <p className="text-muted text-sm mb-6">
-              Tell us your destination and we&apos;ll confirm requirements and pricing directly.
+              {q ? `We couldn't find a visa service matching "${q}". ` : ""}Tell us your destination and we&apos;ll confirm requirements and pricing directly.
             </p>
             <a
               href={waLink("Assalam o Alaikum! I'd like details about visa services.")}
@@ -103,7 +125,7 @@ export default async function VisaPage() {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {visas.map((v) => (
               <div
                 key={v.id}
@@ -136,7 +158,7 @@ export default async function VisaPage() {
                       {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
                     </span>
                     <Link
-                      href={`/visa/${v.id}`}
+                      href={`/visa/${v.id}${paxQS ? `?${paxQS}` : ""}`}
                       className="text-sm font-bold bg-gold text-black px-4 py-1.5 rounded-lg hover:bg-gold-light transition-colors"
                     >
                       View &amp; Apply
@@ -147,6 +169,8 @@ export default async function VisaPage() {
             ))}
           </div>
         )}
+          </div>
+        </div>
       </section>
 
       {/* HOW IT WORKS */}

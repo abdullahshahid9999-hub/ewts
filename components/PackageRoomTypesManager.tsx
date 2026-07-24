@@ -12,9 +12,10 @@ type RoomType = {
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
+  availableSlots: number | null;
 };
 
-const emptyRt = { roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0", maxAdults: "2", maxInfants: "0", minAdultsRequired: "" };
+const emptyRt = { roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0", maxAdults: "2", maxInfants: "0", minAdultsRequired: "", availableSlots: "" };
 
 export default function PackageRoomTypesManager({
   packageId,
@@ -44,6 +45,7 @@ export default function PackageRoomTypesManager({
       maxAdults: String(rt.maxAdults),
       maxInfants: String(rt.maxInfants),
       minAdultsRequired: rt.minAdultsRequired != null ? String(rt.minAdultsRequired) : "",
+      availableSlots: rt.availableSlots != null ? String(rt.availableSlots) : "",
     });
   }
 
@@ -70,6 +72,7 @@ export default function PackageRoomTypesManager({
       maxAdults: Number(form.maxAdults),
       maxInfants: Number(form.maxInfants || 0),
       minAdultsRequired: form.minAdultsRequired ? Number(form.minAdultsRequired) : null,
+      availableSlots: form.availableSlots ? Number(form.availableSlots) : null,
     };
 
     const url = editingId
@@ -99,7 +102,7 @@ export default function PackageRoomTypesManager({
 
       <div className="adp-tw">
         <table className="adp-table">
-          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Price/Infant</th><th>Price/Child</th><th>Max Adults</th><th>Max Infants</th><th>Min Adults</th><th></th></tr></thead>
+          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Price/Infant</th><th>Price/Child</th><th>Max Adults</th><th>Max Infants</th><th>Min Adults</th><th>Slots Left</th><th></th></tr></thead>
           <tbody>
             {roomTypes.length === 0 && (
               <tr><td colSpan={7} className="etd" style={{ textAlign: "center" }}>No room types yet — add one below.</td></tr>
@@ -113,6 +116,7 @@ export default function PackageRoomTypesManager({
                 <td>{rt.maxAdults}</td>
                 <td>{rt.maxInfants}</td>
                 <td>{rt.minAdultsRequired ?? "—"}</td>
+                <td>{rt.availableSlots ?? "Unlimited"}</td>
                 <td style={{ display: "flex", gap: "6px" }}>
                   <button onClick={() => startEdit(rt)} className="adp-btn adp-btn-s">Edit</button>
                   <button onClick={() => handleDelete(rt.id)} className="adp-btn adp-btn-r">Delete</button>
@@ -131,6 +135,7 @@ export default function PackageRoomTypesManager({
         <div><label>Max Adults</label><input type="number" value={form.maxAdults} onChange={(e) => setForm((f) => ({ ...f, maxAdults: e.target.value }))} /></div>
         <div><label>Max Infants</label><input type="number" value={form.maxInfants} onChange={(e) => setForm((f) => ({ ...f, maxInfants: e.target.value }))} /></div>
         <div><label>Min Adults Required (optional)</label><input type="number" placeholder="e.g. 3 for shared rooms" value={form.minAdultsRequired} onChange={(e) => setForm((f) => ({ ...f, minAdultsRequired: e.target.value }))} /></div>
+        <div><label>Total Slots Available (blank = unlimited)</label><input type="number" placeholder="e.g. 40" value={form.availableSlots} onChange={(e) => setForm((f) => ({ ...f, availableSlots: e.target.value }))} /></div>
 
         {error && <p style={{ gridColumn: "1 / -1", color: "var(--a-red)", fontSize: "12px" }}>{error}</p>}
         <div style={{ gridColumn: "1 / -1", display: "flex", gap: "8px" }}>

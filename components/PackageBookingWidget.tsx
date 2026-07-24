@@ -19,15 +19,21 @@ export default function PackageBookingWidget({
   packageId,
   roomTypes,
   packageName,
+  initialAdults = 1,
+  initialChildren = 0,
+  initialInfants = 0,
 }: {
   packageId: string;
   roomTypes: RoomType[];
   packageName: string;
+  initialAdults?: number;
+  initialChildren?: number;
+  initialInfants?: number;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(roomTypes[0]?.id ?? null);
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
+  const [adults, setAdults] = useState(initialAdults);
+  const [children, setChildren] = useState(initialChildren);
+  const [infants, setInfants] = useState(initialInfants);
 
   const selected = roomTypes.find((r) => r.id === selectedId) ?? null;
 

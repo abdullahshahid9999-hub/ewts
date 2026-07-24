@@ -60,7 +60,7 @@ function parseItinerary(raw: unknown): ItineraryStep[] {
   );
 }
 
-export default function PackageDetailView({ pkg }: { pkg: PackageWithRoomTypes }) {
+export default function PackageDetailView({ pkg, initialAdults, initialChildren, initialInfants }: { pkg: PackageWithRoomTypes; initialAdults?: number; initialChildren?: number; initialInfants?: number }) {
   const includes = parseList(pkg.includes);
   const excludes = parseList(pkg.excludes);
   const itinerary = parseItinerary(pkg.itinerary);
@@ -195,7 +195,7 @@ export default function PackageDetailView({ pkg }: { pkg: PackageWithRoomTypes }
         )}
 
         {/* BOOKING WIDGET */}
-        <PackageBookingWidget packageId={pkg.id} roomTypes={pkg.roomTypes} packageName={pkg.name} />
+        <PackageBookingWidget packageId={pkg.id} roomTypes={pkg.roomTypes} packageName={pkg.name} initialAdults={initialAdults} initialChildren={initialChildren} initialInfants={initialInfants} />
       </div>
     </>
   );
