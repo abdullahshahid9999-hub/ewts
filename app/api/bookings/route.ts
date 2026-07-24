@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { sendEmail } from "@/lib/email";
+import { releaseExpiredSlotHolds } from "@/lib/packageSlots";
 
 // Public, unauthenticated — customers book without logging in (matches
 // the reference site's flow: pick room type -> fill details -> submit).
@@ -84,29 +85,62 @@ export async function POST(req: NextRequest) {
   // Server-side price computation — the only source of truth for what
   // this booking actually costs, regardless of what the client displayed.
   const totalPricePkr = adults * rt.pricePerPersonPkr + children * rt.pricePerChildPkr + infants * rt.pricePerInfantPkr; // owner decision: flat PKR rate per infant/child, admin-configurable per room type
+  const slotsNeeded = adults + children + infants;
+  const tracksSlots = rt.availableSlots !== null;
 
   let booking;
   try {
-    booking = await prisma.booking.create({
-      data: {
-        bookingRef: generateBookingRef(),
-        customerName,
-        phone,
-        email: email || undefined,
-        passport: passport || undefined,
-        specialRequests: specialRequests || undefined,
-        service: pkg.category,
-        packageId: pkg.id,
-        roomTypeLabel: rt.roomType,
-        adults,
-        children,
-        infants,
-        totalPricePkr,
-        status: "pending",
-        travellers: travellers.length > 0 ? { create: travellers } : undefined,
-      },
-      include: { travellers: true },
-    });
+    if (tracksSlots) {
+      await releaseExpiredSlotHolds(rt.id);
+      booking = await prisma
+        .$transaction(async (tx) => {
+          const slotUpdate = await tx.packageRoomType.updateMany({
+            where: { id: rt.id, availableSlots: { gte: slotsNeeded } },
+            data: { availableSlots: { decrement: slotsNeeded } },
+          });
+          if (slotUpdate.count === 0) throw new Error("SOLD_OUT_SLOTS");
+          return tx.booking.create({
+            data: {
+              bookingRef: generateBookingRef(),
+              customerName, phone, email: email || undefined, passport: passport || undefined,
+              specialRequests: specialRequests || undefined,
+              service: pkg.category, packageId: pkg.id, roomTypeLabel: rt.roomType,
+              adults, children, infants, totalPricePkr, status: "pending",
+              expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+              travellers: travellers.length > 0 ? { create: travellers } : undefined,
+            },
+            include: { travellers: true },
+          });
+        })
+        .catch((e) => {
+          if (e instanceof Error && e.message === "SOLD_OUT_SLOTS") return null;
+          throw e;
+        });
+      if (!booking) {
+        return NextResponse.json({ error: `Not enough slots left in ${rt.roomType} for ${slotsNeeded} traveller(s).` }, { status: 409 });
+      }
+    } else {
+      booking = await prisma.booking.create({
+        data: {
+          bookingRef: generateBookingRef(),
+          customerName,
+          phone,
+          email: email || undefined,
+          passport: passport || undefined,
+          specialRequests: specialRequests || undefined,
+          service: pkg.category,
+          packageId: pkg.id,
+          roomTypeLabel: rt.roomType,
+          adults,
+          children,
+          infants,
+          totalPricePkr,
+          status: "pending",
+          travellers: travellers.length > 0 ? { create: travellers } : undefined,
+        },
+        include: { travellers: true },
+      });
+    }
   } catch (e) {
     console.error("POST /api/bookings failed:", e);
     return NextResponse.json(

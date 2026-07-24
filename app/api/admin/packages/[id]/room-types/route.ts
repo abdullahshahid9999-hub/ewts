@@ -21,6 +21,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const minAdultsRequired = body?.minAdultsRequired !== undefined && body.minAdultsRequired !== null && body.minAdultsRequired !== ""
     ? Number(body.minAdultsRequired)
     : undefined;
+  const availableSlots = body?.availableSlots !== undefined && body.availableSlots !== null && body.availableSlots !== ""
+    ? Number(body.availableSlots)
+    : undefined;
   const sortOrder = body?.sortOrder !== undefined ? Number(body.sortOrder) : 0;
 
   if (!roomType || !Number.isFinite(pricePerPersonPkr) || pricePerPersonPkr <= 0 || !Number.isFinite(maxAdults) || maxAdults < 1) {
@@ -40,6 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       maxAdults,
       maxInfants: Number.isFinite(maxInfants) ? maxInfants : 0,
       minAdultsRequired: minAdultsRequired !== undefined && Number.isFinite(minAdultsRequired) ? minAdultsRequired : undefined,
+      availableSlots: availableSlots !== undefined && Number.isFinite(availableSlots) ? availableSlots : undefined,
       sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
     },
   });

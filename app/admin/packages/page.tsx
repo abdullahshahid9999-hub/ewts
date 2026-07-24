@@ -16,6 +16,7 @@ type RoomType = {
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
+  availableSlots: number | null;
 };
 
 type ItineraryStep = { title: string; details: string; images: string };

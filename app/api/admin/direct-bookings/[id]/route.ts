@@ -29,7 +29,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
 
-  const existing = await prisma.booking.findUnique({ where: { id } });
+  const existing = await prisma.booking.findUnique({
+    where: { id },
+    include: { package: { include: { roomTypes: true } } },
+  });
   if (!existing) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   // Cancelling a pending/confirmed group-ticket booking releases its held
@@ -42,6 +45,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     existing.service === "group_ticket" &&
     existing.groupFlightId;
 
+  const roomType = existing.package?.roomTypes.find((r) => r.roomType === existing.roomTypeLabel);
+  const releasesSlots =
+    status === "cancelled" &&
+    existing.status !== "cancelled" &&
+    existing.status !== "expired" &&
+    roomType && roomType.availableSlots !== null;
+  const slotsHeld = (existing.adults ?? 1) + (existing.children ?? 0) + (existing.infants ?? 0);
+
   const booking = await prisma
     .$transaction(async (tx) => {
       if (releasesSeat) {
@@ -49,6 +60,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           where: { id: existing.groupFlightId! },
           data: { seats: { increment: existing.seatsRequested ?? 1 } },
         });
+      }
+      if (releasesSlots) {
+        await tx.packageRoomType.update({ where: { id: roomType!.id }, data: { availableSlots: { increment: slotsHeld } } });
       }
       return tx.booking.update({ where: { id }, data: { status } });
     })

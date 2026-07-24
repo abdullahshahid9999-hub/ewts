@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAgent, stripAgentWriteOnlyFields } from "@/lib/apiAuth";
 import { calculateCommission } from "@/lib/commission";
+import { releaseExpiredSeatHolds } from "@/lib/groupFlightSeats";
+import { releaseExpiredSlotHolds } from "@/lib/packageSlots";
 
 // Route Handlers are cached by Next.js by default — without this, admin
 // panel list pages can keep showing stale data after a create/update
@@ -20,6 +22,12 @@ const VALID_STATUSES = ["pending", "confirmed", "issue_requested", "issued", "ca
 // instead (see brief item 3, "Booking expiry timers").
 const INTERNAL_INVENTORY_EXPIRY_MS = 30 * 60 * 1000;
 const SUPPLIER_SAFETY_BUFFER_MS = 3 * 60 * 1000;
+// Real inventory holds (a real seat / a real slot being reserved) get a
+// longer window than the generic "request issuance" deadline above —
+// matches the public B2C booking flow's 2-hour hold exactly, so an agent
+// and a website visitor competing for the same seat/slot are on equal
+// footing.
+const INVENTORY_HOLD_MS = 2 * 60 * 60 * 1000;
 
 function computeExpiresAt(serviceType: string, supplierLimitMs?: number) {
   if (serviceType === "group_ticket" && supplierLimitMs) {
@@ -177,36 +185,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "groupFlightId is required for group ticket bookings." }, { status: 400 });
     }
 
-    // Seats are no longer touched here — decrement now happens at ISSUE
-    // time (see admin agent-bookings [id] PATCH route), since that's when
-    // the office actually commits to the seat. This is a read-only guard
-    // so an agent can't even start a booking against an already-sold-out
-    // flight; it does not reserve the seat, so it's still possible (if
-    // rare) for multiple pending bookings to race for the last seat — the
-    // real oversell protection is the transactional decrement at issue
-    // time, which is where it actually matters.
-    const flight = await prisma.groupFlight.findUnique({ where: { id: groupFlightId } });
-    if (!flight || flight.seats <= 0) {
-      return NextResponse.json({ error: "This flight is sold out — no seats remaining." }, { status: 409 });
-    }
+    // Sweep expired holds on this flight first so the availability check
+    // below is accurate, then atomically hold a real seat — same 2-hour
+    // hold as the public B2C flow. Decrement happens HERE (booking
+    // creation), not at issue time — reverted from the earlier issue-time
+    // design per explicit direction: seats should move in real time for
+    // both B2C and agent bookings alike, held pending confirmation, and
+    // released automatically if not confirmed within the window.
+    await releaseExpiredSeatHolds(groupFlightId);
 
     try {
-      booking = await prisma.agentBooking.create({
-        data: {
-          agentId: agent.id,
-          serviceType,
-          groupFlightId,
-          sellPrice,
-          commission,
-          customerName,
-          customerPhone,
-          customerEmail,
-          travellers: travellers.length > 0 ? travellers : undefined,
-          bookingRef: generateBookingRef(),
-          status: "pending",
-          expiresAt: computeExpiresAt(serviceType),
-        },
-      });
+      booking = await prisma
+        .$transaction(async (tx) => {
+          const seatUpdate = await tx.groupFlight.updateMany({
+            where: { id: groupFlightId, seats: { gt: 0 } },
+            data: { seats: { decrement: 1 } },
+          });
+          if (seatUpdate.count === 0) throw new Error("SOLD_OUT");
+
+          return tx.agentBooking.create({
+            data: {
+              agentId: agent.id,
+              serviceType,
+              groupFlightId,
+              sellPrice,
+              commission,
+              customerName,
+              customerPhone,
+              customerEmail,
+              travellers: travellers.length > 0 ? travellers : undefined,
+              bookingRef: generateBookingRef(),
+              status: "pending",
+              expiresAt: new Date(Date.now() + INVENTORY_HOLD_MS),
+            },
+          });
+        })
+        .catch((e) => {
+          if (e instanceof Error && e.message === "SOLD_OUT") return null;
+          throw e;
+        });
     } catch (e) {
       console.error("POST /api/agent/bookings (group_ticket) failed:", e);
       return NextResponse.json(
@@ -214,30 +231,75 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    if (!booking) {
+      return NextResponse.json({ error: "This flight is sold out — no seats remaining." }, { status: 409 });
+    }
   } else {
+    let roomType = null;
+    if ((serviceType === "umrah" || serviceType === "tours") && packageId && roomTypeLabel) {
+      await releaseExpiredSlotHolds();
+      roomType = await prisma.packageRoomType.findFirst({ where: { packageId, roomType: roomTypeLabel } });
+    }
+    const slotsNeeded = (Number.isFinite(adults) ? adults! : 1) + (Number.isFinite(children) ? children! : 0) + (Number.isFinite(infants) ? infants! : 0);
+    const tracksSlots = roomType && roomType.availableSlots !== null;
+
     try {
-      booking = await prisma.agentBooking.create({
-        data: {
-          agentId: agent.id,
-          serviceType,
-          groupFlightId,
-          packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
-          sellPrice,
-          commission,
-          customerName,
-          customerPhone,
-          customerEmail,
-          travellers: travellers.length > 0 ? travellers : undefined,
-          roomTypeLabel,
-          insurancePlanLabel,
-          adults: Number.isFinite(adults) ? adults : undefined,
-          children: Number.isFinite(children) ? children : undefined,
-          infants: Number.isFinite(infants) ? infants : undefined,
-          bookingRef: generateBookingRef(),
-          status: "pending",
-          expiresAt: computeExpiresAt(serviceType),
-        },
-      });
+      if (tracksSlots) {
+        booking = await prisma
+          .$transaction(async (tx) => {
+            const slotUpdate = await tx.packageRoomType.updateMany({
+              where: { id: roomType!.id, availableSlots: { gte: slotsNeeded } },
+              data: { availableSlots: { decrement: slotsNeeded } },
+            });
+            if (slotUpdate.count === 0) throw new Error("SOLD_OUT_SLOTS");
+            return tx.agentBooking.create({
+              data: {
+                agentId: agent.id, serviceType, groupFlightId,
+                packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
+                sellPrice, commission, customerName, customerPhone, customerEmail,
+                travellers: travellers.length > 0 ? travellers : undefined,
+                roomTypeLabel, insurancePlanLabel,
+                adults: Number.isFinite(adults) ? adults : undefined,
+                children: Number.isFinite(children) ? children : undefined,
+                infants: Number.isFinite(infants) ? infants : undefined,
+                bookingRef: generateBookingRef(),
+                status: "pending",
+                expiresAt: new Date(Date.now() + INVENTORY_HOLD_MS),
+              },
+            });
+          })
+          .catch((e) => {
+            if (e instanceof Error && e.message === "SOLD_OUT_SLOTS") return null;
+            throw e;
+          });
+        if (!booking) {
+          return NextResponse.json({ error: "Not enough slots left for this room type." }, { status: 409 });
+        }
+      } else {
+        booking = await prisma.agentBooking.create({
+          data: {
+            agentId: agent.id,
+            serviceType,
+            groupFlightId,
+            packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
+            sellPrice,
+            commission,
+            customerName,
+            customerPhone,
+            customerEmail,
+            travellers: travellers.length > 0 ? travellers : undefined,
+            roomTypeLabel,
+            insurancePlanLabel,
+            adults: Number.isFinite(adults) ? adults : undefined,
+            children: Number.isFinite(children) ? children : undefined,
+            infants: Number.isFinite(infants) ? infants : undefined,
+            bookingRef: generateBookingRef(),
+            status: "pending",
+            expiresAt: computeExpiresAt(serviceType),
+          },
+        });
+      }
     } catch (e) {
       console.error("POST /api/agent/bookings failed:", e);
       return NextResponse.json(
