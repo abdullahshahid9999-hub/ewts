@@ -172,7 +172,7 @@ function VisaServicesInner() {
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>
               Pricing (PKR) — Adult / Child / Infant
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 10 }}>
               <div>
                 <label style={{ fontSize: 10, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 4 }}>Legacy Price Display</label>
                 <input style={iStyle} value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="e.g. PKR 12,000" />
@@ -196,7 +196,7 @@ function VisaServicesInner() {
           {error && <p style={{ color: "var(--a-red)", fontSize: "12px", marginBottom: 10 }}>{error}</p>}
 
           {/* Terms & Conditions + Refund Policy */}
-          <div style={{ borderTop: "1px solid var(--a-border2)", paddingTop: 14, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ borderTop: "1px solid var(--a-border2)", paddingTop: 14, marginBottom: 14, gap: 12 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
                 Terms &amp; Conditions

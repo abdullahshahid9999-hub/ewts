@@ -156,7 +156,7 @@ function BankAccountsInner() {
       <div className="adp-card" style={{ marginBottom: 20 }}>
         <div className="adp-ch"><h3>Add Bank Account</h3></div>
         <form onSubmit={create} style={{ padding: "16px 18px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 10, marginBottom: 12 }}>
             <Field label="Bank Name *">
               <input style={iStyle} value={form.bankName} onChange={(e) => setForm({ ...form, bankName: e.target.value })} placeholder="e.g. HBL" required />
             </Field>

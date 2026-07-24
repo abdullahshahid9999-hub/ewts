@@ -212,7 +212,7 @@ function BookingDetailInner() {
         )}
         {booking.package && <div style={{ marginBottom: "12px", fontSize: "14px" }}><strong>{booking.package.name}</strong></div>}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", marginBottom: "14px" }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px", fontSize: "13px", marginBottom: "14px" }}>
           <div><strong>Customer:</strong> {booking.customerName}</div>
           <div><strong>Phone:</strong> {booking.customerPhone}</div>
           {booking.customerEmail && <div><strong>Email:</strong> {booking.customerEmail}</div>}

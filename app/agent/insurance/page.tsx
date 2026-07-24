@@ -182,7 +182,7 @@ function InsuranceInner() {
               <label>Customer Full Name</label>
               <input required value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
               <div className="ap-field">
                 <label>Phone</label>
                 <input required value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />

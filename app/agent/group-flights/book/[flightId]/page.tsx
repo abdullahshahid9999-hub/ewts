@@ -238,7 +238,7 @@ function BookFlightInner() {
 
           <div className="ap-card" style={{ padding: "18px", marginBottom: "14px" }}>
             <h3 style={{ marginBottom: "10px" }}>Customer Details</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px" }}>
               <input required placeholder="Customer Name *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="ap-field" />
               <input required placeholder="Phone *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="ap-field" />
               <input type="email" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="ap-field" style={{ gridColumn: "1 / -1" }} />
@@ -248,7 +248,7 @@ function BookFlightInner() {
           <div className="ap-card" style={{ padding: "18px", marginBottom: "14px" }}>
             <h3 style={{ marginBottom: "10px" }}>Passenger Details (Adults)</h3>
             {travellers.map((t, i) => (
-              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "8px" }}>
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: "8px", marginBottom: "8px" }}>
                 <input required placeholder={`Passenger ${i + 1} Full Name *`} value={t.fullName} onChange={(e) => updateTraveller(i, { fullName: e.target.value })} className="ap-field" />
                 <input placeholder="Passport No" value={t.passportNo} onChange={(e) => updateTraveller(i, { passportNo: e.target.value })} className="ap-field" />
                 <input placeholder="CNIC" value={t.cnic} onChange={(e) => updateTraveller(i, { cnic: e.target.value })} className="ap-field" />

@@ -57,7 +57,7 @@ export default async function AgentUmrahDetailPage({ params }: { params: Promise
 
         {(includes.length > 0 || excludes.length > 0) && (
           <div className="ap-card">
-            <div style={{ padding: "16px 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ padding: "16px 18px", gap: 20 }}>
               {includes.length > 0 && (
                 <div>
                   <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>What&apos;s Included</p>

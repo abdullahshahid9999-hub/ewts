@@ -276,7 +276,7 @@ function VisaApplicationsInner() {
                     {expandedId === app.id && (
                       <tr key={`${app.id}-detail`}>
                         <td colSpan={9} style={{ padding: "0 0 12px 0", background: "var(--a-surface)" }}>
-                          <div style={{ padding: "16px 20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ padding: "16px 20px", gap: 20 }}>
 
                             {/* Left: contact + docs */}
                             <div>

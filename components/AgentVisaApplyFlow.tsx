@@ -166,7 +166,7 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
             </div>
           )}
           <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Customer Contact</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10, marginBottom: 16 }}>
             <div className="ap-field"><label>Phone</label><input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="03xx-xxxxxxx" /></div>
             <div className="ap-field"><label>Email</label><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           </div>

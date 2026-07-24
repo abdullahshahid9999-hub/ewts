@@ -86,7 +86,7 @@ function SuppliersInner() {
 
       <div className="adp-card" style={{ marginBottom: 16 }}>
         <div className="adp-ch"><h3>{editingId ? "Edit Supplier" : "New Supplier"}</h3></div>
-        <form onSubmit={submit} style={{ padding: "16px 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2" style={{ padding: "16px 18px", gap: 10 }}>
           <div>
             <label>Supplier Name *</label>
             <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. FX-Port" required />

@@ -199,7 +199,7 @@ export default function AgentPackageBookingWidget({
                 <label>Full Name</label>
                 <input required value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
                 <div className="ap-field">
                   <label>Phone</label>
                   <input required value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
@@ -220,7 +220,7 @@ export default function AgentPackageBookingWidget({
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {travellers.map((t, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8 }}>
+                  <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto]" style={{ gap: 8 }}>
                     <input
                       required={category === "umrah"}
                       placeholder={`Traveller ${i + 1} — Full Name`}

@@ -43,7 +43,7 @@ export default async function AgentVisaDetailPage({ params }: { params: Promise<
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div className="ap-card" style={{ padding: 18 }}>
               <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Visa Details</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
                 {visa.processingTime && <Fact label="Processing Time" value={visa.processingTime} />}
                 {visa.validity && <Fact label="Validity" value={visa.validity} />}
                 {visa.maxStay && <Fact label="Max Stay" value={visa.maxStay} />}
@@ -56,7 +56,7 @@ export default async function AgentVisaDetailPage({ params }: { params: Promise<
             {hasPricing && (
               <div className="ap-card" style={{ padding: 18 }}>
                 <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>Pricing (PKR)</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, textAlign: "center" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 10, textAlign: "center" }}>
                   <PriceCard label="Adult" amount={visa.priceAdult!} />
                   <PriceCard label="Child" amount={visa.priceChild!} />
                   <PriceCard label="Infant" amount={visa.priceInfant!} />

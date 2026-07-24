@@ -126,7 +126,7 @@ function TopupInner() {
       </div>
 
       {/* Two-column layout: bank details left, form right */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 20, marginBottom: 24 }}>
 
         {/* ── Bank Accounts Panel ── */}
         <div className="ap-card" style={{ height: "fit-content" }}>
