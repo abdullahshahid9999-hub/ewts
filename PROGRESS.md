@@ -1442,3 +1442,44 @@ finance page totals, downloadable Excel report with margin column
 REQUIRES: SUPPLIER_KEY_SECRET env var on Render + the SQL migration given
 to the owner directly (suppliers, supplier_transactions tables + new
 columns on group_flights/agent_bookings).
+
+## Phase 3: Mobile-Responsive Audit (in progress, owner will do final pass)
+
+**Fixed — real bugs found:**
+- **Public Navbar had NO mobile menu at all.** `<nav>` was `hidden md:flex`
+  with zero replacement below that breakpoint — mobile visitors could
+  not reach Home/About/Services/Blog from the navbar, full stop. Added a
+  proper hamburger → slide-down panel with all the same links +
+  WhatsApp CTA.
+- Two tables (`app/agent/bookings/[id]/page.tsx` passenger list,
+  `app/admin/suppliers/page.tsx` list) weren't wrapped in the
+  `.ap-tw`/`.adp-tw` horizontal-scroll containers every other table in
+  the codebase already uses — wrapped them to match.
+
+**Checked, already solid (no action needed):**
+- Agent portal (`AgentShell`/`AgentTopbar`) and Admin panel
+  (`AdminShell`/`AdminTopbar`) both already have working hamburger →
+  slide-in sidebar on mobile, wired correctly end to end.
+- `FilterSidebar` (new landing-page work) already has an explicit
+  desktop/mobile split (`hidden lg:block` sticky column vs. a mobile
+  drawer button) — built mobile-first from the start.
+- Two more tables initially flagged by an automated grep
+  (`app/contact/page.tsx` office-hours, `app/agent/group-flights/book/
+  [flightId]` price breakdown) turned out to be simple 2-column,
+  `width: 100%` tables that reflow naturally — false positives, no fix
+  needed.
+
+**Known remaining gap, not yet fixed (flagging for the owner's own
+end-of-project audit rather than guessing at priority):** a handful of
+admin/agent forms use inline `style={{ gridTemplateColumns: "1fr 1fr
+1fr" }}` (fixed 3-column grids with no responsive fallback, since inline
+styles can't carry media queries) —
+`app/admin/visa-services/page.tsx`, `app/admin/bank-accounts/page.tsx`,
+`app/agent/group-flights/book/[flightId]/page.tsx`,
+`app/agent/visa/[id]/page.tsx`. These will look cramped on narrow
+screens. Lower priority than the Navbar/table fixes above since these
+are staff-facing forms typically used on desktop, but worth a look.
+
+`npx tsc --noEmit`: clean throughout, zero new errors from any of this
+phase's changes (all Tailwind class renames + a couple of `<div>`
+wrappers, no logic touched).
