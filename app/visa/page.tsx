@@ -12,13 +12,15 @@ import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
-async function getVisas(q?: string, type?: string) {
+async function getVisas(q?: string, type?: string, processingTime?: string) {
   const types = parseMulti(type);
+  const processingTimes = parseMulti(processingTime);
   try {
     return await prisma.visaService.findMany({
       where: {
         status: "active",
         ...(types.length ? { type: { in: types } } : {}),
+        ...(processingTimes.length ? { processingTime: { in: processingTimes } } : {}),
         ...(q ? { OR: [
           { title: { contains: q, mode: "insensitive" } },
           { country: { contains: q, mode: "insensitive" } },
@@ -51,10 +53,10 @@ const STEPS = [
   { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
 ];
 
-export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; adults?: string; children?: string; infants?: string }> }) {
+export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; processingTime?: string; adults?: string; children?: string; infants?: string }> }) {
   const sp = await searchParams;
-  const { q, type } = sp;
-  const [visas, facets] = await Promise.all([getVisas(q, type), getVisaFacets()]);
+  const { q, type, processingTime } = sp;
+  const [visas, facets] = await Promise.all([getVisas(q, type, processingTime), getVisaFacets()]);
   const paxQS = paxQueryString(sp);
 
   return (
@@ -105,7 +107,10 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         <SearchResultsNotice q={q} basePath="/visa" />
         <div className="flex gap-8 items-start">
           <Suspense fallback={null}>
-            <FilterSidebar groups={[{ key: "type", label: "Visa Type", options: facets.types }]} />
+            <FilterSidebar groups={[
+              { key: "type", label: "Visa Type", options: facets.types },
+              { key: "processingTime", label: "Processing Time", options: facets.processingTimes },
+            ]} />
           </Suspense>
           <div className="flex-1 min-w-0">
         {visas.length === 0 ? (

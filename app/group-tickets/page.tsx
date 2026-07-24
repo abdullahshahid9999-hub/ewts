@@ -10,13 +10,17 @@ import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
-async function getFlights(q?: string, airline?: string, direct?: string) {
+async function getFlights(q?: string, airline?: string, direct?: string, region?: string, tripType?: string) {
   const airlines = parseMulti(airline);
+  const regions = parseMulti(region);
+  const tripTypes = parseMulti(tripType);
   try {
     const flights = await prisma.groupFlight.findMany({
       where: {
         status: "active",
         ...(airlines.length ? { airline: { in: airlines } } : {}),
+        ...(regions.length ? { region: { in: regions } } : {}),
+        ...(tripTypes.length ? { tripType: { in: tripTypes } } : {}),
         ...(q ? { OR: [
           { airline: { contains: q, mode: "insensitive" } },
           { route: { contains: q, mode: "insensitive" } },
@@ -35,9 +39,9 @@ async function getFlights(q?: string, airline?: string, direct?: string) {
   }
 }
 
-export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string; airline?: string; direct?: string }> }) {
-  const { q, airline, direct } = await searchParams;
-  const [flights, facets] = await Promise.all([getFlights(q, airline, direct), getGroupTicketFacets()]);
+export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string; airline?: string; direct?: string; region?: string; tripType?: string }> }) {
+  const { q, airline, direct, region, tripType } = await searchParams;
+  const [flights, facets] = await Promise.all([getFlights(q, airline, direct, region, tripType), getGroupTicketFacets()]);
 
   return (
     <>
@@ -77,8 +81,12 @@ export default async function GroupTicketsPage({ searchParams }: { searchParams:
         <div className="flex gap-8 items-start">
           <Suspense fallback={null}>
             <FilterSidebar
-              groups={[{ key: "airline", label: "Airline", options: facets.airlines }]}
-              showDirectToggle
+              groups={[
+                { key: "airline", label: "Airline", options: facets.airlines },
+                { key: "region", label: "Region", options: facets.regions },
+                { key: "tripType", label: "Trip Type", options: facets.tripTypes },
+              ]}
+              booleanToggle={{ key: "direct", label: "Direct flights only" }}
             />
           </Suspense>
           <div className="flex-1 min-w-0">

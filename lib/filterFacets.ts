@@ -42,15 +42,16 @@ export async function getGroupTicketFacets() {
   try {
     const rows = await prisma.groupFlight.findMany({
       where: { status: "active" },
-      select: { route: true, airline: true, region: true },
+      select: { route: true, airline: true, region: true, tripType: true },
     });
     return {
       routes: uniq(rows.map((r) => r.route)),
       airlines: uniq(rows.map((r) => r.airline)),
       regions: uniq(rows.map((r) => r.region)),
+      tripTypes: uniq(rows.map((r) => r.tripType)),
     };
   } catch {
-    return { routes: [], airlines: [], regions: [] };
+    return { routes: [], airlines: [], regions: [], tripTypes: [] };
   }
 }
 
@@ -58,14 +59,15 @@ export async function getVisaFacets() {
   try {
     const rows = await prisma.visaService.findMany({
       where: { status: "active" },
-      select: { country: true, type: true },
+      select: { country: true, type: true, processingTime: true },
     });
     return {
       countries: uniq(rows.map((r) => r.country)),
       types: uniq(rows.map((r) => r.type)),
+      processingTimes: uniq(rows.map((r) => r.processingTime)),
     };
   } catch {
-    return { countries: [], types: [] };
+    return { countries: [], types: [], processingTimes: [] };
   }
 }
 

@@ -12,7 +12,7 @@ import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
-async function getPackages(q?: string, tier?: string, airline?: string, duration?: string) {
+async function getPackages(q?: string, tier?: string, airline?: string, duration?: string, featured?: string) {
   const tiers = parseMulti(tier);
   const airlines = parseMulti(airline);
   const durations = parseMulti(duration);
@@ -24,6 +24,7 @@ async function getPackages(q?: string, tier?: string, airline?: string, duration
         ...(tiers.length ? { tier: { in: tiers } } : {}),
         ...(airlines.length ? { airline: { in: airlines } } : {}),
         ...(durations.length ? { duration: { in: durations } } : {}),
+        ...(featured === "1" ? { featured: true } : {}),
         ...(q ? { OR: [
           { name: { contains: q, mode: "insensitive" } },
           { destination: { contains: q, mode: "insensitive" } },
@@ -36,10 +37,10 @@ async function getPackages(q?: string, tier?: string, airline?: string, duration
   }
 }
 
-export default async function UmrahPage({ searchParams }: { searchParams: Promise<{ q?: string; tier?: string; airline?: string; duration?: string; adults?: string; children?: string; infants?: string }> }) {
+export default async function UmrahPage({ searchParams }: { searchParams: Promise<{ q?: string; tier?: string; airline?: string; duration?: string; featured?: string; adults?: string; children?: string; infants?: string }> }) {
   const sp = await searchParams;
-  const { q, tier, airline, duration } = sp;
-  const [packages, facets] = await Promise.all([getPackages(q, tier, airline, duration), getUmrahFacets()]);
+  const { q, tier, airline, duration, featured } = sp;
+  const [packages, facets] = await Promise.all([getPackages(q, tier, airline, duration, featured), getUmrahFacets()]);
   const paxQS = paxQueryString(sp);
 
   return (
@@ -74,6 +75,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                 { key: "airline", label: "Airline", options: facets.airlines },
                 { key: "duration", label: "Duration", options: facets.durations },
               ]}
+              booleanToggle={{ key: "featured", label: "Featured Only ⭐" }}
             />
           </Suspense>
 

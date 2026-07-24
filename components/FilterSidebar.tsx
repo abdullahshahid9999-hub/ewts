@@ -66,17 +66,17 @@ function CheckboxGroup({ group, selected, onToggle }: { group: FilterGroup; sele
 
 export default function FilterSidebar({
   groups,
-  showDirectToggle,
+  booleanToggle,
 }: {
   groups: FilterGroup[];
-  showDirectToggle?: boolean;
+  booleanToggle?: { key: string; label: string };
 }) {
   const { searchParams, toggle, toggleBoolean, clearAll } = useAutoApplyFilters();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const activeCount =
     groups.reduce((sum, g) => sum + (searchParams.get(g.key)?.split(",").filter(Boolean).length ?? 0), 0) +
-    (showDirectToggle && searchParams.get("direct") === "1" ? 1 : 0);
+    (booleanToggle && searchParams.get(booleanToggle.key) === "1" ? 1 : 0);
 
   const body = (
     <>
@@ -88,10 +88,10 @@ export default function FilterSidebar({
           onToggle={(v) => toggle(g.key, v)}
         />
       ))}
-      {showDirectToggle && (
+      {booleanToggle && (
         <label className="flex items-center gap-2.5 text-sm cursor-pointer select-none mb-2">
-          <input type="checkbox" checked={searchParams.get("direct") === "1"} onChange={() => toggleBoolean("direct")} className="w-4 h-4 rounded accent-gold" />
-          <span className={searchParams.get("direct") === "1" ? "font-semibold" : ""}>Direct flights only</span>
+          <input type="checkbox" checked={searchParams.get(booleanToggle.key) === "1"} onChange={() => toggleBoolean(booleanToggle.key)} className="w-4 h-4 rounded accent-gold" />
+          <span className={searchParams.get(booleanToggle.key) === "1" ? "font-semibold" : ""}>{booleanToggle.label}</span>
         </label>
       )}
       {activeCount > 0 && (
