@@ -127,6 +127,7 @@ function SuppliersInner() {
         {loading ? (
           <p style={{ padding: 18 }}>Loading…</p>
         ) : (
+          <div className="adp-tw">
           <table className="adp-table">
             <thead><tr><th>Name</th><th>Type</th><th>Contact</th><th>API Key</th><th>Status</th><th></th></tr></thead>
             <tbody>
@@ -147,6 +148,7 @@ function SuppliersInner() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </>

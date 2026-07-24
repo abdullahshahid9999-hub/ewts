@@ -220,6 +220,7 @@ function BookingDetailInner() {
         </div>
 
         {booking.travellers && booking.travellers.length > 0 && (
+          <div className="ap-tw">
           <table className="ap-table" style={{ marginBottom: "14px" }}>
             <thead><tr><th>Passenger</th><th>Passport</th><th>CNIC</th></tr></thead>
             <tbody>
@@ -228,6 +229,7 @@ function BookingDetailInner() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {showFare && (
