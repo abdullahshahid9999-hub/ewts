@@ -1,23 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import SearchResultsNotice from "@/components/SearchResultsNotice";
 import { paxQueryString } from "@/lib/searchState";
+import { getUmrahFacets, parseMulti } from "@/lib/filterFacets";
+import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
 async function getPackages(q?: string, tier?: string, airline?: string, duration?: string) {
+  const tiers = parseMulti(tier);
+  const airlines = parseMulti(airline);
+  const durations = parseMulti(duration);
   try {
     return await prisma.package.findMany({
       where: {
         category: "umrah",
         status: "active",
-        ...(tier ? { tier } : {}),
-        ...(airline ? { airline } : {}),
-        ...(duration ? { duration } : {}),
+        ...(tiers.length ? { tier: { in: tiers } } : {}),
+        ...(airlines.length ? { airline: { in: airlines } } : {}),
+        ...(durations.length ? { duration: { in: durations } } : {}),
         ...(q ? { OR: [
           { name: { contains: q, mode: "insensitive" } },
           { destination: { contains: q, mode: "insensitive" } },
@@ -33,7 +39,7 @@ async function getPackages(q?: string, tier?: string, airline?: string, duration
 export default async function UmrahPage({ searchParams }: { searchParams: Promise<{ q?: string; tier?: string; airline?: string; duration?: string; adults?: string; children?: string; infants?: string }> }) {
   const sp = await searchParams;
   const { q, tier, airline, duration } = sp;
-  const packages = await getPackages(q, tier, airline, duration);
+  const [packages, facets] = await Promise.all([getPackages(q, tier, airline, duration), getUmrahFacets()]);
   const paxQS = paxQueryString(sp);
 
   return (
@@ -58,91 +64,93 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
         </p>
       </section>
 
-      {/* FILTER TABS — cosmetic only: the Package model doesn't distinguish
-          Umrah vs Hajj as a subtype, so this filters Featured vs All within
-          the "umrah" category rather than a true Hajj split. */}
-      <section className="max-w-6xl mx-auto px-6 pt-10">
-        <div className="flex flex-wrap gap-2 justify-center mb-10 text-sm">
-          <span className="rounded-full bg-gold text-black font-semibold px-4 py-1.5">All Packages</span>
-          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Umrah</span>
-          <span className="rounded-full border border-border px-4 py-1.5 text-muted">Hajj</span>
-          <span className="rounded-full border border-border px-4 py-1.5 text-muted">⭐ Featured</span>
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-6 py-10">
         <SearchResultsNotice q={q} basePath="/umrah" />
-        {packages.length === 0 ? (
-          <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
-            <p className="text-4xl mb-4">🕌</p>
-            <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Packages" : "No Packages Found"}</h3>
-            <p className="text-muted text-sm mb-6">
-              {q ? `We couldn't find a package matching "${q}". ` : ""}Contact us for custom Umrah &amp; Hajj quotes.
-            </p>
-            <a
-              href={waLink("Assalam o Alaikum! Please share Umrah package details.")}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
-            >
-              Ask on WhatsApp
-            </a>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {packages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col"
-              >
-                <div className="relative h-44 bg-surface">
-                  {pkg.imageUrl && (
-                    <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
-                  )}
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="bg-[var(--navy)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
-                    {pkg.featured && (
-                      <span className="bg-gold text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
-                    )}
-                  </div>
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-semibold text-lg mb-1">{pkg.name}</h3>
-                  <p className="text-muted text-sm mb-2">
-                    {pkg.duration} {pkg.destination ? `· ${pkg.destination}` : ""}
-                  </p>
-                  {pkg.hotels && <p className="text-muted text-sm mb-2">Hotels: {pkg.hotels}</p>}
-                  {pkg.includes && (
-                    <p className="text-sm mb-3">
-                      <span className="font-semibold">What&apos;s Included: </span>
-                      {pkg.includes}
-                    </p>
-                  )}
-                  <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-display text-xl font-semibold text-gold">
-                      {pkg.price}
-                      <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
-                    </span>
-                    {pkg.slug ? (
-                      <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-gold hover:underline">
-                        View Details →
-                      </Link>
-                    ) : (
-                      <a
-                        href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-gold hover:underline"
-                      >
-                        Book This Package on WhatsApp →
-                      </a>
-                    )}
-                  </div>
-                </div>
+        <div className="flex gap-8 items-start">
+          <Suspense fallback={null}>
+            <FilterSidebar
+              groups={[
+                { key: "tier", label: "Package Type", options: facets.tiers },
+                { key: "airline", label: "Airline", options: facets.airlines },
+                { key: "duration", label: "Duration", options: facets.durations },
+              ]}
+            />
+          </Suspense>
+
+          <div className="flex-1 min-w-0">
+            {packages.length === 0 ? (
+              <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
+                <p className="text-4xl mb-4">🕌</p>
+                <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Packages" : "No Packages Found"}</h3>
+                <p className="text-muted text-sm mb-6">
+                  {q ? `We couldn't find a package matching "${q}". ` : ""}Contact us for custom Umrah &amp; Hajj quotes, or try clearing a filter.
+                </p>
+                <a
+                  href={waLink("Assalam o Alaikum! Please share Umrah package details.")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-gold hover:bg-gold-light text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                >
+                  Ask on WhatsApp
+                </a>
               </div>
-            ))}
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {packages.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col"
+                  >
+                    <div className="relative h-44 bg-surface">
+                      {pkg.imageUrl && (
+                        <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
+                      )}
+                      <div className="absolute top-3 left-3 flex gap-2">
+                        <span className="bg-[var(--navy)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
+                        {pkg.featured && (
+                          <span className="bg-gold text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <h3 className="font-semibold text-lg mb-1">{pkg.name}</h3>
+                      <p className="text-muted text-sm mb-2">
+                        {pkg.duration} {pkg.destination ? `· ${pkg.destination}` : ""}
+                      </p>
+                      {pkg.hotels && <p className="text-muted text-sm mb-2">Hotels: {pkg.hotels}</p>}
+                      {pkg.includes && (
+                        <p className="text-sm mb-3">
+                          <span className="font-semibold">What&apos;s Included: </span>
+                          {pkg.includes}
+                        </p>
+                      )}
+                      <div className="mt-auto flex items-center justify-between pt-2">
+                        <span className="font-display text-xl font-semibold text-gold">
+                          {pkg.price}
+                          <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
+                        </span>
+                        {pkg.slug ? (
+                          <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-gold hover:underline">
+                            View Details →
+                          </Link>
+                        ) : (
+                          <a
+                            href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-semibold text-gold hover:underline"
+                          >
+                            Book This Package on WhatsApp →
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </section>
 
       {/* CTA */}

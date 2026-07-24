@@ -1,18 +1,22 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GroupTicketsClient from "@/components/GroupTicketsClient";
 import SearchResultsNotice from "@/components/SearchResultsNotice";
+import { getGroupTicketFacets, parseMulti } from "@/lib/filterFacets";
+import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
 async function getFlights(q?: string, airline?: string, direct?: string) {
+  const airlines = parseMulti(airline);
   try {
     const flights = await prisma.groupFlight.findMany({
       where: {
         status: "active",
-        ...(airline ? { airline } : {}),
+        ...(airlines.length ? { airline: { in: airlines } } : {}),
         ...(q ? { OR: [
           { airline: { contains: q, mode: "insensitive" } },
           { route: { contains: q, mode: "insensitive" } },
@@ -33,7 +37,7 @@ async function getFlights(q?: string, airline?: string, direct?: string) {
 
 export default async function GroupTicketsPage({ searchParams }: { searchParams: Promise<{ q?: string; airline?: string; direct?: string }> }) {
   const { q, airline, direct } = await searchParams;
-  const flights = await getFlights(q, airline, direct);
+  const [flights, facets] = await Promise.all([getFlights(q, airline, direct), getGroupTicketFacets()]);
 
   return (
     <>
@@ -69,7 +73,19 @@ export default async function GroupTicketsPage({ searchParams }: { searchParams:
         </h3>
       </section>
 
-      <GroupTicketsClient flights={flights} />
+      <section className="max-w-6xl mx-auto px-6">
+        <div className="flex gap-8 items-start">
+          <Suspense fallback={null}>
+            <FilterSidebar
+              groups={[{ key: "airline", label: "Airline", options: facets.airlines }]}
+              showDirectToggle
+            />
+          </Suspense>
+          <div className="flex-1 min-w-0">
+            <GroupTicketsClient flights={flights} />
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </>

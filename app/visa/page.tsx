@@ -1,20 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import SearchResultsNotice from "@/components/SearchResultsNotice";
 import { paxQueryString } from "@/lib/searchState";
+import { getVisaFacets, parseMulti } from "@/lib/filterFacets";
+import FilterSidebar from "@/components/FilterSidebar";
 
 export const revalidate = 120;
 
 async function getVisas(q?: string, type?: string) {
+  const types = parseMulti(type);
   try {
     return await prisma.visaService.findMany({
       where: {
         status: "active",
-        ...(type ? { type } : {}),
+        ...(types.length ? { type: { in: types } } : {}),
         ...(q ? { OR: [
           { title: { contains: q, mode: "insensitive" } },
           { country: { contains: q, mode: "insensitive" } },
@@ -50,7 +54,7 @@ const STEPS = [
 export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; adults?: string; children?: string; infants?: string }> }) {
   const sp = await searchParams;
   const { q, type } = sp;
-  const visas = await getVisas(q, type);
+  const [visas, facets] = await Promise.all([getVisas(q, type), getVisaFacets()]);
   const paxQS = paxQueryString(sp);
 
   return (
@@ -99,6 +103,11 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
 
       <section className="max-w-6xl mx-auto px-6 pb-16">
         <SearchResultsNotice q={q} basePath="/visa" />
+        <div className="flex gap-8 items-start">
+          <Suspense fallback={null}>
+            <FilterSidebar groups={[{ key: "type", label: "Visa Type", options: facets.types }]} />
+          </Suspense>
+          <div className="flex-1 min-w-0">
         {visas.length === 0 ? (
           <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
             <p className="text-4xl mb-4">🛂</p>
@@ -116,7 +125,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {visas.map((v) => (
               <div
                 key={v.id}
@@ -160,6 +169,8 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
             ))}
           </div>
         )}
+          </div>
+        </div>
       </section>
 
       {/* HOW IT WORKS */}
