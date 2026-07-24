@@ -31,10 +31,10 @@ type QuoteRate = {
   plan: { name: string; company: { name: string; logoUrl: string | null } };
 };
 
-export default function InsuranceCalculator({ onViewPlans }: { onViewPlans?: () => void }) {
-  const [destination, setDestination] = useState("");
+export default function InsuranceCalculator({ onViewPlans, initialDestination, initialTravellers }: { onViewPlans?: () => void; initialDestination?: string; initialTravellers?: string }) {
+  const [destination, setDestination] = useState(initialDestination ?? "");
   const [duration, setDuration] = useState("");
-  const [travellers, setTravellers] = useState("1");
+  const [travellers, setTravellers] = useState(initialTravellers ?? "1");
   const [ageBand, setAgeBand] = useState(AGE_BANDS[0]);
   const [departureDate, setDepartureDate] = useState("");
   const [email, setEmail] = useState("");

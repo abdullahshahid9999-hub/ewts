@@ -4,13 +4,25 @@ import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
+import SearchResultsNotice from "@/components/SearchResultsNotice";
+import { paxQueryString } from "@/lib/searchState";
 
 export const revalidate = 120;
 
-async function getPackages() {
+async function getPackages(q?: string, tier?: string, airline?: string, duration?: string) {
   try {
     return await prisma.package.findMany({
-      where: { category: "tours", status: "active" },
+      where: {
+        category: "tours",
+        status: "active",
+        ...(tier ? { tier } : {}),
+        ...(airline ? { airline } : {}),
+        ...(duration ? { duration } : {}),
+        ...(q ? { OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { destination: { contains: q, mode: "insensitive" } },
+        ] } : {}),
+      },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     });
   } catch {
@@ -18,8 +30,11 @@ async function getPackages() {
   }
 }
 
-export default async function ToursPage() {
-  const packages = await getPackages();
+export default async function ToursPage({ searchParams }: { searchParams: Promise<{ q?: string; tier?: string; airline?: string; duration?: string; adults?: string; children?: string; infants?: string }> }) {
+  const sp = await searchParams;
+  const { q, tier, airline, duration } = sp;
+  const packages = await getPackages(q, tier, airline, duration);
+  const paxQS = paxQueryString(sp);
 
   return (
     <>
@@ -53,12 +68,13 @@ export default async function ToursPage() {
       </section>
 
       <section className="max-w-6xl mx-auto px-6 pb-16">
+        <SearchResultsNotice q={q} basePath="/tours" />
         {packages.length === 0 ? (
           <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
             <p className="text-4xl mb-4">🕌</p>
-            <h3 className="font-display text-xl font-semibold mb-2">No Packages Available</h3>
+            <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Tours" : "No Packages Available"}</h3>
             <p className="text-muted text-sm mb-6">
-              Our team is preparing amazing World Tours. Contact us for custom quotes.
+              {q ? `We couldn't find a tour matching "${q}". ` : "Our team is preparing amazing World Tours. "}Contact us for custom quotes.
             </p>
             <a
               href={waLink("Assalam o Alaikum! I want to inquire about World Tours. Please share details.")}
@@ -105,7 +121,7 @@ export default async function ToursPage() {
                       )}
                     </span>
                     {pkg.slug ? (
-                      <Link href={`/tours/${pkg.slug}`} className="text-sm font-semibold text-gold hover:underline">
+                      <Link href={`/tours/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-gold hover:underline">
                         View Details →
                       </Link>
                     ) : (
