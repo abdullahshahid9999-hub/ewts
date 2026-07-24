@@ -81,9 +81,9 @@
    plain rounded rectangle. */
 .lp-ticket {
   position: relative;
-  background: var(--lp-ivory);
-  border-radius: 20px;
-  box-shadow: 0 24px 60px -20px rgba(14, 42, 38, 0.35);
+  background: linear-gradient(180deg, var(--lp-ivory) 0%, #FFFBF2 100%);
+  border-radius: 22px;
+  box-shadow: 0 30px 70px -22px rgba(14, 42, 38, 0.4), 0 2px 0 rgba(184, 134, 46, 0.15) inset;
 }
 .lp-ticket::after {
   content: "";
@@ -98,22 +98,32 @@
   background-repeat: repeat-y;
 }
 
+.lp select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23B8862E'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
 .lp-tab {
   font-family: var(--font-jakarta);
   font-size: 0.84rem;
   font-weight: 600;
   color: var(--lp-muted);
-  padding: 10px 18px;
-  border-radius: 999px;
-  transition: background 0.2s ease, color 0.2s ease;
+  padding: 10px 16px 12px;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 2.5px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
   white-space: nowrap;
 }
 .lp-tab.active {
-  background: var(--lp-ink);
-  color: var(--lp-ivory);
+  color: var(--lp-ink);
+  border-bottom-color: var(--lp-brass);
+  background: rgba(184, 134, 46, 0.07);
 }
 .lp-tab:not(.active):hover {
-  background: rgba(14, 42, 38, 0.06);
+  color: var(--lp-ink);
+  background: rgba(14, 42, 38, 0.04);
 }
 
 .lp-search-btn {
