@@ -75,6 +75,19 @@ export async function GET(req: NextRequest) {
 
   const totalReceivable = agentBalances.reduce((sum, a) => sum + a.outstanding, 0);
 
+  // Supplier payables — sum of each supplier's ledger (negative = owed by
+  // us to them, matching the same sign convention as agent transactions).
+  const suppliers = await prisma.supplier.findMany({
+    where: { status: "active" },
+    select: { id: true, name: true, ledger: { select: { amount: true } } },
+  });
+  const supplierPayables = suppliers.map((s) => ({
+    id: s.id,
+    name: s.name,
+    owed: Math.max(0, -s.ledger.reduce((sum, t) => sum + t.amount, 0)),
+  })).filter((s) => s.owed > 0);
+  const totalSupplierPayable = supplierPayables.reduce((sum, s) => sum + s.owed, 0);
+
   const serviceBreakdown = await prisma.agentBooking.groupBy({
     by: ["serviceType"],
     where: { status: { in: [...OUTSTANDING_STATUSES] }, ...(createdAtFilter ? { createdAt: createdAtFilter } : {}) },
@@ -124,7 +137,8 @@ export async function GET(req: NextRequest) {
       totalCommission: s._sum.commission ?? 0,
       bookingCount: s._count._all,
     })),
-    totals: { totalRevenue, totalCommission, totalReceivable },
+    supplierPayables,
+    totals: { totalRevenue, totalCommission, totalReceivable, totalSupplierPayable },
     range: { from: fromParam, to: toParam },
   });
 }

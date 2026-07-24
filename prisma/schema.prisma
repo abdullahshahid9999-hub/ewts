@@ -107,13 +107,61 @@ model GroupFlight {
   airlineLogoUrl String? @map("airline_logo_url")
   seats         Int      @default(0)
   status        String   @default("active")
+  // Which supplier this inventory comes from — null means "our own"
+  // inventory (self-issued). supplierCostPkr is what THIS supplier charges
+  // the agency per seat, used to compute the agency's real margin
+  // (sellPrice - supplierCostPkr - agentCommission), separate from the
+  // agent-facing commission ledger.
+  supplierId      String?  @map("supplier_id")
+  supplierCostPkr Int?     @map("supplier_cost_pkr")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   agentBookings AgentBooking[]
   directBookings Booking[]
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
 
   @@map("group_flights")
+}
+
+// A wholesaler/consolidator/GDS the agency buys inventory from (e.g.
+// FX-Port) rather than owning seats directly. Credentials are stored
+// ENCRYPTED (see lib/supplierCrypto.ts) — never plain text, never returned
+// to the client after saving (admin UI shows a masked "•••• saved" state).
+model Supplier {
+  id              String   @id @default(uuid())
+  name            String
+  contactInfo     String?  @map("contact_info") // phone/email/portal login notes for manual (non-API) suppliers
+  isApiBased      Boolean  @default(false) @map("is_api_based")
+  apiBaseUrl      String?  @map("api_base_url")
+  // AES-256-GCM encrypted blob (ciphertext + iv + authTag, base64-joined) —
+  // see lib/supplierCrypto.ts. Never store the raw key anywhere else.
+  encryptedApiKey String?  @map("encrypted_api_key")
+  status          String   @default("active") // active | inactive
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  groupFlights GroupFlight[]
+  ledger       SupplierTransaction[]
+
+  @@map("suppliers")
+}
+
+// What the agency owes/has paid to each supplier — mirrors AgentTransaction
+// (same audit-trail convention used everywhere else in this project: every
+// balance-affecting event gets its own row, nothing is silently mutated).
+model SupplierTransaction {
+  id         String   @id @default(uuid())
+  supplierId String   @map("supplier_id")
+  amount     Int      // negative = owed to supplier (debit), positive = paid to supplier (credit)
+  type       String   // "debit" | "credit"
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@map("supplier_transactions")
 }
 
 model VisaService {
@@ -449,6 +497,11 @@ model AgentBooking {
   // rate afterward, only future bookings use the new rate; this row keeps
   // whatever was correct when it was made.
   commission        Int       @default(0)
+  // Snapshot of GroupFlight.supplierCostPkr at booking time (group-ticket
+  // bookings only) — what the agency itself owes the supplier for this
+  // seat. Agency's real profit = sellPrice - supplierCostPkr - commission.
+  // Same snapshot convention as commission — never recomputed later.
+  supplierCostPkr   Int?      @map("supplier_cost_pkr")
   customerName      String?   @map("customer_name")
   customerPhone     String?   @map("customer_phone")
   customerEmail     String?   @map("customer_email")

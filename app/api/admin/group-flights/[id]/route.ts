@@ -61,6 +61,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       seats: seats !== undefined && Number.isFinite(seats) ? seats : undefined,
       status: str("status"),
       legs,
+      supplierId: form.has("supplierId") ? (str("supplierId") || null) : undefined,
+      supplierCostPkr: form.has("supplierCostPkr") ? (str("supplierCostPkr") ? Number(str("supplierCostPkr")) : null) : undefined,
     },
   });
 

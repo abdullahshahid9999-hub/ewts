@@ -198,6 +198,7 @@ export async function POST(req: NextRequest) {
           groupFlightId,
           sellPrice,
           commission,
+          supplierCostPkr: flight.supplierCostPkr ?? undefined,
           customerName,
           customerPhone,
           customerEmail,

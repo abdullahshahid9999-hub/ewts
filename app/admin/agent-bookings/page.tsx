@@ -58,6 +58,18 @@ function AgentBookingsInner() {
 
   useEffect(() => { load(); }, [load]);
 
+  async function downloadReport() {
+    const res = await adminFetch("/api/admin/agent-bookings/export", accessToken, refresh);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `agent-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function updateStatus(id: string, newStatus: string, serviceType?: string) {
     let ticketNumber: string | undefined;
     if (newStatus === "issued" && serviceType === "group_ticket") {
@@ -75,7 +87,9 @@ function AgentBookingsInner() {
 
   return (
     <>
-      <div className="adp-ph"><div><h2>Agent <em>Bookings</em></h2><p>Review and issue bookings placed by agents</p></div></div>
+      <div className="adp-ph"><div><h2>Agent <em>Bookings</em></h2><p>Review and issue bookings placed by agents</p></div>
+        <button onClick={downloadReport} className="adp-btn adp-btn-g">⬇ Download Report (Excel)</button>
+      </div>
 
       {packageId && bookings[0]?.package && (
         <div style={{ background: "var(--a-gold-bg, #fdf6e3)", border: "1px solid var(--a-gold, #d4a843)", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "space-between" }}>

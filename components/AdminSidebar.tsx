@@ -37,6 +37,7 @@ const NAV = [
     section: "Finance & Topup",
     items: [
       { href: "/admin/payment-slips", icon: "💳", label: "Payment Slips" },
+      { href: "/admin/suppliers", icon: "🔑", label: "Suppliers" },
       { href: "/admin/bank-accounts", icon: "🏦", label: "Bank Accounts" },
     ],
   },

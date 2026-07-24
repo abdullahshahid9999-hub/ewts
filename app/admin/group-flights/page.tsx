@@ -23,11 +23,14 @@ type GroupFlight = {
   seats: number;
   status: string;
   legs: unknown;
+  supplierId: string | null;
+  supplierCostPkr: number | null;
 };
 
 const emptyForm = {
   airline: "", route: "", price: "", depDate: "",
   baggage: "", meal: "Yes", region: "international", tripType: "oneway", seats: "0", status: "active",
+  supplierId: "", supplierCostPkr: "",
 };
 
 const emptyLeg: FlightLeg = { flightNo: "", from: "", to: "", depTime: "", arrTime: "" };
@@ -36,6 +39,7 @@ const defaultLegs: FlightLeg[] = [{ ...emptyLeg }];
 function GroupFlightsInner() {
   const { accessToken, refresh } = useAdminAuth();
   const [items, setItems] = useState<GroupFlight[]>([]);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -53,6 +57,12 @@ function GroupFlightsInner() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    adminFetch("/api/admin/suppliers", accessToken, refresh).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) setSuppliers((data.suppliers ?? []).filter((s: { status: string }) => s.status === "active"));
+    });
+  }, [accessToken, refresh]);
 
   function resetForm() { setEditingId(null); setForm(emptyForm); setLegs(defaultLegs); setFile(null); setError(null); }
 
@@ -63,6 +73,7 @@ function GroupFlightsInner() {
       depDate: f.depDate ?? "",
       baggage: f.baggage ?? "", meal: f.meal ?? "Yes", region: f.region ?? "international",
       tripType: f.tripType ?? "oneway", seats: String(f.seats), status: f.status,
+      supplierId: f.supplierId ?? "", supplierCostPkr: f.supplierCostPkr != null ? String(f.supplierCostPkr) : "",
     });
     setLegs(legsFromFlight(f));
     setFile(null);
@@ -207,6 +218,19 @@ function GroupFlightsInner() {
           </div>
           <div><label>Price</label><input required placeholder="e.g. 80,000 PKR" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} /></div>
           <div><label>Seats</label><input type="number" value={form.seats} onChange={(e) => setForm((f) => ({ ...f, seats: e.target.value }))} /></div>
+          <div>
+            <label>Supplier</label>
+            <select value={form.supplierId} onChange={(e) => setForm((f) => ({ ...f, supplierId: e.target.value }))}>
+              <option value="">— Our own inventory —</option>
+              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          {form.supplierId && (
+            <div>
+              <label>Supplier Cost (PKR, per seat)</label>
+              <input type="number" value={form.supplierCostPkr} onChange={(e) => setForm((f) => ({ ...f, supplierCostPkr: e.target.value }))} placeholder="What the supplier charges us per seat" />
+            </div>
+          )}
           <div>
             <label>Status</label>
             <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>

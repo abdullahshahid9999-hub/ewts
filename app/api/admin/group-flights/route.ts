@@ -76,6 +76,8 @@ export async function POST(req: NextRequest) {
       seats: Number.isFinite(seats) ? seats : 0,
       status: str("status") ?? "active",
       legs,
+      supplierId: str("supplierId") || undefined,
+      supplierCostPkr: str("supplierCostPkr") ? Number(str("supplierCostPkr")) : undefined,
     },
   });
 

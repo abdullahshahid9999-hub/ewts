@@ -66,6 +66,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             note: `Booking issued: ${existing.bookingRef}`,
           },
         });
+
+        // Supplier payable ledger — separate from the agent ledger above.
+        // Only applies if this specific flight was sourced from a supplier
+        // (supplierCostPkr was snapshotted at booking creation); our own
+        // inventory has no supplier cost, nothing to record here.
+        if (existing.supplierCostPkr) {
+          const flight = await tx.groupFlight.findUnique({ where: { id: existing.groupFlightId! }, select: { supplierId: true } });
+          if (flight?.supplierId) {
+            await tx.supplierTransaction.create({
+              data: {
+                supplierId: flight.supplierId,
+                amount: -existing.supplierCostPkr,
+                type: "debit",
+                note: `Booking issued: ${existing.bookingRef}`,
+              },
+            });
+          }
+        }
       }
 
       return tx.agentBooking.update({
