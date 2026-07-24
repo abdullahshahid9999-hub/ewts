@@ -1483,3 +1483,25 @@ are staff-facing forms typically used on desktop, but worth a look.
 `npx tsc --noEmit`: clean throughout, zero new errors from any of this
 phase's changes (all Tailwind class renames + a couple of `<div>`
 wrappers, no logic touched).
+
+## Phase 3 — Completed (all fixed-column grids made responsive)
+
+Finished what was flagged as "remaining" earlier: every inline
+`gridTemplateColumns` grid across the whole codebase (not just the 4
+originally flagged) now stacks to 1 column on mobile via
+`className="grid grid-cols-1 sm:grid-cols-2"` (or `sm:grid-cols-3` /
+`sm:grid-cols-4` / `sm:grid-cols-[1fr_1fr_1fr_auto]` for the traveller-row
++ remove-button case), instead of a fixed inline
+`gridTemplateColumns` that can't carry a media query at all.
+
+Covered: admin visa-services, visa-applications, bank-accounts,
+suppliers; agent insurance, topup, umrah/[slug], tours/[slug],
+group-flights booking, visa/[id], bookings/[id];
+`AgentVisaApplyFlow`, `AgentPackageBookingWidget`. Verified via repo-wide
+grep afterward — zero fixed-column grids remain anywhere.
+
+`npx tsc --noEmit`: clean, zero new errors (pure className/style
+restructuring, no logic changes).
+
+This closes out the mobile-responsive pass for now. Owner will do their
+own end-to-end audit next and report back anything found.
