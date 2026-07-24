@@ -1432,3 +1432,13 @@ number shifts of the pre-existing implicit-any errors — zero new/real
 errors introduced by this work).
 
 No schema changes, no migration needed for this phase.
+
+## Supplier management framework (done)
+Suppliers, encrypted API keys (lib/supplierCrypto.ts, AES-256-GCM, key from
+SUPPLIER_KEY_SECRET env var), per-flight supplier + cost attribution,
+supplier payable ledger (mirrors agent ledger, debited at issuance),
+finance page totals, downloadable Excel report with margin column
+(/admin/agent-bookings -> Download Report). Admin page: /admin/suppliers.
+REQUIRES: SUPPLIER_KEY_SECRET env var on Render + the SQL migration given
+to the owner directly (suppliers, supplier_transactions tables + new
+columns on group_flights/agent_bookings).
