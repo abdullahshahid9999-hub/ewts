@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-const DESTINATIONS = [
-  { group: "Middle East", items: ["Gulf States (UAE, Kuwait, Bahrain, Oman)", "Saudi Arabia — Umrah / Hajj", "Qatar"] },
-  { group: "Asia", items: ["Asia (Thailand, Malaysia, Indonesia)", "Turkey"] },
-  { group: "Europe / West", items: ["Schengen States (26 countries)", "United Kingdom", "USA / Canada / Australia", "Worldwide (All countries)"] },
-];
+import { INSURANCE_DESTINATIONS as DESTINATIONS } from "@/lib/insuranceDestinations";
 
 const DURATIONS: { label: string; days: number }[] = [
   { label: "7 Days", days: 7 },
