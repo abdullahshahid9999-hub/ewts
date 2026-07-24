@@ -1376,3 +1376,11 @@ number shifts of the pre-existing implicit-any errors from the missing
 generated Prisma client in this sandbox — zero new/real errors).
 
 No schema changes, no migration needed for this phase.
+
+## Real-time seat/slot holds unified (B2C + agent, group flights + Umrah/Tours)
+Group-ticket seats and Umrah/Tours room-type slots now decrement atomically at booking creation (2hr hold, auto-release if unconfirmed) for BOTH public and agent bookings. Reverted agent group-ticket from issue-time back to creation-time per explicit direction. Umrah slots are opt-in per room type (`availableSlots`, blank = unlimited, backward compatible) — admin sets "Total Slots Available" in the room-type manager.
+**DB migration:**
+```sql
+ALTER TABLE agent_bookings ADD COLUMN expires_at TIMESTAMP;
+ALTER TABLE package_room_types ADD COLUMN available_slots INTEGER;
+```
