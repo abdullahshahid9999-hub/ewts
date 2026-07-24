@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustpilotBadge from "@/components/TrustpilotBadge";
 import SearchWidget from "@/components/landing/SearchWidget";
+import { getAllFacets } from "@/lib/filterFacets";
 import { waLink } from "@/lib/whatsapp";
 
 export const revalidate = 120;
@@ -22,33 +23,8 @@ async function getFeaturedPackages() {
 }
 
 // Distinct real values pulled from the DB (not hardcoded) — so filters
-// never offer an option that doesn't actually exist, and new tiers/
-// airlines/durations admin adds later show up automatically.
-async function getFilterOptions() {
-  const empty = {
-    umrah: { tiers: [], airlines: [], durations: [] },
-    tours: { tiers: [], airlines: [], durations: [] },
-    groupTickets: { airlines: [] },
-    visa: { types: [], countries: [] },
-  };
-  try {
-    const [umrahPkgs, tourPkgs, flights, visas] = await Promise.all([
-      prisma.package.findMany({ where: { category: "umrah", status: "active" }, select: { tier: true, airline: true, duration: true } }),
-      prisma.package.findMany({ where: { category: "tours", status: "active" }, select: { tier: true, airline: true, duration: true } }),
-      prisma.groupFlight.findMany({ where: { status: "active" }, select: { airline: true } }),
-      prisma.visaService.findMany({ where: { status: "active" }, select: { type: true, country: true } }),
-    ]);
-    const uniq = (arr: (string | null)[]) => Array.from(new Set(arr.filter((v): v is string => !!v))).sort();
-    return {
-      umrah: { tiers: uniq(umrahPkgs.map((p) => p.tier)), airlines: uniq(umrahPkgs.map((p) => p.airline)), durations: uniq(umrahPkgs.map((p) => p.duration)) },
-      tours: { tiers: uniq(tourPkgs.map((p) => p.tier)), airlines: uniq(tourPkgs.map((p) => p.airline)), durations: uniq(tourPkgs.map((p) => p.duration)) },
-      groupTickets: { airlines: uniq(flights.map((f) => f.airline)) },
-      visa: { types: uniq(visas.map((v) => v.type)), countries: uniq(visas.map((v) => v.country)) },
-    };
-  } catch {
-    return empty;
-  }
-}
+// Distinct destination/route/country values now live in
+// lib/filterFacets.ts (shared with each listing page's sidebar).
 
 const HERO_STATS = [
   { value: "5,000+", label: "Travelers Served" },
@@ -146,7 +122,7 @@ function TrustStrip() {
 
 export default async function Home() {
   const packages = await getFeaturedPackages();
-  const filterOptions = await getFilterOptions();
+  const facets = await getAllFacets();
 
   return (
     <>
@@ -175,7 +151,7 @@ export default async function Home() {
             take care of the rest, the halal way.
           </p>
 
-          <SearchWidget options={filterOptions} />
+          <SearchWidget facets={{ umrah: { destinations: facets.umrah.destinations }, tours: { destinations: facets.tours.destinations }, groupTickets: { routes: facets.groupTickets.routes }, visa: { countries: facets.visa.countries } }} />
 
           <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-10 gap-y-4 mt-12">
             {HERO_STATS.map((s) => (
