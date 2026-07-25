@@ -241,6 +241,10 @@ model VisaApplication {
   // + infants×priceInfant. Stored so price is auditable even if admin
   // later changes the visa price.
   totalPricePkr  Int      @map("total_price_pkr")
+  // Snapshotted at submission time via calculateCommission(), same
+  // convention as AgentBooking.commission — never recalculated later.
+  // Null for direct/B2C applications (agentId also null).
+  commission     Int?
   // Pipeline: pending → under_review → approved | rejected | more_info_needed
   status         String   @default("pending")
   adminNote      String?  @map("admin_note")

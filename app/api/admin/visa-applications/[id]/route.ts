@@ -16,12 +16,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
   }
 
-  const application = await prisma.visaApplication.update({
-    where: { id },
-    data: {
-      ...(status && { status }),
-      ...(adminNote !== undefined && { adminNote: adminNote?.trim() || null }),
-    },
+  const existing = await prisma.visaApplication.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Application not found." }, { status: 404 });
+
+  // Same convention as AgentBooking issuance: debit the agent's balance
+  // and log an AgentTransaction the moment a decision moves an
+  // agent-submitted application into "approved" — never on direct/B2C
+  // applications (agentId null, commission null, nothing to charge).
+  // Known edge case (documented for bookings too, applies here as well):
+  // if a booking somehow goes approved → rejected → approved again this
+  // would fire a second time. Not currently guarded against.
+  const isBeingApproved = status === "approved" && existing.status !== "approved" && existing.agentId && existing.commission !== null;
+
+  const application = await prisma.$transaction(async (tx) => {
+    if (isBeingApproved) {
+      const netOwed = existing.totalPricePkr - (existing.commission ?? 0);
+      await tx.agent.update({ where: { id: existing.agentId! }, data: { balance: { decrement: netOwed } } });
+      await tx.agentTransaction.create({
+        data: { agentId: existing.agentId!, amount: -netOwed, type: "debit", note: `Visa application approved: ${existing.batchRef}` },
+      });
+    }
+    return tx.visaApplication.update({
+      where: { id },
+      data: {
+        ...(status && { status }),
+        ...(adminNote !== undefined && { adminNote: adminNote?.trim() || null }),
+      },
+    });
   });
 
   return NextResponse.json({ application });

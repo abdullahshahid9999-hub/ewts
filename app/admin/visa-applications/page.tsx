@@ -23,6 +23,7 @@ type Application = {
   children: number;
   infants: number;
   totalPricePkr: number;
+  commission: number | null;
   status: string;
   adminNote: string | null;
   createdAt: string;
@@ -234,6 +235,9 @@ function VisaApplicationsInner() {
                       </td>
                       <td style={{ fontWeight: 700, fontSize: 13 }}>
                         {app.totalPricePkr > 0 ? `PKR ${app.totalPricePkr.toLocaleString()}` : "—"}
+                        {app.agent && app.commission !== null && (
+                          <div style={{ fontSize: 10, color: "var(--a-muted)" }}>Commission: PKR {app.commission.toLocaleString()}</div>
+                        )}
                       </td>
                       <td>
                         <span className={`adp-pill ${statusPill(app.status)}`}>

@@ -145,6 +145,8 @@ function AgentsInner() {
             <option value="umrah">Umrah</option>
             <option value="group_ticket">Group Ticket</option>
             <option value="insurance">Insurance</option>
+            <option value="world_tour">World Tour</option>
+            <option value="visa_services">Visa Services</option>
           </select>
           <select value={rateForm.rateType} onChange={(e) => setRateForm((f) => ({ ...f, rateType: e.target.value }))} style={{ width: "auto" }}>
             <option value="percentage">Percentage</option>

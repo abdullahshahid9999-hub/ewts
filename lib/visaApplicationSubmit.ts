@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { uploadToR2 } from "@/lib/r2";
+import { calculateCommission } from "@/lib/commission";
 import crypto from "crypto";
 
 const ALLOWED_DOC_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
@@ -68,6 +69,13 @@ export async function submitVisaApplicationBatch(
     const priceInfant = visa.priceInfant ?? 0;
     const totalPricePkr = adults * priceAdult + children * priceChild + infants * priceInfant;
 
+    // Same snapshot convention as AgentBooking.commission — computed once,
+    // now, using whatever rate is current for this agent+visa_services.
+    // Null for direct/B2C applications (no agent to owe commission to).
+    const commission = opts.agentId
+      ? await calculateCommission(opts.agentId, "visa_services", totalPricePkr)
+      : null;
+
     // Validate required docs are present. Two modes: the public/B2C flow
     // attaches documents at the application level (doc_{docId}_{i}); the
     // agent wizard attaches them per-traveller instead
@@ -114,6 +122,7 @@ export async function submitVisaApplicationBatch(
         children,
         infants,
         totalPricePkr,
+        commission,
         status: "pending",
       },
     });
