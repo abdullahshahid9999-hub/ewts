@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
@@ -35,6 +36,7 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
 };
 
 function VisaBookingsInner() {
+  const router = useRouter();
   const { accessToken, refresh } = useAgentAuth();
   const [status, setStatus] = useState("all");
   const [apps, setApps] = useState<VisaApp[]>([]);
@@ -90,7 +92,7 @@ function VisaBookingsInner() {
                 {apps.map((a) => {
                   const c = STATUS_COLORS[a.status] ?? STATUS_COLORS.pending;
                   return (
-                    <tr key={a.id}>
+                    <tr key={a.id} onClick={() => router.push(`/agent/bookings/visa/${a.id}`)} style={{ cursor: "pointer" }}>
                       <td><strong style={{ fontFamily: "monospace", fontSize: 12 }}>{a.batchRef}</strong></td>
                       <td style={{ fontSize: 12.5 }}>
                         <strong>{a.visa.title}</strong>
