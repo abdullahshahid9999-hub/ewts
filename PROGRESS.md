@@ -1505,3 +1505,67 @@ restructuring, no logic changes).
 
 This closes out the mobile-responsive pass for now. Owner will do their
 own end-to-end audit next and report back anything found.
+
+## Cleanup pass: security, SEO, visa commission, document re-upload
+
+Working through the earlier "betterment suggestions" list:
+
+**1. Image security** — `next.config.ts` previously allowed
+`remotePatterns: [{ hostname: "**" }]` (any HTTPS host through Next/Image's
+optimizer). Now derives the real hostname from `R2_PUBLIC_URL` at build
+time and restricts to just that — falls back to the wildcard only if the
+env var isn't set, so it can't break local dev.
+
+**2. SEO basics** — added `app/sitemap.ts` (static pages + all active
+packages/blogs/visa services, DB-driven) and `app/robots.ts`
+(disallows `/admin`, `/agent`, `/api`, booking-flow pages from being
+crawled/indexed). Both read `NEXT_PUBLIC_SITE_URL` with a fallback to
+the current Render URL — **set this env var once the final public domain
+is confirmed**.
+
+**3. Agent commission for Visa Services — real gap, now fixed:**
+- `VisaApplication.commission` (new, nullable) — snapshotted via the
+  same `calculateCommission()` used everywhere else, at submission time,
+  only when an agent is attached (`agentId` set).
+- Admin's commission-rate dropdown (`/admin/agents`) was missing **two**
+  service types entirely — `world_tour` and `visa_services` — added
+  both (world_tour bookings existed and could never get a real rate set
+  either).
+- `PATCH /api/admin/visa-applications/[id]` now debits
+  `Agent.balance` by `totalPricePkr - commission` + logs an
+  `AgentTransaction`, in a `$transaction`, the moment an agent-submitted
+  application moves into "approved" — mirrors `AgentBooking` issuance
+  exactly. Same known edge case as bookings (documented there too):
+  approved → rejected → approved again would double-debit; not guarded.
+- Admin review page now shows commission next to the price when an
+  agent submitted it.
+
+**4. Document re-upload flow — real gap, now fixed:** previously, once
+admin marked a visa application "More Info Needed", there was no way for
+an agent to actually act on it — no detail view existed at all, only the
+status list. Added:
+- `GET /api/agent/visa-applications/[id]` — single application detail
+  (agent-owned only), with applicants + their documents + the visa's
+  required-document slots.
+- `POST` on the same route — uploads new documents against specific
+  applicants (`doc_{applicantId}_{docId}` field convention), restricted
+  to `more_info_needed` status only (can't be used to tamper with a
+  decided application), auto-bumps status back to `under_review` so it
+  doesn't sit silently.
+- `/agent/bookings/visa/[id]` — new detail page: status + admin's note,
+  each traveller's documents on file, and the re-upload form (only shown
+  while `more_info_needed`). List page rows now link here.
+
+`npx tsc --noEmit`: clean throughout (only the same known implicit-any
+baseline from the missing generated Prisma client in this sandbox).
+
+**Deliberately not done this pass (scope/effort call, not forgotten):**
+a public/B2C re-upload flow — would need some way for an unauthenticated
+customer to prove they own an application (e.g. batchRef + phone/email
+verification), which is a bigger, separate design decision rather than a
+quick addition. Flagging for later if wanted.
+
+**Pending manual migration:**
+```sql
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS commission INTEGER;
+```
