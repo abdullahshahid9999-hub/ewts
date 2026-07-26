@@ -1569,3 +1569,40 @@ quick addition. Flagging for later if wanted.
 ```sql
 ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS commission INTEGER;
 ```
+
+## Agent Portal: My Bookings Consolidated + Dark Mode Sidebar Fix
+
+Owner feedback: sidebar stays dark navy in both light AND dark mode
+(theme toggle never touched it), dark theme needed more polish, and "My
+Bookings" should be one page with selectable service options (like New
+Booking's card picker) instead of 5 separate sidebar links/URLs.
+Sign Out/theme-toggle "missing" in one screenshot — checked
+`AgentTopbar.tsx`, both render unconditionally with no gating logic, so
+that was very likely a stale cached tab (pre-deploy JS bundle), not a
+real bug — flagged to owner rather than chased blind.
+
+**Dark mode sidebar** — `.ap-sb` was deliberately always-navy
+("distinct from admin's light sidebar"), which is why the toggle never
+changed it. Added `.ap-dark .ap-sb` with its own deep-charcoal gradient
+(`#161B22 → #0A0D12`, matching the dark palette's own tones) so dark
+mode reads as one deliberate theme end-to-end instead of a light-only
+toggle that leaves the sidebar untouched. Also polished `.ap-tab-bar`/
+`.ap-tab-btn` dark-mode contrast, which had the same gap.
+
+**My Bookings consolidated** — was 5 sidebar links → 5 separate pages
+(`/agent/bookings/{umrah,group-tickets,insurance,tours,visa}`), each
+re-fetching/re-rendering independently. Now one page
+(`/agent/bookings`) with a pill-style service selector at the top
+(`?service=` query param, shareable/bookmarkable) that swaps between the
+already-existing `AgentBookingsByType` (umrah/group_ticket/insurance/
+world_tour) and a newly-extracted `AgentVisaBookingsList` component
+(visa) — no new data-fetching logic written, this is pure reuse/
+reorganization of what already existed. Sidebar now has a single "My
+Bookings" entry. The 5 old URLs still work — each is now a one-line
+redirect to `/agent/bookings?service=X` so no bookmark/link breaks.
+
+`npx tsc --noEmit`: clean — the one non-implicit-any error present
+(`app/api/admin/agents/route.ts` TS7031) is pre-existing, unrelated to
+this work (confirmed against the prior baseline).
+
+No schema changes, no migration needed for this pass.
