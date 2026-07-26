@@ -118,31 +118,26 @@ export default function AgentBookingsByType({
         <Link href="/agent/new-booking" className="ap-btn ap-btn-gold">New Booking</Link>
       </div>
 
-      <div className="ap-tab-bar" style={{ marginBottom: 12 }}>
-        {statusTabs.map((t) => (
-          <button key={t.value} onClick={() => setStatus(t.value)} className={`ap-tab-btn ${status === t.value ? "active" : ""}`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div className="ap-results-panel">
+        <div className="ap-tab-bar">
+          {statusTabs.map((t) => (
+            <button key={t.value} onClick={() => setStatus(t.value)} className={`ap-tab-btn ${status === t.value ? "active" : ""}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-      {/* Search bar */}
-      <div style={{ marginBottom: 12 }}>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="🔍  Search by ref, passenger name, flight route…"
-          style={{
-            width: "100%", padding: "8px 14px",
-            border: "1.5px solid var(--bdr)", borderRadius: 10,
-            fontSize: 12, outline: "none", background: "var(--white)",
-            color: "var(--text)",
-          }}
-        />
-      </div>
+        <div className="ap-search-wrap">
+          <span className="ap-search-icon" aria-hidden>🔍</span>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by ref, passenger name, flight route…"
+            className="ap-search-input"
+          />
+        </div>
 
-      <div className="ap-card">
         <div className="ap-tw">
           {loading ? (
             <p className="etd">Loading…</p>
