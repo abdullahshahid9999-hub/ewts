@@ -155,6 +155,32 @@
 .ap-tbar-bal-amt { font-size: 14px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
 .ap-tbar-bal-amt.neg { color: #DC2626; }
 
+/* Topbar's own Sign Out — NOT .ap-sb-out (that one's colors assume the
+   dark sidebar background: translucent white text/border, invisible on
+   this white topbar). This is what was actually happening — the button
+   was always rendering, just invisible, which is why refreshing never
+   fixed it. */
+.ap-tbar-signout {
+  background: none;
+  border: 1px solid var(--bdr);
+  color: var(--text2);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.ap-tbar-signout:hover { border-color: #F87171; color: #F87171; }
+.ap-dark .ap-tbar-signout { border-color: var(--bdr); color: var(--text2); }
+
+/* Topbar's dark-mode toggle — same fix: the base .ap-dark-toggle track/
+   knob colors also assumed a dark background (translucent-white track,
+   solid-white knob), nearly invisible on the white topbar. */
+.ap-tbar .ap-dark-toggle { background: var(--bdr); }
+.ap-tbar .ap-dark-toggle::after { background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+.ap-tbar .ap-dark-toggle.on { background: var(--gold); }
+
 /* MAIN */
 .ap-main { margin-left: 220px; flex: 1; padding: 80px 28px 24px; min-height: 100vh; }
 
@@ -334,22 +360,6 @@
   border-right: 1px solid var(--bdr);
 }
 
-/* My Bookings service selector — pill buttons instead of five separate
-   sidebar links to five separate pages. */
-.ap-service-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 9px 16px;
-  border-radius: 999px;
-  border: 1.5px solid var(--bdr);
-  background: var(--white);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-.ap-service-pill:hover { transform: translateY(-1px); }
 
 /* Dark mode toggle button */
 .ap-dark-toggle {

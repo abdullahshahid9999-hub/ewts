@@ -24,7 +24,7 @@ export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMe
       {onToggleDark && (
         <button className={`ap-dark-toggle${dark ? " on" : ""}`} onClick={onToggleDark} aria-label="Toggle dark mode" title={dark ? "Light mode" : "Dark mode"} />
       )}
-      <button onClick={logout} className="ap-sb-out" style={{ width: "auto", padding: "6px 12px" }}>
+      <button onClick={logout} className="ap-tbar-signout">
         Sign Out
       </button>
     </div>
