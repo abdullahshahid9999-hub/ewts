@@ -1606,3 +1606,30 @@ redirect to `/agent/bookings?service=X` so no bookmark/link breaks.
 this work (confirmed against the prior baseline).
 
 No schema changes, no migration needed for this pass.
+
+## Real Fix: Sign Out / Dark Toggle Were Invisible (Not a Cache Issue)
+
+Owner reported Sign Out + theme toggle still missing after many hard
+refreshes on the latest deploy — correctly suspected it wasn't cache.
+Root cause found: `AgentTopbar.tsx`'s Sign Out button used `.ap-sb-out`
+— a class actually meant for the **sidebar's** dark-navy background
+(translucent-white text/border, by design invisible-ish against navy so
+it reads as subtle). The topbar background is white. White-on-white =
+button was rendering the whole time, just impossible to see. Same root
+cause for the dark-mode toggle (`.ap-dark-toggle`'s track/knob colors
+also assumed a dark background).
+
+Fixed with dedicated topbar-scoped classes (`.ap-tbar-signout`, and an
+`.ap-tbar .ap-dark-toggle` override) with colors that actually contrast
+against white — sidebar's own dark styling untouched.
+
+**My Bookings redesign** — owner wanted the same image-card visual
+language as the New Booking hub applied to My Bookings' service
+selector (previously plain pill buttons). Rebuilt with the same
+Unsplash-image + gradient-overlay card style, except clicking a card
+selects it as the active filter inline (ring + checkmark badge) instead
+of navigating to a new page — content below swaps via the same
+`AgentBookingsByType`/`AgentVisaBookingsList` reuse as before.
+
+`npx tsc --noEmit`: clean (only the one pre-existing unrelated TS7031 in
+`admin/agents/route.ts`, confirmed present before this session too).
