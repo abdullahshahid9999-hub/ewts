@@ -91,6 +91,19 @@ function ImagePlaceholder({ caption, className = "" }: { caption: string; classN
   );
 }
 
+function TimelineCard({ t }: { t: { year: string; icon: string; label: string; desc: string } }) {
+  return (
+    <div className="inline-block text-left bg-white border rounded-2xl p-5" style={{ borderColor: "var(--lp-border)", boxShadow: "0 4px 16px rgba(14,42,38,0.06)" }}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-xl">{t.icon}</span>
+        <span className="font-display text-lg font-semibold" style={{ color: "var(--lp-brass)" }}>{t.year}</span>
+      </div>
+      <p className="font-semibold text-sm mb-1" style={{ color: "var(--lp-ink)" }}>{t.label}</p>
+      <p className="text-xs" style={{ color: "var(--lp-muted)" }}>{t.desc}</p>
+    </div>
+  );
+}
+
 export default function AboutPage() {
   return (
     <>
@@ -199,24 +212,48 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 20 YEARS TIMELINE */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3 text-center">Our Journey</p>
-        <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4 text-center">
-          20 Years of Serving <span className="italic text-[var(--lp-brass)]">Pakistan</span>
+      {/* 20 YEARS TIMELINE — vertical zigzag, alternating left/right */}
+      <section className="lp max-w-4xl mx-auto px-6 py-20">
+        <p className="lp-eyebrow text-center mb-3">Our Journey</p>
+        <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4 text-center" style={{ color: "var(--lp-ink)" }}>
+          Milestones &amp; <span className="italic" style={{ color: "var(--lp-brass)" }}>Achievements</span>
         </h2>
-        <p className="text-muted text-center max-w-2xl mx-auto mb-12">
+        <p className="text-center max-w-2xl mx-auto mb-16" style={{ color: "var(--lp-muted)" }}>
           From a small office in Faisalabad to one of the city&apos;s most trusted travel agencies.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          {TIMELINE.map((t) => (
-            <div key={t.year} className="bg-white border border-border rounded-2xl p-5 text-center">
-              <p className="text-2xl mb-2">{t.icon}</p>
-              <p className="font-display text-lg font-semibold text-[var(--lp-brass)] mb-1">{t.year}</p>
-              <p className="font-semibold text-sm mb-1">{t.label}</p>
-              <p className="text-muted text-xs">{t.desc}</p>
-            </div>
-          ))}
+
+        <div className="relative">
+          {/* Center line */}
+          <div
+            className="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 hidden sm:block"
+            style={{ background: "var(--lp-border)" }}
+          />
+          <div className="flex flex-col gap-10">
+            {TIMELINE.map((t, i) => (
+              <div key={t.year} className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+                {/* Dot on the center line */}
+                <div
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full hidden sm:flex items-center justify-center z-10"
+                  style={{ background: "var(--lp-brass)", boxShadow: "0 0 0 5px var(--lp-sand)" }}
+                />
+                {i % 2 === 0 ? (
+                  <>
+                    <div className="sm:text-right sm:pr-10">
+                      <TimelineCard t={t} />
+                    </div>
+                    <div />
+                  </>
+                ) : (
+                  <>
+                    <div className="hidden sm:block" />
+                    <div className="sm:pl-10">
+                      <TimelineCard t={t} />
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
