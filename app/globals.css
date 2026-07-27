@@ -165,3 +165,13 @@ body {
 h1, h2, h3, .font-display {
   font-family: var(--font-cormorant), serif;
 }
+
+/* Card hover motion — used across About page cards for the "advanced
+   motion" polish. */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.18);
+}

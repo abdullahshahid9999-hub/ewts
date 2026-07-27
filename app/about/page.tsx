@@ -3,6 +3,14 @@ import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import Link from "next/link";
 import TrustpilotBadge from "@/components/TrustpilotBadge";
+import HeroSlideshow from "@/components/HeroSlideshow";
+import Reveal, { RevealStagger, RevealItem } from "@/components/Reveal";
+
+const HERO_IMAGES = [
+  { src: "/images/makarem_1.jpeg", alt: "Makarem Ajyad Makkah" },
+  { src: "/images/pullman_1.jpeg", alt: "Pullman Madinah" },
+  { src: "/images/makarem_2.jpeg", alt: "Premium Rooms" },
+];
 
 const PARTNERS = [
   { name: "Pullman Hotels & Resorts", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Pullman_Hotels_logo.svg/320px-Pullman_Hotels_logo.svg.png" },
@@ -109,14 +117,22 @@ export default function AboutPage() {
     <>
       <Navbar />
 
-      {/* HERO */}
-      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-20 pb-24">
-        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
-          Pakistan&apos;s Trusted Travel Partner Since 2004
-        </p>
-        <h1 className="font-display text-5xl md:text-6xl font-semibold mb-8">
-          EAST &amp; WEST
-        </h1>
+      {/* HERO — slideshow background + motion-in content */}
+      <section className="relative bg-[var(--lp-ink)] text-white text-center px-6 pt-20 pb-24 overflow-hidden">
+        <HeroSlideshow images={HERO_IMAGES} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(14,42,38,0.85) 0%, rgba(14,42,38,0.75) 60%, rgba(14,42,38,0.92) 100%)" }} />
+        <div className="relative">
+        <Reveal>
+          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
+            Pakistan&apos;s Trusted Travel Partner Since 2004
+          </p>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <h1 className="font-display text-5xl md:text-6xl font-semibold mb-8">
+            EAST &amp; WEST
+          </h1>
+        </Reveal>
+        <Reveal delay={0.2}>
         <div className="flex items-center justify-center gap-4">
           <a
             href={waLink("Hi, I want to know more about your travel services.")}
@@ -130,23 +146,25 @@ export default function AboutPage() {
             Explore
           </a>
         </div>
-        <TrustpilotBadge className="mt-5" />
+        </Reveal>
+        <Reveal delay={0.3}><TrustpilotBadge className="mt-5" /></Reveal>
+        </div>
       </section>
 
       {/* STATS ROW */}
-      <section id="about-intro" className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <RevealStagger id="about-intro" className="max-w-6xl mx-auto px-6 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" >
         {STATS.map((s) => (
-          <div key={s.label}>
+          <RevealItem key={s.label}>
             <p className="font-display text-3xl font-semibold text-[var(--lp-brass)] mb-1">{s.value}</p>
             <p className="font-semibold mb-2">{s.label}</p>
             <p className="text-muted text-sm">{s.desc}</p>
-          </div>
+          </RevealItem>
         ))}
-      </section>
+      </RevealStagger>
 
       {/* OUR TRAVEL PARTNER (logo strip) */}
       <section className="bg-[var(--surface)] py-16 px-6">
-        <div className="max-w-6xl mx-auto text-center">
+        <Reveal className="max-w-6xl mx-auto text-center">
           <h2 className="font-display text-3xl font-semibold mb-2">Our Travel Partner</h2>
           <p className="text-muted mb-10">
             Together with the best partners, we present a more comfortable and reliable worship experience.
@@ -157,11 +175,11 @@ export default function AboutPage() {
               <img key={p.name} src={p.logo} alt={p.name} title={p.name} className="h-8 md:h-10 object-contain grayscale" />
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* BEYOND TRAVEL: A SACRED COMMITMENT */}
-      <section className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <Reveal className="max-w-6xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <ImagePlaceholder caption="East & West Travel Services Office" className="h-80 rounded-2xl" />
         <div>
           <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">Who We Are</p>
@@ -189,7 +207,7 @@ export default function AboutPage() {
             ))}
           </ul>
         </div>
-      </section>
+      </Reveal>
 
       {/* WHAT WE DO */}
       <section className="bg-[var(--surface)] py-20 px-6">
@@ -201,19 +219,20 @@ export default function AboutPage() {
           <p className="text-muted text-center max-w-2xl mx-auto mb-12">
             Full-service travel — from Umrah pilgrimages to exotic honeymoons, visa processing to air ticketing.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <RevealStagger className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {WHAT_WE_DO.map((w) => (
-              <div key={w.title} className="bg-white border border-border rounded-2xl p-6">
+              <RevealItem key={w.title} className="bg-white border border-border rounded-2xl p-6 hover-lift">
                 <h3 className="font-display text-xl font-semibold mb-2">{w.title}</h3>
                 <p className="text-muted text-sm">{w.desc}</p>
-              </div>
+              </RevealItem>
             ))}
-          </div>
+          </RevealStagger>
         </div>
       </section>
 
       {/* 20 YEARS TIMELINE — vertical zigzag, alternating left/right */}
       <section className="lp max-w-4xl mx-auto px-6 py-20">
+        <Reveal>
         <p className="lp-eyebrow text-center mb-3">Our Journey</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4 text-center" style={{ color: "var(--lp-ink)" }}>
           Milestones &amp; <span className="italic" style={{ color: "var(--lp-brass)" }}>Achievements</span>
@@ -221,6 +240,7 @@ export default function AboutPage() {
         <p className="text-center max-w-2xl mx-auto mb-16" style={{ color: "var(--lp-muted)" }}>
           From a small office in Faisalabad to one of the city&apos;s most trusted travel agencies.
         </p>
+        </Reveal>
 
         <div className="relative">
           {/* Center line */}
@@ -230,7 +250,7 @@ export default function AboutPage() {
           />
           <div className="flex flex-col gap-10">
             {TIMELINE.map((t, i) => (
-              <div key={t.year} className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+              <Reveal key={t.year} delay={0.05} className="relative grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
                 {/* Dot on the center line */}
                 <div
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full hidden sm:flex items-center justify-center z-10"
@@ -251,7 +271,7 @@ export default function AboutPage() {
                     </div>
                   </>
                 )}
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -264,14 +284,14 @@ export default function AboutPage() {
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
             Everything You Need to <span className="italic text-[var(--lp-brass)]">Travel</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SERVICES.map((s) => (
-              <div key={s.title} className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <RevealItem key={s.title} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover-lift">
                 <h3 className="font-display text-lg font-semibold mb-2">{s.title}</h3>
                 <p className="text-white/70 text-sm">{s.desc}</p>
-              </div>
+              </RevealItem>
             ))}
-          </div>
+          </RevealStagger>
         </div>
       </section>
 
@@ -281,15 +301,15 @@ export default function AboutPage() {
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
           The People Behind Your <span className="italic text-[var(--lp-brass)]">Journey</span>
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <RevealStagger className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {TEAM.map((t) => (
-            <div key={t.name} className="text-center">
+            <RevealItem key={t.name} className="text-center">
               <ImagePlaceholder caption={t.name} className="h-32 w-32 mx-auto rounded-full mb-3" />
               <p className="font-semibold text-sm">{t.name}</p>
               <p className="text-muted text-xs">{t.role}</p>
-            </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealStagger>
       </section>
 
       {/* CERTIFICATIONS */}
@@ -299,14 +319,14 @@ export default function AboutPage() {
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
             Certified, Trusted, <span className="italic text-[var(--lp-brass)]">Professional</span>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <RevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {CERTIFICATIONS.map((c) => (
-              <div key={c.title} className="bg-white border border-border rounded-2xl p-6 text-center">
+              <RevealItem key={c.title} className="bg-white border border-border rounded-2xl p-6 text-center hover-lift">
                 <p className="font-semibold mb-1">{c.title}</p>
                 <p className="text-muted text-xs">{c.desc}</p>
-              </div>
+              </RevealItem>
             ))}
-          </div>
+          </RevealStagger>
         </div>
       </section>
 
@@ -316,20 +336,20 @@ export default function AboutPage() {
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-12 text-center">
           Recognized for <span className="italic text-[var(--lp-brass)]">Excellence</span>
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <RevealStagger className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {AWARDS.map((a) => (
-            <div key={a.title} className="bg-white border border-border rounded-2xl p-6 text-center">
+            <RevealItem key={a.title} className="bg-white border border-border rounded-2xl p-6 text-center hover-lift">
               <p className="text-3xl mb-2">{a.icon}</p>
               <p className="text-[var(--lp-brass)] font-semibold text-sm mb-1">{a.year}</p>
               <p className="font-semibold mb-2">{a.title}</p>
               <p className="text-muted text-xs">{a.desc}</p>
-            </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealStagger>
       </section>
 
       {/* FINAL CTA */}
-      <section className="bg-[var(--lp-ink)] text-white text-center py-20 px-6">
+      <Reveal className="bg-[var(--lp-ink)] text-white text-center py-20 px-6" >
         <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">Ready to Travel?</p>
         <h2 className="font-display text-3xl md:text-4xl font-semibold mb-4">
           Start Your Journey with Us <span className="italic text-[var(--lp-brass)]">Today</span>
@@ -348,7 +368,7 @@ export default function AboutPage() {
             WhatsApp Us
           </a>
         </div>
-      </section>
+      </Reveal>
 
       <Footer />
     </>
