@@ -74,6 +74,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const { id } = await params;
+
+  // Null out groupFlightId on any bookings referencing this flight before deleting
+  await prisma.agentBooking.updateMany({
+    where: { groupFlightId: id },
+    data: { groupFlightId: null },
+  }).catch(() => null);
+
+  await prisma.booking.updateMany({
+    where: { groupFlightId: id },
+    data: { groupFlightId: null },
+  }).catch(() => null);
+
   await prisma.groupFlight.delete({ where: { id } }).catch(() => null);
   return NextResponse.json({ ok: true });
 }
