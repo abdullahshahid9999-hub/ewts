@@ -8,17 +8,20 @@ export default function Reveal({
   y = 24,
   className = "",
   id,
+  style,
 }: {
   children: React.ReactNode;
   delay?: number;
   y?: number;
   className?: string;
   id?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <motion.div
       id={id}
       className={className}
+      style={style}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
@@ -31,11 +34,12 @@ export default function Reveal({
 
 // Wraps a grid of children so each item staggers in one after another
 // instead of the whole group appearing at once.
-export function RevealStagger({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
+export function RevealStagger({ children, className = "", id, style }: { children: React.ReactNode; className?: string; id?: string; style?: React.CSSProperties }) {
   return (
     <motion.div
       id={id}
       className={className}
+      style={style}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: "-60px" }}
