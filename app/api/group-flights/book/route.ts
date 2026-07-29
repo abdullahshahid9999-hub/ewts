@@ -8,7 +8,7 @@ import { releaseExpiredSeatHolds } from "@/lib/groupFlightSeats";
 // group flight. Seats ARE held here (2-hour reservation) since there's no
 // agent/admin in the loop to manually manage inventory for these — see
 // lib/groupFlightSeats.ts for how expired holds get released back.
-const HOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
+const HOLD_MS = 30 * 60 * 1000; // 30 minutes — was 2 hours
 
 function generatePNR() {
   // 6-character alphanumeric, uppercase, no ambiguous chars (0/O, 1/I)

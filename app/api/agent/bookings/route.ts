@@ -27,7 +27,7 @@ const SUPPLIER_SAFETY_BUFFER_MS = 3 * 60 * 1000;
 // matches the public B2C booking flow's 2-hour hold exactly, so an agent
 // and a website visitor competing for the same seat/slot are on equal
 // footing.
-const INVENTORY_HOLD_MS = 2 * 60 * 60 * 1000;
+const INVENTORY_HOLD_MS = 30 * 60 * 1000; // 30 minutes — was 2 hours, shortened so an abandoned hold releases the seat back quickly instead of leaving it unavailable for a long window
 
 function computeExpiresAt(serviceType: string, supplierLimitMs?: number) {
   if (serviceType === "group_ticket" && supplierLimitMs) {
