@@ -71,6 +71,9 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
             ))}
           </div>
         ))}
+        <a className="adp-sbn" href="/admin/2fa-setup">
+          🔐 Two-Factor Auth
+        </a>
         <a className="adp-sbn" href="/" target="_blank" rel="noopener noreferrer">
           🔗 View Website
         </a>

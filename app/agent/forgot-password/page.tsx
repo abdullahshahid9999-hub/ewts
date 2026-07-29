@@ -1,124 +1,55 @@
 "use client";
-
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import "../portal.css";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<"identify" | "reset">("identify");
-  const [agentCode, setAgentCode] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function handleIdentify(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    const res = await fetch("/api/agent/password-reset/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentCode, email, phone }),
+    setLoading(true); setError(null);
+    const res = await fetch("/api/agent/forgot-password", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     });
-    const data = await res.json().catch(() => ({}));
-    setSubmitting(false);
-    // Always move forward regardless of match — the API never reveals
-    // whether the details matched an account.
-    setMessage(data.message ?? "If those details match an account, a code has been sent.");
-    setStep("reset");
-  }
-
-  async function handleReset(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    const res = await fetch("/api/agent/password-reset/confirm", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentCode, email, phone, code, newPassword }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "Could not reset password.");
-      return;
-    }
-    router.push("/agent/login");
+    setLoading(false);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "Something went wrong."); return; }
+    setSent(true);
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: "var(--bg)" }}>
-      <div className="w-full max-w-sm ap-login-card p-8">
-        <h1 className="font-display text-2xl text-[var(--navy)]">Reset Password</h1>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 24 }}>
+      <div className="ap-card" style={{ width: "100%", maxWidth: 400, padding: 32 }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔑</div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>Forgot Password</h2>
+          <p style={{ fontSize: 13, color: "var(--muted)" }}>Enter your email and we'll send a reset link</p>
+        </div>
 
-        {step === "identify" ? (
-          <form onSubmit={handleIdentify} className="mt-6 space-y-4">
-            <p className="text-sm text-[var(--muted)]">
-              Enter your agent code, registered email, and phone number.
+        {sent ? (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>📧</div>
+            <p style={{ fontWeight: 700, marginBottom: 8 }}>Check your email</p>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 20 }}>
+              If <strong>{email}</strong> is registered, you'll receive a reset link within a minute.
             </p>
-            <input
-              required
-              placeholder="Agent code"
-              value={agentCode}
-              onChange={(e) => setAgentCode(e.target.value)}
-              className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-            />
-            <input
-              required
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-            />
-            <input
-              required
-              placeholder="Phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-lg bg-[var(--navy)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              {submitting ? "Sending…" : "Send verification code"}
-            </button>
-          </form>
+            <Link href="/agent/login" style={{ color: "var(--gold)", fontSize: 13, fontWeight: 600 }}>← Back to login</Link>
+          </div>
         ) : (
-          <form onSubmit={handleReset} className="mt-6 space-y-4">
-            {message && <p className="text-sm text-[var(--muted)]">{message}</p>}
-            <input
-              required
-              maxLength={6}
-              placeholder="6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm tracking-widest"
-            />
-            <input
-              required
-              type="password"
-              minLength={8}
-              placeholder="New password (min 8 characters)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-lg border border-[var(--bdr)] px-3 py-2 text-sm"
-            />
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-lg bg-[var(--navy)] px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              {submitting ? "Resetting…" : "Reset password"}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="ap-field">
+              <label>Email Address</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+            </div>
+            {error && <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>{error}</p>}
+            <button type="submit" disabled={loading} className="ap-btn ap-btn-gold" style={{ justifyContent: "center" }}>
+              {loading ? "Sending…" : "Send Reset Link"}
             </button>
+            <Link href="/agent/login" style={{ textAlign: "center", color: "var(--muted)", fontSize: 12 }}>← Back to login</Link>
           </form>
         )}
       </div>
