@@ -26,6 +26,10 @@ type Application = {
   commission: number | null;
   status: string;
   adminNote: string | null;
+  trackingCountry: string | null;
+  trackingLink: string | null;
+  trackingNumber: string | null;
+  finalDocumentUrl: string | null;
   createdAt: string;
   updatedAt: string;
   visa: { title: string; country: string; type: string };
@@ -34,13 +38,29 @@ type Application = {
   documents: AppDoc[];
 };
 
+// Labels shown to admin — "pending" reads as "Under Consideration" (the
+// owner's exact wording: something just came in, from either a direct
+// customer or an agent, and hasn't been actioned yet) and there's a new
+// "applied" stage between review and a decision, for once the paperwork
+// is actually lodged with the embassy/consulate (tracking info attaches
+// here).
+const STATUS_LABELS: Record<string, string> = {
+  pending: "Under Consideration",
+  under_review: "Under Review",
+  applied: "Applied",
+  approved: "Approved",
+  rejected: "Rejected",
+  more_info_needed: "More Info Needed",
+};
+
 const STATUSES = [
   { value: "", label: "All Statuses" },
-  { value: "pending", label: "Pending" },
-  { value: "under_review", label: "Under Review" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-  { value: "more_info_needed", label: "More Info Needed" },
+  { value: "pending", label: STATUS_LABELS.pending },
+  { value: "under_review", label: STATUS_LABELS.under_review },
+  { value: "applied", label: STATUS_LABELS.applied },
+  { value: "approved", label: STATUS_LABELS.approved },
+  { value: "rejected", label: STATUS_LABELS.rejected },
+  { value: "more_info_needed", label: STATUS_LABELS.more_info_needed },
 ];
 
 // Only sensible next steps are offered from each current status — this is
@@ -48,9 +68,10 @@ const STATUSES = [
 // a decision has already been made. Approved/rejected are terminal and
 // handled by their own banner further down, not by this map.
 const NEXT_STEPS: Record<string, string[]> = {
-  pending: ["under_review", "approved", "rejected", "more_info_needed"],
-  under_review: ["approved", "rejected", "more_info_needed"],
-  more_info_needed: ["under_review", "approved", "rejected"],
+  pending: ["under_review", "applied", "rejected", "more_info_needed"],
+  under_review: ["applied", "approved", "rejected", "more_info_needed"],
+  applied: ["approved", "rejected", "more_info_needed"],
+  more_info_needed: ["under_review", "applied", "approved", "rejected"],
   approved: [],
   rejected: [],
 };
@@ -63,6 +84,7 @@ function statusPill(s: string) {
   const map: Record<string, string> = {
     pending: "adp-p-pending",
     under_review: "adp-p-confirmed",
+    applied: "adp-p-confirmed",
     approved: "adp-p-active",
     rejected: "adp-p-cancelled",
     more_info_needed: "adp-p-pending",
@@ -241,7 +263,7 @@ function VisaApplicationsInner() {
                       </td>
                       <td>
                         <span className={`adp-pill ${statusPill(app.status)}`}>
-                          {app.status.replace(/_/g, " ")}
+                          {STATUS_LABELS[app.status] ?? app.status.replace(/_/g, " ")}
                         </span>
                       </td>
                       <td style={{ fontSize: 10, color: "var(--a-muted)", fontFamily: "monospace" }}>
@@ -398,7 +420,7 @@ function VisaApplicationsInner() {
                                           border: s === "more_info_needed" ? "1px solid #FED7AA" : undefined,
                                         }}
                                       >
-                                        {s === "approved" ? "✓ Approve" : s === "rejected" ? "✕ Reject" : s === "more_info_needed" ? "📋 More Info Needed (add note)" : `→ Mark as ${s.replace(/_/g, " ")}`}
+                                        {s === "approved" ? "✓ Approve" : s === "rejected" ? "✕ Reject" : s === "more_info_needed" ? "📋 More Info Needed (add note)" : s === "applied" ? "📨 Mark as Applied" : `→ Mark as ${STATUS_LABELS[s] ?? s.replace(/_/g, " ")}`}
                                       </button>
                                     ))}
                                   </div>
@@ -430,6 +452,14 @@ function VisaApplicationsInner() {
                                     </div>
                                   )}
                                 </>
+                              )}
+
+                              {/* Tracking info — visible once "Applied" (or later, as a
+                                  read-only record). Uploading the final document is what
+                                  actually emails the applicant/agent — not a separate,
+                                  easy-to-forget step. */}
+                              {(app.status === "applied" || app.trackingLink || app.finalDocumentUrl) && (
+                                <TrackingPanel app={app} accessToken={accessToken} refresh={refresh} onDone={load} acting={acting} />
                               )}
 
                               {/* Note editor — shared by the Reject / More Info Needed
@@ -519,5 +549,99 @@ export default function AdminVisaApplicationsPage() {
         <VisaApplicationsInner />
       </AdminShell>
     </AdminGuard>
+  );
+}
+
+// Tracking info (country/link/number) + final document upload — kept as
+// its own component since it has its own local form state, separate from
+// the parent's note/status-action state machine.
+function TrackingPanel({
+  app, accessToken, refresh, onDone, acting,
+}: {
+  app: Application; accessToken: string | null; refresh: () => Promise<string | null>; onDone: () => void; acting: boolean;
+}) {
+  const [country, setCountry] = useState(app.trackingCountry ?? "");
+  const [link, setLink] = useState(app.trackingLink ?? "");
+  const [number, setNumber] = useState(app.trackingNumber ?? "");
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+
+  async function saveTracking() {
+    setSaving(true);
+    setError(null);
+    setSavedMsg(null);
+    const res = await adminFetch(`/api/admin/visa-applications/${app.id}/tracking`, accessToken, refresh, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackingCountry: country, trackingLink: link, trackingNumber: number }),
+    });
+    setSaving(false);
+    if (!res.ok) { setError("Could not save tracking info."); return; }
+    setSavedMsg("Saved.");
+    onDone();
+  }
+
+  async function uploadDocument(file: File) {
+    setUploading(true);
+    setError(null);
+    const form = new FormData();
+    form.set("document", file);
+    const res = await adminFetch(`/api/admin/visa-applications/${app.id}/document`, accessToken, refresh, { method: "POST", body: form });
+    const data = await res.json().catch(() => ({}));
+    setUploading(false);
+    if (!res.ok) { setError(data.error ?? "Could not upload document."); return; }
+    onDone();
+  }
+
+  if (app.finalDocumentUrl) {
+    return (
+      <div style={{ marginTop: 12, background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "10px 14px" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#15803D" }}>✅ Visa document delivered</div>
+        <a href={app.finalDocumentUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--a-gold)", fontWeight: 600 }}>📎 View document</a>
+        {app.trackingCountry && <div style={{ fontSize: 11, color: "var(--a-muted)", marginTop: 4 }}>{app.trackingCountry}{app.trackingNumber ? ` · ${app.trackingNumber}` : ""}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 12, background: "#F8FAFC", border: "1px solid var(--a-border)", borderRadius: 10, padding: "10px 14px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", marginBottom: 8 }}>
+        📍 Tracking Info
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+        <input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Country (e.g. UAE)" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid var(--a-border)", borderRadius: 6 }} />
+        <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Tracking portal link" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid var(--a-border)", borderRadius: 6 }} />
+        <input value={number} onChange={(e) => setNumber(e.target.value)} placeholder="Tracking / application number" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid var(--a-border)", borderRadius: 6 }} />
+      </div>
+      {error && <p style={{ fontSize: 11, color: "var(--a-red)", marginBottom: 6 }}>{error}</p>}
+      {savedMsg && <p style={{ fontSize: 11, color: "#15803D", marginBottom: 6 }}>{savedMsg}</p>}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+        <button disabled={saving || acting} onClick={saveTracking} className="adp-btn adp-btn-s">
+          {saving ? "Saving…" : "Save"}
+        </button>
+        {link && (
+          <a href={link} target="_blank" rel="noreferrer" className="adp-btn adp-btn-s" style={{ textDecoration: "none" }}>
+            🔗 Check Status
+          </a>
+        )}
+      </div>
+      <div style={{ borderTop: "1px dashed var(--a-border)", paddingTop: 10 }}>
+        <label className="adp-btn adp-btn-g adp-btn-s" style={{ cursor: "pointer", display: "inline-block" }}>
+          {uploading ? "Uploading…" : "📄 Upload Visa & Email Applicant"}
+          <input
+            type="file"
+            accept="application/pdf,image/jpeg,image/png"
+            style={{ display: "none" }}
+            disabled={uploading}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadDocument(f); e.target.value = ""; }}
+          />
+        </label>
+        <p style={{ fontSize: 10, color: "var(--a-muted)", marginTop: 4 }}>
+          Uploading here marks Approved and automatically emails the visa to the applicant{app.agent ? " and agent" : ""}.
+        </p>
+      </div>
+    </div>
   );
 }
