@@ -2,13 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { createHash, randomBytes } from "crypto";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  if (!checkRateLimit(`agent-forgot-pw:ip:${ip}`, 5, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email) return NextResponse.json({ error: "Email required." }, { status: 400 });
+
+  // Also rate-limit per email specifically, so one leaked/guessed address
+  // can't be email-bombed even from many different IPs.
+  if (!checkRateLimit(`agent-forgot-pw:email:${email}`, 3, 15 * 60 * 1000)) {
+    return NextResponse.json({ ok: true }); // same generic response, don't reveal the limit was hit
+  }
 
   // Always return success to prevent email enumeration
   const agent = await prisma.agent.findUnique({ where: { email } });
