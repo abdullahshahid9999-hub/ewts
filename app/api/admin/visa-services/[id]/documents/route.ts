@@ -32,6 +32,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       description: typeof body?.description === "string" && body.description.trim() ? body.description.trim() : null,
       isRequired: body?.isRequired !== false, // default true
       sortOrder: Number(body?.sortOrder) || 0,
+      applicantCategory: typeof body?.applicantCategory === "string" && body.applicantCategory ? body.applicantCategory : null,
+      nationality: typeof body?.nationality === "string" && body.nationality.trim() ? body.nationality.trim() : null,
     },
   });
 

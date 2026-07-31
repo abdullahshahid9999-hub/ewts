@@ -5,6 +5,7 @@ import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
+import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 
 type RequiredDoc = {
   id: string;
@@ -12,6 +13,8 @@ type RequiredDoc = {
   description: string | null;
   isRequired: boolean;
   sortOrder: number;
+  applicantCategory: string | null;
+  nationality: string | null;
 };
 
 type VisaService = {
@@ -50,7 +53,7 @@ function VisaServicesInner() {
   const [docsForId, setDocsForId] = useState<string | null>(null);
   const [docs, setDocs] = useState<RequiredDoc[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
-  const [newDoc, setNewDoc] = useState({ name: "", description: "", isRequired: true });
+  const [newDoc, setNewDoc] = useState({ name: "", description: "", isRequired: true, applicantCategory: "", nationality: "" });
   const [savingDoc, setSavingDoc] = useState(false);
 
   const load = useCallback(async () => {
@@ -104,12 +107,15 @@ function VisaServicesInner() {
     const res = await adminFetch(`/api/admin/visa-services/${docsForId}/documents`, accessToken, refresh, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newDoc.name.trim(), description: newDoc.description.trim() || null, isRequired: newDoc.isRequired }),
+      body: JSON.stringify({
+        name: newDoc.name.trim(), description: newDoc.description.trim() || null, isRequired: newDoc.isRequired,
+        applicantCategory: newDoc.applicantCategory || null, nationality: newDoc.nationality.trim() || null,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     setSavingDoc(false);
     if (!res.ok) { setError(data.error ?? "Could not add document."); return; }
-    setNewDoc({ name: "", description: "", isRequired: true });
+    setNewDoc({ name: "", description: "", isRequired: true, applicantCategory: "", nationality: "" });
     loadDocs(docsForId);
   }
 
@@ -265,6 +271,12 @@ function VisaServicesInner() {
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 12, fontWeight: 600 }}>{doc.name}</div>
                               {doc.description && <div style={{ fontSize: 11, color: "var(--a-muted)" }}>{doc.description}</div>}
+                              {(doc.applicantCategory || doc.nationality) && (
+                                <div style={{ fontSize: 10, color: "var(--a-gold)", marginTop: 2 }}>
+                                  🎯 {doc.applicantCategory ? APPLICANT_CATEGORIES.find((c) => c.value === doc.applicantCategory)?.label ?? doc.applicantCategory : "All types"}
+                                  {doc.nationality ? ` · ${doc.nationality} only` : ""}
+                                </div>
+                              )}
                             </div>
                             <button
                               onClick={() => toggleDocRequired(doc)}
@@ -320,6 +332,32 @@ function VisaServicesInner() {
                       >
                         {savingDoc ? "…" : "+ Add"}
                       </button>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "2fr 2fr", gap: 8, marginTop: 8 }}>
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 3 }}>
+                          Only required for (leave blank = everyone)
+                        </label>
+                        <select
+                          style={iStyle}
+                          value={newDoc.applicantCategory}
+                          onChange={(e) => setNewDoc((d) => ({ ...d, applicantCategory: e.target.value }))}
+                        >
+                          <option value="">All applicant types</option>
+                          {APPLICANT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 3 }}>
+                          Only for nationality (leave blank = everyone)
+                        </label>
+                        <input
+                          style={iStyle}
+                          value={newDoc.nationality}
+                          onChange={(e) => setNewDoc((d) => ({ ...d, nationality: e.target.value }))}
+                          placeholder="e.g. Pakistani"
+                        />
+                      </div>
                     </div>
 
                     {docs.length === 0 && (
