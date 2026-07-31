@@ -207,6 +207,13 @@ model VisaRequiredDocument {
   description String?                     // instruction shown to user
   isRequired  Boolean @default(true) @map("is_required")
   sortOrder   Int     @default(0)  @map("sort_order")
+  // Null = required for every applicant. Set to scope a document to only
+  // one applicant category (e.g. "Salary Slips" only for job_holder) or
+  // one nationality (e.g. some countries need an extra form only from
+  // certain passport holders). Both can be set together for a narrow
+  // combination; both null means universal.
+  applicantCategory String? @map("applicant_category") // job_holder | business_owner | retired | student | other
+  nationality       String? @map("nationality")
 
   visa      VisaService               @relation(fields: [visaId], references: [id], onDelete: Cascade)
   uploads   VisaApplicationDocument[]
@@ -246,6 +253,13 @@ model VisaApplication {
   passportNumber String   @map("passport_number")
   phone          String
   email          String
+  // Who's applying and from where — determines which required documents
+  // actually apply to them (e.g. job_holder needs salary slips,
+  // business_owner needs a business registration, and some documents
+  // are only asked of specific nationalities).
+  applicantCategory String? @map("applicant_category") // job_holder | business_owner | retired | student | other
+  nationality       String?
+  passportExpiry    String? @map("passport_expiry")
   // Traveler counts for this specific visa application
   adults         Int      @default(1)
   children       Int      @default(0)
@@ -314,6 +328,12 @@ model VisaApplicant {
   fullName       String   @map("full_name")
   passportNumber String?  @map("passport_number")
   ageGroup       String   @default("adult") @map("age_group") // "adult" | "child" | "infant"
+  // Same purpose as VisaApplication's own fields — but per-traveller,
+  // since an agent might submit a family where one member is retired and
+  // another is a student, each needing a different document set.
+  applicantCategory String? @map("applicant_category")
+  nationality       String?
+  passportExpiry    String? @map("passport_expiry")
   createdAt      DateTime @default(now()) @map("created_at")
 
   application VisaApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
