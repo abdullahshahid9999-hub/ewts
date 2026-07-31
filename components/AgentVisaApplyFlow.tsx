@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 import { compressImage } from "@/lib/imageCompression";
+import { APPLICANT_CATEGORIES, filterDocsForApplicant, passportExpiryWarning } from "@/lib/visaApplicantCategory";
+import { checkImageQuality } from "@/lib/imageQualityCheck";
 
 type RequiredDoc = { id: string; name: string; description: string | null; isRequired: boolean };
 type VisaInfo = {
@@ -11,7 +13,7 @@ type VisaInfo = {
   requiredDocuments: RequiredDoc[];
 };
 type AgeGroup = "adult" | "child" | "infant";
-type Traveller = { fullName: string; passportNumber: string; ageGroup: AgeGroup; files: Record<string, File> };
+type Traveller = { fullName: string; passportNumber: string; passportExpiry: string; applicantCategory: string; nationality: string; ageGroup: AgeGroup; files: Record<string, File> };
 
 function priceFor(visa: VisaInfo, ageGroup: AgeGroup): number {
   if (ageGroup === "adult") return visa.priceAdult ?? 0;
@@ -38,12 +40,16 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ batchRef: string; total: number } | null>(null);
+  const [docWarnings, setDocWarnings] = useState<Record<string, string | null>>({});
+  function setDocWarning(key: string, msg: string | null) {
+    setDocWarnings((w) => ({ ...w, [key]: msg }));
+  }
 
   function buildTravellers() {
     const list: Traveller[] = [];
-    for (let i = 0; i < counts.adults; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "adult", files: {} });
-    for (let i = 0; i < counts.children; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "child", files: {} });
-    for (let i = 0; i < counts.infants; i++) list.push({ fullName: "", passportNumber: "", ageGroup: "infant", files: {} });
+    for (let i = 0; i < counts.adults; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "adult", files: {} });
+    for (let i = 0; i < counts.children; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "child", files: {} });
+    for (let i = 0; i < counts.infants; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "infant", files: {} });
     setTravellers(list);
     setActiveTrav(0);
   }
@@ -108,6 +114,9 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
       form.set(`trav_0_${ti}_fullName`, t.fullName.trim());
       form.set(`trav_0_${ti}_passportNumber`, t.passportNumber.trim());
       form.set(`trav_0_${ti}_ageGroup`, t.ageGroup);
+      form.set(`trav_0_${ti}_passportExpiry`, t.passportExpiry);
+      form.set(`trav_0_${ti}_applicantCategory`, t.applicantCategory);
+      form.set(`trav_0_${ti}_nationality`, t.nationality);
       Object.entries(t.files).forEach(([docId, file]) => form.set(`travdoc_0_${ti}_${docId}`, file));
     });
 
@@ -206,9 +215,29 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
             <label>Full Name (as on passport)</label>
             <input required value={travellers[activeTrav].fullName} onChange={(e) => updateTrav(activeTrav, { fullName: e.target.value })} />
           </div>
-          <div className="ap-field" style={{ marginBottom: 16 }}>
+          <div className="ap-field" style={{ marginBottom: 10 }}>
             <label>Passport Number</label>
             <input value={travellers[activeTrav].passportNumber} onChange={(e) => updateTrav(activeTrav, { passportNumber: e.target.value })} placeholder="e.g. AB1234567" />
+          </div>
+          <div className="ap-field" style={{ marginBottom: 10 }}>
+            <label>Passport Expiry Date</label>
+            <input type="date" value={travellers[activeTrav].passportExpiry} onChange={(e) => updateTrav(activeTrav, { passportExpiry: e.target.value })} />
+            {passportExpiryWarning(travellers[activeTrav].passportExpiry) && (
+              <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ {passportExpiryWarning(travellers[activeTrav].passportExpiry)}</p>
+            )}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+            <div className="ap-field">
+              <label>Applicant Type</label>
+              <select value={travellers[activeTrav].applicantCategory} onChange={(e) => updateTrav(activeTrav, { applicantCategory: e.target.value })}>
+                <option value="">Select…</option>
+                {APPLICANT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div className="ap-field">
+              <label>Nationality</label>
+              <input value={travellers[activeTrav].nationality} onChange={(e) => updateTrav(activeTrav, { nationality: e.target.value })} placeholder="e.g. Pakistani" />
+            </div>
           </div>
 
           <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Documents for this traveller</p>
@@ -216,8 +245,9 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
             <p style={{ fontSize: 11, color: "var(--muted)" }}>No specific documents configured for this visa.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {visa.requiredDocuments.map((doc) => {
+              {filterDocsForApplicant(visa.requiredDocuments, travellers[activeTrav].applicantCategory, travellers[activeTrav].nationality).map((doc) => {
                 const f = travellers[activeTrav].files[doc.id];
+                const warnKey = `${activeTrav}_${doc.id}`;
                 return (
                   <div key={doc.id} style={{ border: "1px solid var(--bdr)", borderRadius: 10, padding: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
@@ -228,8 +258,13 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                     </div>
                     {doc.description && <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>{doc.description}</p>}
                     <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ fontSize: 11, width: "100%" }}
-                      onChange={(e) => setTravFile(activeTrav, doc.id, e.target.files?.[0] ?? null)} />
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        await setTravFile(activeTrav, doc.id, file);
+                        if (file) setDocWarning(warnKey, await checkImageQuality(file));
+                      }} />
                     {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}
+                    {docWarnings[warnKey] && <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ {docWarnings[warnKey]}</p>}
                   </div>
                 );
               })}
