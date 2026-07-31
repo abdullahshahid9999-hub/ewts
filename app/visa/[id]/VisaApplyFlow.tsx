@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { APPLICANT_CATEGORIES, filterDocsForApplicant, passportExpiryWarning } from "@/lib/visaApplicantCategory";
+import { checkImageQuality } from "@/lib/imageQualityCheck";
 
 type RequiredDoc = {
   id: string;
@@ -25,6 +27,9 @@ type ApplicationDraft = {
   visa: VisaInfo;
   fullName: string;
   passportNumber: string;
+  passportExpiry: string;
+  applicantCategory: string;
+  nationality: string;
   phone: string;
   email: string;
   adults: number;
@@ -39,6 +44,9 @@ function emptyDraft(visa: VisaInfo, initial?: { adults?: number; children?: numb
     visa,
     fullName: "",
     passportNumber: "",
+    passportExpiry: "",
+    applicantCategory: "",
+    nationality: "",
     phone: "",
     email: "",
     adults: initial?.adults ?? 1,
@@ -63,6 +71,10 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [batchRef, setBatchRef] = useState<string | null>(null);
+  const [docWarnings, setDocWarnings] = useState<Record<string, string | null>>({});
+  function setDocWarning(docId: string, msg: string | null) {
+    setDocWarnings((w) => ({ ...w, [docId]: msg }));
+  }
 
   function updateDraft(idx: number, patch: Partial<ApplicationDraft>) {
     setDrafts((prev) => prev.map((d, i) => (i === idx ? { ...d, ...patch } : d)));
@@ -123,6 +135,9 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
       form.set(`adults_${i}`, String(d.adults));
       form.set(`children_${i}`, String(d.children));
       form.set(`infants_${i}`, String(d.infants));
+      form.set(`applicantCategory_${i}`, d.applicantCategory);
+      form.set(`nationality_${i}`, d.nationality);
+      form.set(`passportExpiry_${i}`, d.passportExpiry);
       Object.entries(d.files).forEach(([docId, file]) => {
         form.set(`doc_${docId}_${i}`, file);
       });
@@ -221,6 +236,44 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
             className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-gold"
           />
         </div>
+        <div>
+          <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Passport Expiry Date</label>
+          <input
+            type="date"
+            value={draft.passportExpiry}
+            onChange={(e) => updateDraft(activeIdx, { passportExpiry: e.target.value })}
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-gold"
+          />
+          {passportExpiryWarning(draft.passportExpiry) && (
+            <p className="text-xs text-amber-700 mt-1">⚠️ {passportExpiryWarning(draft.passportExpiry)}</p>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">You Are a *</label>
+            <select
+              value={draft.applicantCategory}
+              onChange={(e) => updateDraft(activeIdx, { applicantCategory: e.target.value })}
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-gold"
+            >
+              <option value="">Select…</option>
+              {APPLICANT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Nationality *</label>
+            <input
+              type="text"
+              value={draft.nationality}
+              onChange={(e) => updateDraft(activeIdx, { nationality: e.target.value })}
+              placeholder="e.g. Pakistani"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-gold"
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-muted -mt-1">
+          Telling us this narrows the document checklist below to exactly what you need — nothing extra.
+        </p>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Phone *</label>
@@ -299,7 +352,7 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
             </div>
           ) : (
             <div className="space-y-2">
-              {draft.visa.requiredDocuments.map((doc) => (
+              {filterDocsForApplicant(draft.visa.requiredDocuments, draft.applicantCategory, draft.nationality).map((doc) => (
                 <div key={doc.id} className="border border-border rounded-xl p-3">
                   <div className="flex items-start justify-between mb-1.5">
                     <div>
@@ -321,10 +374,17 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                     type="file"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     className="text-xs w-full"
-                    onChange={(e) => setFile(activeIdx, doc.id, e.target.files?.[0] ?? null)}
+                    onChange={async (e) => {
+                      const f = e.target.files?.[0] ?? null;
+                      setFile(activeIdx, doc.id, f);
+                      if (f) setDocWarning(doc.id, await checkImageQuality(f));
+                    }}
                   />
                   {draft.files[doc.id] && (
                     <p className="text-xs text-muted mt-1">📎 {draft.files[doc.id].name}</p>
+                  )}
+                  {docWarnings[doc.id] && (
+                    <p className="text-xs text-amber-700 mt-1">⚠️ {docWarnings[doc.id]}</p>
                   )}
                 </div>
               ))}
