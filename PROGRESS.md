@@ -1633,3 +1633,79 @@ of navigating to a new page — content below swaps via the same
 
 `npx tsc --noEmit`: clean (only the one pre-existing unrelated TS7031 in
 `admin/agents/route.ts`, confirmed present before this session too).
+
+## Visa: New Status Stages, Tracking + Auto-Delivery, Group Discounts
+
+Owner asked for: clearer status labels for visa applications (whether
+from direct/B2C or agent), a way to track an application once formally
+lodged with the embassy, automatic document delivery on arrival, and
+admin-configurable group discounts. Verified first (already done by a
+prior session, no work needed): agent commission on visa applications
+(snapshotted at submission via `calculateCommission`, paid out at
+approval, matching `AgentBooking`) and multi-traveller billing
+(adults×priceAdult + children×priceChild + infants×priceInfant).
+
+**Honest scope note on "AI automation to auto-check and auto-download":**
+not realistically buildable for free/generically — every country's visa
+tracking portal is different, most require login/CAPTCHA, none have a
+public API. Explained this plainly rather than half-building something
+that wouldn't reliably work. Built the practical, fully-reliable
+alternative instead (below).
+
+**New pipeline stage: "Applied"** — sits between Under Review and a
+decision. `pending` is now labeled "Under Consideration" in the UI (no
+data/enum change, purely `STATUS_LABELS` display text) to match the
+owner's exact wording for "something just came in, from either a direct
+customer or an agent." `NEXT_STEPS` updated so Applied is reachable from
+Pending/Under Review/More Info Needed, and itself only leads to
+Approved/Rejected/More Info Needed.
+
+**Tracking info** — `VisaApplication.trackingCountry/trackingLink/
+trackingNumber` (nullable). Once status is "Applied," admin sees a panel
+to enter these, plus a "🔗 Check Status" button that opens the saved
+link directly — no need to re-find/re-type the portal URL each time.
+
+**Automatic document delivery** — new
+`POST /api/admin/visa-applications/[id]/document`: admin uploads the
+arrived visa (R2), which sets `finalDocumentUrl` +
+`finalDocumentSentAt`, flips status to `approved`, and **automatically
+emails the applicant (and the agent too, if this was an agent
+submission)** with a download link — one action instead of "approve,
+then separately remember to email the file."
+
+**Group discount tiers** — new `VisaDiscountTier` model
+(`minTravellers`, `discountPercent`), fully admin-configurable (owner
+chose "admin sets it themselves" over fixed defaults) via new
+`/admin/visa-discount-tiers` page. Applied in
+`submitVisaApplicationBatch`: highest-qualifying tier for that
+application's total traveller count discounts the gross total;
+commission is computed on the *discounted* total (what the customer
+actually pays), consistent with how commission works everywhere else in
+this codebase.
+
+`npx tsc --noEmit`: clean (only the same pre-existing unrelated
+TS7031 in `admin/agents/route.ts`).
+
+**Pending manual migration:**
+```sql
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_country TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_link TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_number TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_url TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_sent_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS visa_discount_tiers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  min_travellers INTEGER NOT NULL,
+  discount_percent INTEGER NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+```
+
+**Suggestion (asked for): other international-visa features worth
+considering later** — per-country dynamic document checklists (some
+countries need bank statements, others don't — already partially
+supported via `VisaRequiredDocument`, just needs more countries added);
+a "days until expected decision" estimate per country to set customer
+expectations; SMS notification alongside email for markets where email
+open-rates are low.

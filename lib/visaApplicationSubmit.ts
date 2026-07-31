@@ -39,6 +39,7 @@ export async function submitVisaApplicationBatch(
   if (indices.length === 0) throw new VisaSubmissionError("No applications submitted.");
 
   const batchRef = `VA-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+  const discountTiers = await prisma.visaDiscountTier.findMany();
   const results: { id: string; visaId: string; visa: string; totalPricePkr: number }[] = [];
 
   for (const i of indices) {
@@ -67,7 +68,18 @@ export async function submitVisaApplicationBatch(
     const priceAdult = visa.priceAdult ?? 0;
     const priceChild = visa.priceChild ?? 0;
     const priceInfant = visa.priceInfant ?? 0;
-    const totalPricePkr = adults * priceAdult + children * priceChild + infants * priceInfant;
+    const grossPricePkr = adults * priceAdult + children * priceChild + infants * priceInfant;
+    // Group discount: highest tier this application's traveller count
+    // qualifies for. Same commission is then computed on the DISCOUNTED
+    // total (not gross) — the agent's cut reflects what the customer
+    // actually pays, same principle as everywhere else in this codebase.
+    const totalTravellers = adults + children + infants;
+    const applicableTier = discountTiers
+      .filter((t) => totalTravellers >= t.minTravellers)
+      .sort((a, b) => b.discountPercent - a.discountPercent)[0];
+    const totalPricePkr = applicableTier
+      ? Math.round(grossPricePkr * (1 - applicableTier.discountPercent / 100))
+      : grossPricePkr;
 
     // Same snapshot convention as AgentBooking.commission — computed once,
     // now, using whatever rate is current for this agent+visa_services.

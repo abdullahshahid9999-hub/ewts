@@ -16,6 +16,7 @@ const NAV = [
       { href: "/admin/direct-bookings", icon: "🧳", label: "Direct Bookings" },
       { href: "/admin/visa-services", icon: "🛂", label: "Visa Services" },
       { href: "/admin/visa-applications", icon: "📥", label: "Visa Applications" },
+      { href: "/admin/visa-discount-tiers", icon: "💸", label: "Visa Group Discounts" },
       { href: "/admin/group-flights", icon: "✈️", label: "Group Flights" },
       { href: "/admin/insurance", icon: "🛡️", label: "Insurance Plans" },
       { href: "/admin/insurance-applications", icon: "📥", label: "Insurance Applications" },
@@ -71,6 +72,9 @@ export default function AdminSidebar({ open, onClose }: { open: boolean; onClose
             ))}
           </div>
         ))}
+        <a className="adp-sbn" href="/admin/2fa-setup">
+          🔐 Two-Factor Auth
+        </a>
         <a className="adp-sbn" href="/" target="_blank" rel="noopener noreferrer">
           🔗 View Website
         </a>

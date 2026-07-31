@@ -3,39 +3,66 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword, signAccessToken, signRefreshToken } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
 
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-
   const body = await req.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!email || !password) {
+  if (!email || !password)
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
-  }
 
-  // Rate-limit brute-force attempts per IP + per email, not just per IP,
-  // so an attacker can't spread guesses across many emails from one IP
-  // undetected, nor hammer one email from rotating IPs undetected.
-  if (!checkRateLimit(`agent-login:ip:${ip}`, 20, 10 * 60 * 1000) ||
-      !checkRateLimit(`agent-login:email:${email}`, 8, 10 * 60 * 1000)) {
-    return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
-  }
+  // IP-level rate limit (fast fail before DB hit)
+  if (!checkRateLimit(`agent-login:ip:${ip}`, 20, 10 * 60 * 1000))
+    return NextResponse.json({ error: "Too many attempts from your network. Try again in 10 minutes." }, { status: 429 });
 
-  const agent = await prisma.agent.findUnique({ where: { email } });
-
-  // Same generic error whether the email doesn't exist or the password is
-  // wrong — never reveal which one it was (account enumeration).
   const genericError = () =>
     NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
 
+  const agent = await prisma.agent.findUnique({ where: { email } });
   if (!agent) return genericError();
-  if (agent.status !== "active") {
+
+  if (agent.status !== "active")
     return NextResponse.json({ error: "This account is suspended. Contact the office." }, { status: 403 });
+
+  // DB-level lockout check
+  if (agent.lockedUntil && agent.lockedUntil > new Date()) {
+    const remaining = Math.ceil((agent.lockedUntil.getTime() - Date.now()) / 60000);
+    return NextResponse.json(
+      { error: `Account locked due to too many failed attempts. Try again in ${remaining} minute${remaining !== 1 ? "s" : ""}.` },
+      { status: 429 }
+    );
   }
 
   const valid = await verifyPassword(password, agent.passwordHash);
-  if (!valid) return genericError();
+
+  if (!valid) {
+    const newAttempts = agent.loginAttempts + 1;
+    const shouldLock = newAttempts >= MAX_ATTEMPTS;
+    await prisma.agent.update({
+      where: { id: agent.id },
+      data: {
+        loginAttempts: newAttempts,
+        lockedUntil: shouldLock ? new Date(Date.now() + LOCKOUT_MS) : null,
+      },
+    });
+    if (shouldLock) {
+      return NextResponse.json(
+        { error: `Too many failed attempts. Account locked for 15 minutes.` },
+        { status: 429 }
+      );
+    }
+    return genericError();
+  }
+
+  // Reset attempts on successful login
+  await prisma.agent.update({
+    where: { id: agent.id },
+    data: { loginAttempts: 0, lockedUntil: null },
+  });
 
   const accessToken = signAccessToken({ sub: agent.id, role: "agent" });
   const refreshToken = signRefreshToken({ sub: agent.id, role: "agent" });
