@@ -1709,3 +1709,50 @@ supported via `VisaRequiredDocument`, just needs more countries added);
 a "days until expected decision" estimate per country to set customer
 expectations; SMS notification alongside email for markets where email
 open-rates are low.
+
+## Visa: Category/Nationality-Scoped Documents, Passport Expiry, Doc Quality, WhatsApp Notify
+
+Requirements differ by applicant category (Job Holder/Business
+Owner/Retired/Student/Other) and by nationality — implemented end to end:
+
+- Schema: `applicantCategory`/`nationality`/`passportExpiry` on
+  `VisaApplication` (B2C, one set) and `VisaApplicant` (agent, per
+  traveller — a family can have a retiree and a student, each with
+  different requirements). `VisaRequiredDocument` gained the same two
+  scoping fields (nullable = applies to everyone).
+- `lib/visaApplicantCategory.ts` — single shared source for the category
+  list, the applies-to-this-applicant filter logic, and the passport
+  6-month-validity warning. Used identically by admin config, B2C flow,
+  and agent flow so they can't drift.
+- Admin (`/admin/visa-services`): each required document can be scoped
+  to one category and/or one nationality when adding it.
+- Both apply flows (B2C `VisaApplyFlow.tsx`, agent `AgentVisaApplyFlow.tsx`):
+  applicant states their category + nationality + passport expiry date
+  *before* seeing the document checklist — checklist is filtered live,
+  so nobody's asked for a business registration they don't have.
+  Passport-expiry warning is soft (not blocking, since not every country
+  needs 6 months).
+- `lib/imageQualityCheck.ts` — client-side check on every document
+  upload (image dimensions + file size); warns, doesn't block, on likely
+  low-quality scans — a common real cause of embassy rejection.
+- Admin visa-applications list: WhatsApp quick-notify button per
+  application (`waLinkTo()` in `lib/whatsapp.ts` — opens a pre-filled
+  message to the applicant's own number). Not a paid WhatsApp Business
+  API integration (none set up) — one tap from admin, not automatic, but
+  genuinely reliable rather than a broken promise of full automation.
+
+`npx tsc --noEmit`: clean (only the same pre-existing unrelated TS7031).
+
+**Pending manual migration:**
+```sql
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
+
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
+
+ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS nationality TEXT;
+```
