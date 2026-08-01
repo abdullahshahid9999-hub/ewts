@@ -51,6 +51,9 @@ export async function submitVisaApplicationBatch(
     const adults = Math.max(1, Number(form.get(`adults_${i}`)) || 1);
     const children = Math.max(0, Number(form.get(`children_${i}`)) || 0);
     const infants = Math.max(0, Number(form.get(`infants_${i}`)) || 0);
+    const applicantCategory = ((form.get(`applicantCategory_${i}`) as string | null) ?? "").trim() || null;
+    const nationality = ((form.get(`nationality_${i}`) as string | null) ?? "").trim() || null;
+    const passportExpiry = ((form.get(`passportExpiry_${i}`) as string | null) ?? "").trim() || null;
 
     if (!visaId || !fullName || !passportNumber || !phone || !email) {
       throw new VisaSubmissionError(
@@ -130,11 +133,9 @@ export async function submitVisaApplicationBatch(
         passportNumber,
         phone,
         email,
-        adults,
-        children,
-        infants,
-        totalPricePkr,
-        commission,
+        adults, children, infants,
+        applicantCategory, nationality, passportExpiry,
+        totalPricePkr, commission,
         status: "pending",
       },
     });
@@ -177,9 +178,12 @@ export async function submitVisaApplicationBatch(
     // module doc comment above). Absent entirely for public submissions.
     for (let t = 0; t < travellerCount; t++) {
       const travFullName = ((form.get(`trav_${i}_${t}_fullName`) as string | null) ?? "").trim();
-      if (!travFullName) continue; // skip empty rows defensively
+      if (!travFullName) continue;
       const travPassport = ((form.get(`trav_${i}_${t}_passportNumber`) as string | null) ?? "").trim();
       const ageGroup = ((form.get(`trav_${i}_${t}_ageGroup`) as string | null) ?? "adult").trim();
+      const applicantCategory = ((form.get(`trav_${i}_${t}_applicantCategory`) as string | null) ?? "").trim() || null;
+      const nationality = ((form.get(`trav_${i}_${t}_nationality`) as string | null) ?? "").trim() || null;
+      const passportExpiry = ((form.get(`trav_${i}_${t}_passportExpiry`) as string | null) ?? "").trim() || null;
 
       const applicant = await prisma.visaApplicant.create({
         data: {
@@ -187,6 +191,9 @@ export async function submitVisaApplicationBatch(
           fullName: travFullName,
           passportNumber: travPassport || null,
           ageGroup,
+          applicantCategory,
+          nationality,
+          passportExpiry,
         },
       });
 

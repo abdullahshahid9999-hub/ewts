@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback, Fragment } from "react";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
+import { waLinkTo } from "@/lib/whatsapp";
+import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 
 type AppDoc = {
   id: string;
@@ -19,6 +21,9 @@ type Application = {
   passportNumber: string;
   phone: string;
   email: string;
+  applicantCategory: string | null;
+  nationality: string | null;
+  passportExpiry: string | null;
   adults: number;
   children: number;
   infants: number;
@@ -234,6 +239,7 @@ function VisaApplicationsInner() {
                       </td>
                       <td>
                         <div style={{ fontWeight: 700, fontSize: 12 }}>{app.fullName}</div>
+                        <div style={{ fontSize: 10, color: "var(--a-muted)" }}>{(APPLICANT_CATEGORIES as {value:string;label:string}[]).find((c) => c.value === app.applicantCategory)?.label}{app.nationality ? ` · ${app.nationality}` : ""}</div>
                         <div style={{ fontSize: 11, color: "var(--a-muted)" }}>{app.passportNumber}</div>
                       </td>
                       <td>
@@ -313,6 +319,17 @@ function VisaApplicationsInner() {
                                 📞 {app.phone}<br />
                                 ✉️ {app.email}
                               </div>
+                              {app.phone && (
+                                <a
+                                  href={waLinkTo(app.phone, `Assalam o Alaikum ${app.fullName}! Apki visa application (Ref: ${app.batchRef}) ka update: status abhi "${STATUS_LABELS[app.status] ?? app.status}" hai. East & West Travel Services`)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="adp-btn adp-btn-s"
+                                  style={{ marginTop: 8, display: "inline-block", background: "#25D366", color: "#fff", textDecoration: "none" }}
+                                >
+                                  💬 Notify on WhatsApp
+                                </a>
+                              )}
 
                               {app.applicants && app.applicants.length > 0 && (
                                 <>
