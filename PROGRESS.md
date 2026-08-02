@@ -1756,3 +1756,31 @@ ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
 ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS applicant_category TEXT;
 ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS nationality TEXT;
 ```
+
+## Passport Auto-Read (OCR + MRZ Parsing) — Free, Client-Side
+
+`lib/passportScan.ts`: entirely free, runs in the customer's/agent's own
+browser (`tesseract.js` for OCR, `mrz` npm package to decode the
+result) — no paid API, no server cost. Reads the passport's MRZ (the
+two standardized lines at the bottom of the photo page, ICAO 9303
+format) rather than trying to OCR the whole page, which is far more
+reliable. Extracts full name, passport number, nationality (ICAO
+3-letter code mapped to a readable name for ~25 common countries), and
+expiry date.
+
+Wired into both apply flows, but **only on the file input for a document
+literally named "passport"** (`/passport/i.test(doc.name)`), not every
+upload — a CNIC or bank statement scan shouldn't trigger passport
+parsing. On upload: shows "🔍 Reading passport…", then either:
+- Success → auto-fills fullName/passportNumber/passportExpiry/nationality
+  (still fully editable) + "✨ Auto-filled from your passport!"
+- Failure (blurry, wrong document, MRZ not found) → **file is rejected,
+  not attached** — clear warning explaining why, so a bad scan never
+  silently gets used.
+
+Nationality is always asked as its own field regardless (was already
+built last session) — the OCR just saves typing it when it can read it
+cleanly.
+
+No schema changes — reuses fields already added for applicant category/
+nationality.
