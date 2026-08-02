@@ -5,6 +5,7 @@ import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 import { APPLICANT_CATEGORIES, filterDocsForApplicant, passportExpiryWarning } from "@/lib/visaApplicantCategory";
 import { checkImageQuality } from "@/lib/imageQualityCheck";
+import { scanPassport } from "@/lib/passportScan";
 
 type RequiredDoc = { id: string; name: string; description: string | null; isRequired: boolean };
 type VisaInfo = {
@@ -260,11 +261,36 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                     <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ fontSize: 11, width: "100%" }}
                       onChange={async (e) => {
                         const file = e.target.files?.[0] ?? null;
-                        await setTravFile(activeTrav, doc.id, file);
-                        if (file) setDocWarning(warnKey, await checkImageQuality(file));
+                        if (!file) return;
+                        const isPassportDoc = /passport/i.test(doc.name);
+                        if (isPassportDoc) {
+                          setDocWarning(warnKey, "🔍 Reading passport…");
+                          const scan = await scanPassport(file);
+                          if (!scan.ok) {
+                            setDocWarning(warnKey, `❌ ${scan.warning}`);
+                            e.target.value = "";
+                            return;
+                          }
+                          await setTravFile(activeTrav, doc.id, file);
+                          const qualityWarning = await checkImageQuality(file);
+                          setDocWarning(warnKey, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from passport — please double-check!");
+                          updateTrav(activeTrav, {
+                            fullName: scan.fullName || travellers[activeTrav].fullName,
+                            passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber,
+                            passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry,
+                            nationality: scan.nationality || travellers[activeTrav].nationality,
+                          });
+                        } else {
+                          await setTravFile(activeTrav, doc.id, file);
+                          setDocWarning(warnKey, await checkImageQuality(file));
+                        }
                       }} />
                     {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}
-                    {docWarnings[warnKey] && <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ {docWarnings[warnKey]}</p>}
+                    {docWarnings[warnKey] && (
+                      <p style={{ fontSize: 11, marginTop: 4, color: docWarnings[warnKey]?.startsWith("✨") ? "#16a34a" : docWarnings[warnKey]?.startsWith("🔍") ? "#2563eb" : "#B45309" }}>
+                        {docWarnings[warnKey]}
+                      </p>
+                    )}
                   </div>
                 );
               })}

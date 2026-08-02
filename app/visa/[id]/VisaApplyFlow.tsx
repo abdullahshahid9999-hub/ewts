@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { APPLICANT_CATEGORIES, filterDocsForApplicant, passportExpiryWarning } from "@/lib/visaApplicantCategory";
 import { checkImageQuality } from "@/lib/imageQualityCheck";
+import { scanPassport } from "@/lib/passportScan";
 
 type RequiredDoc = {
   id: string;
@@ -376,15 +377,38 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                     className="text-xs w-full"
                     onChange={async (e) => {
                       const f = e.target.files?.[0] ?? null;
-                      setFile(activeIdx, doc.id, f);
-                      if (f) setDocWarning(doc.id, await checkImageQuality(f));
+                      if (!f) return;
+                      const isPassportDoc = /passport/i.test(doc.name);
+                      if (isPassportDoc) {
+                        setDocWarning(doc.id, "🔍 Reading passport…");
+                        const scan = await scanPassport(f);
+                        if (!scan.ok) {
+                          setDocWarning(doc.id, `❌ ${scan.warning}`);
+                          e.target.value = "";
+                          return; // reject — don't attach an unreadable scan
+                        }
+                        setFile(activeIdx, doc.id, f);
+                        const qualityWarning = await checkImageQuality(f);
+                        setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
+                        updateDraft(activeIdx, {
+                          fullName: scan.fullName || draft.fullName,
+                          passportNumber: scan.passportNumber || draft.passportNumber,
+                          passportExpiry: scan.passportExpiry || draft.passportExpiry,
+                          nationality: scan.nationality || draft.nationality,
+                        });
+                      } else {
+                        setFile(activeIdx, doc.id, f);
+                        setDocWarning(doc.id, await checkImageQuality(f));
+                      }
                     }}
                   />
                   {draft.files[doc.id] && (
                     <p className="text-xs text-muted mt-1">📎 {draft.files[doc.id].name}</p>
                   )}
                   {docWarnings[doc.id] && (
-                    <p className="text-xs text-amber-700 mt-1">⚠️ {docWarnings[doc.id]}</p>
+                    <p className={`text-xs mt-1 ${docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
+                      {docWarnings[doc.id]}
+                    </p>
                   )}
                 </div>
               ))}
