@@ -19,6 +19,7 @@ const NAV = [
     section: "New Booking",
     items: [
       { href: "/agent/new-booking", icon: "➕", label: "New Booking" },
+      { href: "/agent/saved-clients", icon: "👥", label: "Saved Clients" },
     ],
   },
   {
