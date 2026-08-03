@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
+import BookingStatusTimeline from "@/components/BookingStatusTimeline";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 
 type Traveller = { fullName: string; passportNo: string; cnic: string };
@@ -22,6 +23,8 @@ type Booking = {
   children: number | null;
   infants: number | null;
   expiresAt: string | null;
+  issueRequestedAt: string | null;
+  issuedAt: string | null;
   createdAt: string;
   groupFlight: {
     airline: string; route: string; flightNo: string | null; depDate: string | null; depTime: string | null;
@@ -191,6 +194,13 @@ function BookingDetailInner() {
         </div>
         <span className={`ap-pill ap-p-${booking.status}`}>{booking.status.replace("_", " ")}</span>
       </div>
+
+      <BookingStatusTimeline
+        status={booking.status}
+        createdAt={booking.createdAt}
+        issueRequestedAt={booking.issueRequestedAt}
+        issuedAt={booking.issuedAt}
+      />
 
       {booking.expiresAt && canIssue && (
         <div className="ap-card no-print" style={{ padding: "12px 18px", marginBottom: "14px" }}>
