@@ -497,6 +497,45 @@ model AgentCommissionRate {
   @@map("agent_commission_rates")
 }
 
+// In-app notifications for the agent portal bell icon — created
+// server-side whenever something actionable happens to that agent (topup
+// approved, booking issued, etc). Read state is per-notification, not
+// dismissed globally, so the bell badge count is always accurate.
+model AgentNotification {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  title     String
+  body      String?
+  link      String?  // where clicking the notification should take them
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_notifications")
+  @@index([agentId, readAt])
+}
+
+// Passenger profiles an agent saves so they don't retype the same
+// client's details every time they book for them again.
+model AgentSavedClient {
+  id             String   @id @default(uuid())
+  agentId        String   @map("agent_id")
+  fullName       String   @map("full_name")
+  passportNumber String?  @map("passport_number")
+  cnic           String?
+  phone          String?
+  email          String?
+  dob            String?
+  passportExpiry String?  @map("passport_expiry")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_saved_clients")
+}
+
 model Agent {
   id           String   @id @default(uuid())
   agentCode    String   @unique @map("agent_code")
@@ -518,6 +557,8 @@ model Agent {
 
   bookings        AgentBooking[]
   visaApplications VisaApplication[]
+  notifications   AgentNotification[]
+  savedClients    AgentSavedClient[]
   commissionRates AgentCommissionRate[]
   transactions AgentTransaction[]
   otps         AgentOtp[]
