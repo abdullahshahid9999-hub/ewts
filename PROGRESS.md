@@ -1784,3 +1784,53 @@ cleanly.
 
 No schema changes — reuses fields already added for applicant category/
 nationality.
+
+## Agent Portal: Notifications, Timeline, Saved Clients, Bulk Booking (confirmed existing)
+
+Implemented 4 of the 5 requested features:
+1. **In-app notifications** — `AgentNotification` model, bell icon in
+   topbar (30s poll, unread badge, mark-read), triggered on topup
+   approve/reject, booking issued/cancelled, visa approved/rejected.
+2. **Booking status timeline** — `components/BookingStatusTimeline.tsx`,
+   visual pipeline (Pending → Confirmed → Issue Requested → Issued) on
+   the booking detail page, with per-step timestamps; cancelled/expired
+   shown as a distinct banner rather than forced into the pipeline.
+3. **Saved client profiles** — `AgentSavedClient` model, CRUD page
+   (`/agent/saved-clients`), and a `SavedClientPicker` dropdown wired
+   into `AgentPackageBookingWidget`'s traveller rows for instant fill.
+9. **Bulk booking** — verified already existed (group-ticket and
+   package booking forms already support multiple travellers per
+   booking); no new work needed here.
+10. **Mobile-optimized view** — not yet started; tables already scroll
+    horizontally (`.ap-tw { overflow-x: auto }`) and the shell already
+    has a 900px breakpoint, but a full pass hasn't been done.
+
+`npx tsc --noEmit`: clean (only the same pre-existing unrelated TS7031).
+
+**Pending manual migration:**
+```sql
+CREATE TABLE IF NOT EXISTS agent_notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  body TEXT,
+  link TEXT,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_agent_notifications_agent_read ON agent_notifications(agent_id, read_at);
+
+CREATE TABLE IF NOT EXISTS agent_saved_clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  passport_number TEXT,
+  cnic TEXT,
+  phone TEXT,
+  email TEXT,
+  dob TEXT,
+  passport_expiry TEXT,
+  notes TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+```
