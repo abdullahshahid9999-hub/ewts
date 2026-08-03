@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
+import SavedClientPicker from "@/components/SavedClientPicker";
 
 type RoomType = {
   id: string;
@@ -220,7 +221,11 @@ export default function AgentPackageBookingWidget({
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {travellers.map((t, i) => (
-                  <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto]" style={{ gap: 8 }}>
+                  <div key={i}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+                    <SavedClientPicker onPick={(c) => updateTraveller(i, { fullName: c.fullName, passportNo: c.passportNumber ?? "", cnic: c.cnic ?? "" })} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto]" style={{ gap: 8 }}>
                     <input
                       required={category === "umrah"}
                       placeholder={`Traveller ${i + 1} — Full Name`}
@@ -249,6 +254,7 @@ export default function AgentPackageBookingWidget({
                     >
                       −
                     </button>
+                  </div>
                   </div>
                 ))}
               </div>
