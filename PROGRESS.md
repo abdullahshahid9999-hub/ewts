@@ -1834,3 +1834,22 @@ CREATE TABLE IF NOT EXISTS agent_saved_clients (
   created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 ```
+
+## Feature #10: Mobile-Optimized View (agent portal)
+
+Focused pass rather than exhaustive per-page audit — targeted the two
+most common real overflow/crowding points across a mobile-heavy portal:
+- **Topbar** (`<480px`): "Sign Out" collapses to an icon-only button,
+  balance label hides (amount stays), so hamburger + balance + bell +
+  dark-toggle + sign-out no longer fight for one cramped row.
+- **Page headers** (`.ap-ph`, used at the top of every agent page):
+  title/subtitle and the action button now stack vertically with the
+  button full-width, instead of squeezing side-by-side and wrapping
+  badly on narrow screens.
+
+Already fine before this pass (verified, not touched): tables
+(`.ap-tw { overflow-x: auto }`), sidebar (slide-out drawer under 900px),
+My Bookings service-picker grid (5→3→2 columns), traveller-row forms
+(Tailwind `sm:` stacks to 1 column).
+
+`npx tsc --noEmit`: clean (CSS-only change, same pre-existing baseline).
