@@ -1,6 +1,7 @@
 "use client";
 
 import { useAgentAuth } from "@/lib/agentAuthClient";
+import AgentNotificationBell from "@/components/AgentNotificationBell";
 
 export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMenuToggle: () => void; dark?: boolean; onToggleDark?: () => void }) {
   const { agent, logout } = useAgentAuth();
@@ -21,6 +22,7 @@ export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMe
           {balance < 0 ? "-" : ""}PKR {Math.abs(balance).toLocaleString()}
         </span>
       </div>
+      <AgentNotificationBell />
       {onToggleDark && (
         <button className={`ap-dark-toggle${dark ? " on" : ""}`} onClick={onToggleDark} aria-label="Toggle dark mode" title={dark ? "Light mode" : "Dark mode"} />
       )}
