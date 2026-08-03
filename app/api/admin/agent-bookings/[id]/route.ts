@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
+import { notifyAgent } from "@/lib/notifyAgent";
 
 const VALID_STATUSES = ["pending", "confirmed", "issue_requested", "issued", "cancelled", "expired"];
 
@@ -83,6 +84,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: { status, ticketNumber: ticketNumber || undefined, issuedAt: isBeingIssued ? new Date() : undefined },
       });
     });
+
+  if (isBeingIssued) {
+    await notifyAgent(booking.agentId, "Ticket Issued ✈️", `Booking ${booking.bookingRef} has been issued${booking.ticketNumber ? ` — Ticket No. ${booking.ticketNumber}` : ""}.`, `/agent/bookings/${booking.id}`);
+  } else if (status === "cancelled") {
+    await notifyAgent(booking.agentId, "Booking Cancelled", `Booking ${booking.bookingRef} was cancelled.`, `/agent/bookings/${booking.id}`);
+  }
 
   return NextResponse.json({ booking });
 }

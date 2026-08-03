@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
+import { notifyAgent } from "@/lib/notifyAgent";
 
 const VALID_STATUSES = ["pending", "under_review", "applied", "approved", "rejected", "more_info_needed"];
 
@@ -44,6 +45,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
   });
+
+  if (existing.agentId && status && (status === "approved" || status === "rejected") && existing.status !== status) {
+    await notifyAgent(
+      existing.agentId,
+      status === "approved" ? "Visa Approved 🎉" : "Visa Rejected",
+      `Application ${existing.batchRef} (${existing.fullName}) was ${status}.`,
+      "/agent/bookings?service=visa"
+    );
+  }
 
   return NextResponse.json({ application });
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/apiAuth";
+import { notifyAgent } from "@/lib/notifyAgent";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin(req);
@@ -37,6 +38,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   } else {
     await prisma.paymentSlip.update({ where: { id }, data: { status, note: body?.note } });
   }
+
+  await notifyAgent(
+    slip.agentId,
+    status === "approved" ? "Top-up Approved 🎉" : "Top-up Rejected",
+    status === "approved" ? `PKR ${slip.amount.toLocaleString()} has been credited to your balance.` : (body?.note || "Your top-up request was rejected."),
+    "/agent/topup"
+  );
 
   const updated = await prisma.paymentSlip.findUnique({ where: { id } });
   return NextResponse.json({ paymentSlip: updated });
