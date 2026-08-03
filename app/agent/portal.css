@@ -320,6 +320,19 @@
   .ap-sg { grid-template-columns: 1fr 1fr; }
 }
 
+@media (max-width: 480px) {
+  /* Topbar was crowding on phones: hamburger + balance + bell + toggle +
+     "Sign Out" text all fighting for one row. Compact it down instead of
+     letting it wrap awkwardly. */
+  .ap-tbar-bal-label { display: none; }
+  .ap-tbar-bal { padding: 4px 8px; }
+  .ap-tbar-signout { padding: 6px 10px; font-size: 0; }
+  .ap-tbar-signout::before { content: '⏻'; font-size: 14px; }
+  .ap-ph { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .ap-ph > *:last-child { width: 100%; }
+  .ap-ph .ap-btn { width: 100%; text-align: center; }
+}
+
 /* ── DARK MODE ── */
 .ap-dark {
   --bg: #0D1117;
