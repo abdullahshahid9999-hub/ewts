@@ -30,6 +30,7 @@ const SECTIONS = [
   { href: "/admin/agent-bookings", title: "Agent Bookings", desc: "Review & issue bookings" },
   { href: "/admin/payment-slips", title: "Payment Slips", desc: "Approve/reject agent payments" },
   { href: "/admin/finance", title: "Finance", desc: "Revenue, commission, agent balances" },
+  { href: "/admin/invite-admins", title: "Invite Admins", desc: "Invite new admin users via email" },
 ];
 
 function DashboardInner() {

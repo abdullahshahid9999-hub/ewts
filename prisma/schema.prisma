@@ -714,10 +714,12 @@ model AdminUser {
   email        String   @unique
   passwordHash String   @map("password_hash")
   fullName     String?  @map("full_name")
-  // TOTP 2FA — totpSecret is base32 encoded, stored encrypted at rest.
-  // totpEnabled: false until admin completes setup flow (scan QR → verify code).
   totpSecret   String?  @map("totp_secret")
   totpEnabled  Boolean  @default(false) @map("totp_enabled")
+  inviteToken      String?   @map("invite_token")
+  inviteExpiresAt  DateTime? @map("invite_expires_at")
+  inviteAcceptedAt DateTime? @map("invite_accepted_at")
+  invitedByEmail   String?   @map("invited_by_email")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("admin_users")
