@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Stage = "loading" | "form" | "done" | "error";
 
-export default function InviteAcceptPage() {
+function InviteAcceptInner() {
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get("token") ?? "";
@@ -139,5 +139,13 @@ export default function InviteAcceptPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function InviteAcceptPage() {
+  return (
+    <Suspense fallback={<div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",fontFamily:"sans-serif",color:"#888"}}>Loading invitation…</div>}>
+      <InviteAcceptInner />
+    </Suspense>
   );
 }
