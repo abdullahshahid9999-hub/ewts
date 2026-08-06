@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import "../portal.css";
 
 type Step = "credentials" | "totp";
@@ -55,12 +57,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 56 }}>
-            <div style={{
-              width: 42, height: 42, borderRadius: 12,
-              background: "linear-gradient(135deg, #B8923A, #D4AF5A)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20, boxShadow: "0 4px 12px rgba(184,146,58,0.4)",
-            }}>✈</div>
+            <Image src="/images/logo.jpg" alt="East & West Travel" width={48} height={48} style={{ borderRadius: 12, objectFit: "cover", boxShadow: "0 4px 12px rgba(0,0,0,0.35)" }} />
             <div>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>East &amp; West Travel</div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Management System</div>

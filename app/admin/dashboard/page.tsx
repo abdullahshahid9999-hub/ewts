@@ -19,19 +19,35 @@ function pkr(n: number) {
   return `PKR ${n.toLocaleString()}`;
 }
 
-const SECTIONS = [
-  { href: "/admin/packages", title: "Packages", desc: "Umrah & tour packages" },
-  { href: "/admin/direct-bookings", title: "Direct Bookings", desc: "Walk-in customer bookings, no agent" },
-  { href: "/admin/visa-services", title: "Visa Services", desc: "Country visa listings" },
-  { href: "/admin/group-flights", title: "Group Flights", desc: "Group ticket listings" },
-  { href: "/admin/insurance", title: "Insurance", desc: "Companies, plans, rates" },
-  { href: "/admin/blogs", title: "Blog", desc: "Articles & posts" },
-  { href: "/admin/agents", title: "Agents", desc: "Agent accounts, commission rates" },
-  { href: "/admin/agent-bookings", title: "Agent Bookings", desc: "Review & issue bookings" },
-  { href: "/admin/payment-slips", title: "Payment Slips", desc: "Approve/reject agent payments" },
-  { href: "/admin/finance", title: "Finance", desc: "Revenue, commission, agent balances" },
-  { href: "/admin/invite-admins", title: "Invite Admins", desc: "Invite new admin users via email" },
+const SECTION_GROUPS = [
+  {
+    group: "Content & Listings",
+    items: [
+      { href: "/admin/packages",     title: "Packages",      desc: "Umrah & tour packages" },
+      { href: "/admin/visa-services", title: "Visa Services",  desc: "Country visa listings" },
+      { href: "/admin/group-flights", title: "Group Flights",  desc: "Group ticket listings" },
+      { href: "/admin/insurance",     title: "Insurance",      desc: "Companies, plans, rates" },
+      { href: "/admin/blogs",         title: "Blog",           desc: "Articles & posts" },
+    ],
+  },
+  {
+    group: "Agents & Bookings",
+    items: [
+      { href: "/admin/agents",         title: "Agents",          desc: "Agent accounts, commission rates" },
+      { href: "/admin/agent-bookings",  title: "Agent Bookings",  desc: "Review & issue bookings" },
+      { href: "/admin/payment-slips",   title: "Payment Slips",   desc: "Approve/reject agent payments" },
+      { href: "/admin/finance",         title: "Finance",         desc: "Revenue, commission, agent balances" },
+    ],
+  },
+  {
+    group: "Admin",
+    items: [
+      { href: "/admin/invite-admins",  title: "Invite Admins",  desc: "Invite new admin users via email" },
+      { href: "/admin/bank-accounts",  title: "Bank Accounts",  desc: "Manage bank account details" },
+    ],
+  },
 ];
+const SECTIONS = SECTION_GROUPS.flatMap(g => g.items);
 
 function DashboardInner() {
   const { admin, accessToken, refresh } = useAdminAuth();
@@ -83,25 +99,19 @@ function DashboardInner() {
         ))}
       </div>
 
-      <div className="adp-sg" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-        {SECTIONS.slice(0, 4).map((s) => (
-          <Link key={s.href} href={s.href} className="adp-sc" style={{ display: "block" }}>
-            <div className="adp-sc-n" style={{ fontSize: "15px" }}>{s.title}</div>
-            <div className="adp-sc-l">{s.desc}</div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="adp-card">
-        <div className="adp-ch"><h3>All Sections</h3></div>
-        <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "10px" }}>
-          {SECTIONS.map((s) => (
-            <Link key={s.href} href={s.href} className="adp-btn adp-btn-t" style={{ justifyContent: "flex-start" }}>
-              {s.title}
-            </Link>
-          ))}
+{SECTION_GROUPS.map((grp) => (
+        <div key={grp.group} className="adp-card" style={{ marginBottom: 16 }}>
+          <div className="adp-ch"><h3>{grp.group}</h3></div>
+          <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "10px" }}>
+            {grp.items.map((s) => (
+              <Link key={s.href} href={s.href} className="adp-sc" style={{ display: "block" }}>
+                <div className="adp-sc-n" style={{ fontSize: "14px" }}>{s.title}</div>
+                <div className="adp-sc-l">{s.desc}</div>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
     </>
   );
 }
