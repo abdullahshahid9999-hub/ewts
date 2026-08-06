@@ -57,14 +57,23 @@ export async function POST(req: NextRequest) {
     coverImage = await uploadToR2({ buffer, contentType: file.type, folder: "blogs" });
   }
 
+  let mobileCoverImage: string | undefined;
+  const mobileFile = form.get("mobileCoverImage");
+  if (mobileFile instanceof File) {
+    const buffer = Buffer.from(await mobileFile.arrayBuffer());
+    mobileCoverImage = await uploadToR2({ buffer, contentType: mobileFile.type, folder: "blogs" });
+  }
+
   const blog = await prisma.blog.create({
     data: {
       title,
       slug,
       category: str("category"),
       coverImage,
+      mobileCoverImage,
       excerpt: str("excerpt"),
       content: str("content"),
+      authorName: str("authorName"),
       published: form.get("published") === "true",
     },
   });

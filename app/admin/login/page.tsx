@@ -3,7 +3,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import "../portal.css";
 
 type Step = "credentials" | "totp";

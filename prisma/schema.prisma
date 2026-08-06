@@ -414,9 +414,11 @@ model Blog {
   title       String
   slug        String   @unique
   category    String?
-  coverImage  String?  @map("cover_image")
-  excerpt     String?
-  content     String?
+  coverImage        String?  @map("cover_image")
+  mobileCoverImage  String?  @map("mobile_cover_image")
+  excerpt           String?
+  content           String?
+  authorName        String?  @map("author_name")
   published   Boolean  @default(false)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
