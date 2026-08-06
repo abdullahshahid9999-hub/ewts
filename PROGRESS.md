@@ -1853,3 +1853,24 @@ My Bookings service-picker grid (5→3→2 columns), traveller-row forms
 (Tailwind `sm:` stacks to 1 column).
 
 `npx tsc --noEmit`: clean (CSS-only change, same pre-existing baseline).
+
+## Admin: Agents Add/Edit split + Deactivate, Direct Bookings tabbed sections
+
+- **Agents**: `/admin/agents` is now a list-only view. New pages:
+  `/admin/agents/new` (create), `/admin/agents/[id]/edit` (balance,
+  credit limit, tier, status, commission rates — same fields as before,
+  just its own page instead of an inline row-edit). List page also got
+  a one-click **Deactivate/Activate** button (toggles `status` between
+  `active`/`suspended` directly, with a confirm prompt on deactivate) so
+  the owner doesn't need to open the edit page just to lock an agent out.
+  Ledger page (`/admin/agents/[id]`) unchanged.
+- **Direct Bookings** (`/admin/direct-bookings`): replaced the single
+  dropdown category filter with three tabs — Umrah / World Tours / Group
+  Flights — each its own section with its own status filter, count
+  badge, and Excel export. Same underlying API
+  (`/api/admin/direct-bookings?category=...`), no schema/API changes.
+
+No new migrations. `npx tsc --noEmit`: clean on all touched files (same
+pre-existing unrelated errors as before — ledger route, agents route
+TS7031, direct-bookings `[id]`/export routes — none in the files
+touched this session).
