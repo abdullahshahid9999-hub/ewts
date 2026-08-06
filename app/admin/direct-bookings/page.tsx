@@ -25,12 +25,14 @@ type DirectBooking = {
   groupFlight: { airline: string; route: string; flightNo: string | null; depDate: string | null } | null;
 };
 
-const CATEGORIES = [
-  { value: "", label: "All (Umrah + Tours + Flights)" },
-  { value: "umrah", label: "Umrah" },
-  { value: "tours", label: "World Tours" },
-  { value: "group_ticket", label: "Group Flights" },
-];
+// Each direct-booking type gets its own section/tab instead of being
+// mixed together behind one dropdown filter.
+const SECTIONS = [
+  { value: "umrah", label: "Umrah", icon: "🕋" },
+  { value: "tours", label: "World Tours", icon: "🌍" },
+  { value: "group_ticket", label: "Group Flights", icon: "✈️" },
+] as const;
+
 const STATUSES = [
   { value: "", label: "All Statuses" },
   { value: "pending", label: "Pending" },
@@ -44,24 +46,40 @@ function pkr(n: number | null) {
 
 function DirectBookingsInner() {
   const { accessToken, refresh } = useAdminAuth();
-  const [category, setCategory] = useState("");
+  const [section, setSection] = useState<(typeof SECTIONS)[number]["value"]>("umrah");
   const [status, setStatus] = useState("");
   const [bookings, setBookings] = useState<DirectBooking[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    params.set("category", section);
     if (status) params.set("status", status);
     const res = await adminFetch(`/api/admin/direct-bookings?${params.toString()}`, accessToken, refresh);
     const data = await res.json().catch(() => ({}));
     setBookings(data.bookings ?? []);
     setLoading(false);
-  }, [category, status, accessToken, refresh]);
+  }, [section, status, accessToken, refresh]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Fetch a lightweight count per section (unfiltered by status) so tab
+  // badges stay useful even while looking at another tab.
+  const loadCounts = useCallback(async () => {
+    const entries = await Promise.all(
+      SECTIONS.map(async (s) => {
+        const res = await adminFetch(`/api/admin/direct-bookings?category=${s.value}`, accessToken, refresh);
+        const data = await res.json().catch(() => ({}));
+        return [s.value, (data.bookings ?? []).length] as const;
+      })
+    );
+    setCounts(Object.fromEntries(entries));
+  }, [accessToken, refresh]);
+
+  useEffect(() => { loadCounts(); }, [loadCounts]);
 
   async function updateStatus(id: string, newStatus: string) {
     await adminFetch(`/api/admin/direct-bookings/${id}`, accessToken, refresh, {
@@ -70,11 +88,12 @@ function DirectBookingsInner() {
       body: JSON.stringify({ status: newStatus }),
     });
     load();
+    loadCounts();
   }
 
   async function exportToExcel() {
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    params.set("category", section);
     if (status) params.set("status", status);
     const res = await adminFetch(`/api/admin/direct-bookings/export?${params.toString()}`, accessToken, refresh);
     if (!res.ok) return;
@@ -82,7 +101,7 @@ function DirectBookingsInner() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `direct-bookings-${category || "all"}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `direct-bookings-${section}-${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -92,20 +111,36 @@ function DirectBookingsInner() {
       <div className="adp-ph">
         <div>
           <h2>Direct <em>Bookings</em></h2>
-          <p>Walk-in / website customer bookings for Umrah, World Tour packages &amp; group flights — no agent involved</p>
+          <p>Walk-in / website customer bookings — no agent involved. Separate section per booking type.</p>
         </div>
       </div>
 
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px", borderBottom: "1px solid var(--a-border)" }}>
+        {SECTIONS.map((s) => (
+          <button
+            key={s.value}
+            onClick={() => setSection(s.value)}
+            className="adp-btn"
+            style={{
+              border: "none",
+              borderBottom: section === s.value ? "2px solid var(--a-gold)" : "2px solid transparent",
+              borderRadius: 0,
+              background: "transparent",
+              color: section === s.value ? "var(--a-gold)" : "inherit",
+              fontWeight: section === s.value ? 600 : 400,
+              padding: "10px 14px",
+            }}
+          >
+            {s.icon} {s.label} {counts[s.value] !== undefined && <span style={{ opacity: 0.6, fontSize: 11 }}>({counts[s.value]})</span>}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="adp-ss">
-            {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="adp-ss">
-            {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </div>
-        <button onClick={exportToExcel} className="adp-btn adp-btn-s">⬇ Export to Excel</button>
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="adp-ss">
+          {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <button onClick={exportToExcel} className="adp-btn adp-btn-s">⬇ Export {SECTIONS.find((s) => s.value === section)?.label} to Excel</button>
       </div>
 
       <div className="adp-card">
@@ -113,7 +148,7 @@ function DirectBookingsInner() {
           {loading ? (
             <p className="etd">Loading…</p>
           ) : bookings.length === 0 ? (
-            <p className="etd">No direct bookings match these filters.</p>
+            <p className="etd">No {SECTIONS.find((s) => s.value === section)?.label.toLowerCase()} direct bookings match these filters.</p>
           ) : (
             <table className="adp-table">
               <thead>
@@ -129,14 +164,6 @@ function DirectBookingsInner() {
                       <td>{b.customerName ?? "—"}</td>
                       <td>
                         {b.package?.name ?? (b.groupFlight ? `${b.groupFlight.airline} — ${b.groupFlight.route}` : "—")}
-                        {b.package?.category && (
-                          <span className="adp-pill" style={{ marginLeft: "6px" }}>
-                            {b.package.category === "umrah" ? "Umrah" : "World Tour"}
-                          </span>
-                        )}
-                        {b.groupFlight && (
-                          <span className="adp-pill" style={{ marginLeft: "6px" }}>Group Flight</span>
-                        )}
                       </td>
                       <td>
                         {b.roomTypeLabel ?? b.travelClass ?? "—"}
