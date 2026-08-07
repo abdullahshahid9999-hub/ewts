@@ -32,8 +32,8 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
         <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight">
           <Image src="/images/logo.png" alt="East & West Travel Services" width={44} height={44} className="rounded-md" />
-          <span className="hidden xs:inline">East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travel Services</span></span>
-          <span className="xs:hidden">E<span className="text-[var(--lp-brass)] italic">&amp;</span>W</span>
+          <span className="hidden sm:inline">East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travel Services</span></span>
+          <span className="sm:hidden text-sm">eastwestpk</span>
         </Link>
 
         {/* Desktop nav */}
