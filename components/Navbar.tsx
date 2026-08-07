@@ -31,8 +31,8 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
         <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight">
-          <Image src="/images/logo.jpg" alt="East & West Travel" width={36} height={36} className="rounded-md" />
-          <span className="hidden xs:inline">East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travels</span></span>
+          <Image src="/images/logo.png" alt="East & West Travel Services" width={44} height={44} className="rounded-md" />
+          <span className="hidden xs:inline">East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travel Services</span></span>
           <span className="xs:hidden">E<span className="text-[var(--lp-brass)] italic">&amp;</span>W</span>
         </Link>
 
@@ -142,8 +142,8 @@ export default function Navbar() {
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-border bg-[var(--lp-ink)]">
           <div className="flex items-center gap-2">
-            <Image src="/images/logo.jpg" alt="East & West Travel" width={28} height={28} className="rounded-md" />
-            <span className="font-display text-base font-semibold text-white">East &amp; West</span>
+            <Image src="/images/logo.png" alt="East & West Travel Services" width={36} height={36} className="rounded-md" />
+            <span className="font-display text-base font-semibold text-white">East &amp; West Travel Services</span>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
