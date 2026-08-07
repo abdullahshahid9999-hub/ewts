@@ -7,6 +7,8 @@ import TrustpilotBadge from "@/components/TrustpilotBadge";
 import SearchWidget from "@/components/landing/SearchWidget";
 import { getAllFacets } from "@/lib/filterFacets";
 import { waLink } from "@/lib/whatsapp";
+import LogoScroll from "@/components/LogoScroll";
+import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 
 export const revalidate = 120;
 
@@ -138,7 +140,7 @@ export default async function Home() {
           <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(14,42,38,0.88) 0%, rgba(14,42,38,0.72) 45%, var(--lp-sand) 100%)" }} />
         </div>
 
-        <div className="relative max-w-5xl mx-auto px-6 pt-16 pb-20 sm:pt-28 sm:pb-32 lg:pt-36 lg:pb-40 text-center">
+        <div className="relative max-w-5xl mx-auto px-6 pt-10 pb-12 sm:pt-16 sm:pb-16 lg:pt-20 lg:pb-20 text-center">
           <span className="lp-rise lp-rise-1 inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase px-4 py-2 rounded-full mb-7" style={{ color: "var(--lp-brass-light)", background: "rgba(255,253,248,0.08)", border: "1px solid rgba(212,169,79,0.35)" }}>
             📍 Faisalabad&apos;s Trusted Travel Partner · Umrah Ministry Approved
           </span>
@@ -153,10 +155,10 @@ export default async function Home() {
 
           <SearchWidget facets={{ umrah: { destinations: facets.umrah.destinations }, tours: { destinations: facets.tours.destinations }, groupTickets: { routes: facets.groupTickets.routes }, visa: { countries: facets.visa.countries } }} />
 
-          <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-10 gap-y-4 mt-12">
+          <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-8 gap-y-3 mt-8">
             {HERO_STATS.map((s) => (
-              <div key={s.label}>
-                <div className="font-display text-2xl font-semibold" style={{ color: "var(--lp-ivory)" }}>{s.value}</div>
+              <div key={s.label} className="text-center">
+                <div className="font-display text-xl font-semibold" style={{ color: "var(--lp-ivory)" }}>{s.value}</div>
                 <div className="text-xs uppercase tracking-wide" style={{ color: "rgba(255,253,248,0.55)" }}>{s.label}</div>
               </div>
             ))}
@@ -164,7 +166,7 @@ export default async function Home() {
         </div>
 
         {/* Destination chip strip */}
-        <div className="relative py-5" style={{ borderTop: "1px solid var(--lp-border)" }}>
+        <div className="relative py-3" style={{ borderTop: "1px solid var(--lp-border)" }}>
           <div className="max-w-6xl mx-auto px-6 flex flex-wrap gap-3 justify-center">
             {DEST_CHIPS.map((chip) => (
               <span
@@ -179,6 +181,7 @@ export default async function Home() {
         </div>
       </section>
 
+      <LogoScroll />
       <TrustStrip />
 
       {/* FEATURED PACKAGES */}
@@ -364,6 +367,7 @@ export default async function Home() {
         </p>
       </section>
 
+      <GoogleReviewsSection />
       <Footer />
     </>
   );

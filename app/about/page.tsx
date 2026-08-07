@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
 import Link from "next/link";
@@ -356,6 +357,7 @@ export default function AboutPage() {
         </div>
       </Reveal>
 
+      <GoogleReviewsSection />
       <Footer />
     </>
   );
