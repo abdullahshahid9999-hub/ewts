@@ -554,6 +554,8 @@ model Agent {
   // successful login. lockedUntil: if set and in the future, login is blocked.
   loginAttempts Int     @default(0) @map("login_attempts")
   lockedUntil  DateTime? @map("locked_until")
+  totpSecret   String?  @map("totp_secret")
+  totpEnabled  Boolean  @default(false) @map("totp_enabled")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
