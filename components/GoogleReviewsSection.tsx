@@ -87,7 +87,7 @@ export default function GoogleReviewsSection() {
                 <p style={{ fontWeight: 800, fontSize: 22, margin: 0, color: "#111" }}>{RATING}<span style={{ color: "#f59e0b" }}>★</span></p>
                 <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>{TOTAL} Google Reviews</p>
               </div>
-              <a href="https://www.google.com/maps?cid=YOUR_CID" target="_blank" rel="noopener noreferrer"
+              <a href="https://www.google.com/search?q=east+and+west+travel+services#lrd=0x3922681fbfba76cf:0x170ae59c50dbd903,1" target="_blank" rel="noopener noreferrer"
                 style={{ marginLeft: "auto", fontSize: 11, color: "var(--lp-brass,#B8862E)", fontWeight: 700, textDecoration: "underline" }}>
                 See all →
               </a>
@@ -112,7 +112,7 @@ export default function GoogleReviewsSection() {
 
             {/* Feedback button */}
             <a
-              href="https://g.page/r/YOUR_REVIEW_LINK/review"
+              href="https://reviewthis.biz/eastwestpk"
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 18, background: "#fff", border: "2px solid var(--lp-brass,#B8862E)", color: "var(--lp-brass,#B8862E)", fontWeight: 700, fontSize: 13, padding: "10px 22px", borderRadius: 10, textDecoration: "none", transition: "all 0.15s" }}
@@ -128,7 +128,7 @@ export default function GoogleReviewsSection() {
             </h3>
             <div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #e5e7eb", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3402.2!2d73.0885!3d31.4504!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzHCsDI3JzAxLjQiTiA3M8KwMDUnMTguNiJF!5e0!3m2!1sen!2spk!4v1699999999999!5m2!1sen!2spk"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3401.5!2d73.0885!3d31.4504!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3922681fbfba76cf:0x170ae59c50dbd903!2sEast+%26+West+Travel+Services!5e0!3m2!1sen!2spk!4v1754000000000!5m2!1sen!2spk"
                 width="100%"
                 height="300"
                 style={{ border: 0, display: "block" }}
@@ -139,7 +139,7 @@ export default function GoogleReviewsSection() {
               />
             </div>
             <a
-              href="https://maps.google.com/?q=East+West+Travel+Services+Faisalabad"
+              href="https://google.com/maps/place/East+%26+West+Travel+Services/data=!4m2!3m1!1s0x0:0x170ae59c50dbd903"
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12, fontSize: 12, color: "#4b5563", textDecoration: "none" }}
