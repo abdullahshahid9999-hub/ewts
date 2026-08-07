@@ -8,7 +8,6 @@ import SearchWidget from "@/components/landing/SearchWidget";
 import { getAllFacets } from "@/lib/filterFacets";
 import { waLink } from "@/lib/whatsapp";
 import LogoScroll from "@/components/LogoScroll";
-import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import ReviewScrollSection from "@/components/ReviewScrollSection";
 
 export const revalidate = 120;
@@ -344,7 +343,6 @@ export default async function Home() {
         </p>
       </section>
 
-      <GoogleReviewsSection />
       <Footer />
     </>
   );
