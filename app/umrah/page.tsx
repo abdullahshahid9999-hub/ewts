@@ -48,24 +48,24 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
-        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-14 pb-12">
+        <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">
           Spiritual Journeys
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+        <h1 className="font-display text-3xl md:text-5xl font-semibold mb-3">
           Umrah &amp; Hajj <span className="italic text-[var(--lp-brass)]">Packages</span>
         </h1>
-        <p className="text-white/70 max-w-xl mx-auto mb-4">
+        <p className="text-white/70 max-w-xl mx-auto mb-4 text-sm md:text-base">
           Perform your sacred duty with comfort and complete peace of mind
         </p>
-        <p className="text-white/50 text-sm">
+        <p className="text-white/50 text-xs">
           <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
           <span className="mx-2">/</span>
           <span>Umrah &amp; Hajj</span>
         </p>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 py-10">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <SearchResultsNotice q={q} basePath="/umrah" />
         <div className="flex gap-8 items-start">
           <Suspense fallback={null}>
@@ -81,58 +81,89 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
 
           <div className="flex-1 min-w-0">
             {packages.length === 0 ? (
-              <div className="max-w-md mx-auto text-center bg-white border border-border rounded-2xl p-10">
-                <p className="text-4xl mb-4">🕌</p>
-                <h3 className="font-display text-xl font-semibold mb-2">{q ? "No Matching Packages" : "No Packages Found"}</h3>
-                <p className="text-muted text-sm mb-6">
+              <div className="max-w-sm mx-auto text-center bg-white border border-border rounded-2xl p-8 shadow-sm">
+                <p className="text-5xl mb-4">🕌</p>
+                <h3 className="font-display text-xl font-semibold mb-2">
+                  {q ? "No Matching Packages" : "No Packages Found"}
+                </h3>
+                <p className="text-muted text-sm mb-6 leading-relaxed">
                   {q ? `We couldn't find a package matching "${q}". ` : ""}Contact us for custom Umrah &amp; Hajj quotes, or try clearing a filter.
                 </p>
                 <a
                   href={waLink("Assalam o Alaikum! Please share Umrah package details.")}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+                  className="inline-flex items-center gap-2 bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-5 py-3 rounded-lg shadow-md transition-colors text-sm"
                 >
                   Ask on WhatsApp
                 </a>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {packages.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col"
+                    className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 flex flex-col"
                   >
+                    {/* Card image */}
                     <div className="relative h-44 bg-surface">
                       {pkg.imageUrl && (
                         <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
                       )}
-                      <div className="absolute top-3 left-3 flex gap-2">
-                        <span className="bg-[var(--lp-ink)] text-white text-xs font-semibold px-2 py-1 rounded">Umrah</span>
+                      {!pkg.imageUrl && (
+                        <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-30">🕌</div>
+                      )}
+                      <div className="absolute top-3 left-3 flex gap-1.5">
+                        <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
                         {pkg.featured && (
-                          <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded">Featured</span>
+                          <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>
                         )}
                       </div>
                     </div>
-                    <div className="p-5 flex flex-col flex-1">
-                      <h3 className="font-semibold text-lg mb-1">{pkg.name}</h3>
-                      <p className="text-muted text-sm mb-2">
-                        {pkg.duration} {pkg.destination ? `· ${pkg.destination}` : ""}
-                      </p>
-                      {pkg.hotels && <p className="text-muted text-sm mb-2">Hotels: {pkg.hotels}</p>}
+
+                    {/* Card body */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="font-semibold text-base leading-snug mb-1">{pkg.name}</h3>
+
+                      {/* Meta row */}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted mb-3">
+                        {pkg.duration && (
+                          <span className="flex items-center gap-1">🗓️ {pkg.duration}</span>
+                        )}
+                        {pkg.destination && (
+                          <span className="flex items-center gap-1">📍 {pkg.destination}</span>
+                        )}
+                        {pkg.airline && (
+                          <span className="flex items-center gap-1">✈️ {pkg.airline}</span>
+                        )}
+                      </div>
+
+                      {pkg.hotels && (
+                        <p className="text-xs text-muted mb-2 flex items-start gap-1">
+                          <span>🏨</span>
+                          <span>{pkg.hotels}</span>
+                        </p>
+                      )}
                       {pkg.includes && (
-                        <p className="text-sm mb-3">
-                          <span className="font-semibold">What&apos;s Included: </span>
+                        <p className="text-xs mb-3 line-clamp-2 text-text2">
+                          <span className="font-semibold">Includes: </span>
                           {pkg.includes}
                         </p>
                       )}
-                      <div className="mt-auto flex items-center justify-between pt-2">
-                        <span className="font-display text-xl font-semibold text-[var(--lp-brass)]">
-                          {pkg.price}
-                          <span className="text-muted text-xs font-sans font-normal ml-1">per person</span>
-                        </span>
+
+                      {/* Price + CTA */}
+                      <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                        <div>
+                          <span className="font-display text-xl font-semibold text-[var(--lp-brass)]">
+                            {pkg.price}
+                          </span>
+                          <span className="text-muted text-xs font-sans font-normal ml-1">/ person</span>
+                        </div>
                         {pkg.slug ? (
-                          <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="text-sm font-semibold text-[var(--lp-brass)] hover:underline">
+                          <Link
+                            href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`}
+                            className="text-xs font-bold text-white bg-[var(--lp-ink)] hover:bg-[var(--lp-ink-light)] px-3 py-2 rounded-lg transition-colors shrink-0"
+                          >
                             View Details →
                           </Link>
                         ) : (
@@ -140,9 +171,9 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                             href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-semibold text-[var(--lp-brass)] hover:underline"
+                            className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors shrink-0"
                           >
-                            Book This Package on WhatsApp →
+                            Book Now →
                           </a>
                         )}
                       </div>
@@ -156,13 +187,13 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
       </section>
 
       {/* CTA */}
-      <section className="bg-[var(--surface)] text-center py-16 px-6">
+      <section className="bg-[var(--surface)] text-center py-14 px-6">
         <p className="font-semibold mb-4">Questions? We reply instantly on WhatsApp</p>
         <a
           href={waLink("Assalam o Alaikum! I have a question.")}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
+          className="inline-flex items-center gap-2 bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 py-3 rounded-lg shadow-md transition-colors"
         >
           Chat on WhatsApp
         </a>
