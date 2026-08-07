@@ -8,7 +8,7 @@ import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
 // Preview what the next Agent ID will look like
-function useNextAgentCodePreview(accessToken: string | null, refresh: () => Promise<void>) {
+function useNextAgentCodePreview(accessToken: string | null, refresh: () => Promise<string | null>) {
   const [preview, setPreview] = useState<string | null>(null);
   useEffect(() => {
     if (!accessToken) return;
