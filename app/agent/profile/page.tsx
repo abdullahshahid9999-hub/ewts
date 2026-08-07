@@ -132,6 +132,19 @@ function ProfileInner() {
           </button>
         </form>
       </div>
+
+      {/* 2FA Setup Card */}
+      <div className="ap-card">
+        <div className="ap-ch"><h3>Two-Factor Authentication</h3></div>
+        <div style={{ padding: "16px 18px" }}>
+          <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 14 }}>
+            Add an extra layer of security to your account. Once enabled, you&apos;ll need a 6-digit code from Google Authenticator every time you log in.
+          </p>
+          <a href="/agent/2fa-setup" className="ap-btn ap-btn-gold" style={{ display: "inline-block", textDecoration: "none" }}>
+            Manage 2FA →
+          </a>
+        </div>
+      </div>
     </>
   );
 }

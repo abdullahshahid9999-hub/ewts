@@ -12,6 +12,8 @@ export default function AgentLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totpCode, setTotpCode] = useState("");
+  const [step, setStep] = useState<"creds" | "totp">("creds");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,8 +21,9 @@ export default function AgentLoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const err = await login(email, password);
+    const err = await login(email, password, step === "totp" ? totpCode : undefined);
     setSubmitting(false);
+    if (err === "__2FA_REQUIRED__") { setStep("totp"); return; }
     if (err) { setError(err); return; }
     router.push("/agent/dashboard");
   }
@@ -81,14 +84,27 @@ export default function AgentLoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="ap-field">
-                <label>Email Address</label>
-                <input type="email" required placeholder="agent@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-              </div>
-              <div className="ap-field">
-                <label>Password</label>
-                <input type="password" required placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-              </div>
+              {step === "creds" ? (<>
+                <div className="ap-field">
+                  <label>Email Address</label>
+                  <input type="email" required placeholder="agent@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                </div>
+                <div className="ap-field">
+                  <label>Password</label>
+                  <input type="password" required placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                </div>
+              </>) : (
+                <div className="ap-field">
+                  <label>Authenticator Code</label>
+                  <input type="text" inputMode="numeric" maxLength={6} autoFocus required placeholder="000000"
+                    value={totpCode} onChange={(e) => setTotpCode(e.target.value)}
+                    style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.3em", textAlign: "center" }} />
+                  <button type="button" onClick={() => { setStep("creds"); setTotpCode(""); setError(null); }}
+                    style={{ fontSize: 12, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>
+                    ← Use different account
+                  </button>
+                </div>
+              )}
 
               {error && (
                 <p className="rounded-lg px-3 py-2 text-xs font-medium" style={{ background: "#FEF2F2", color: "var(--red)", border: "1px solid #FECACA" }}>
@@ -102,7 +118,7 @@ export default function AgentLoginPage() {
                 className="w-full rounded-lg py-3 text-sm font-bold text-white transition disabled:opacity-70"
                 style={{ background: "var(--navy)" }}
               >
-                {submitting ? "Signing in…" : "Sign In"}
+                {submitting ? (step === "totp" ? "Verifying…" : "Signing in…") : (step === "totp" ? "Verify Code" : "Sign In")}
               </button>
             </form>
           </div>

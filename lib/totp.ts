@@ -2,8 +2,15 @@ import * as OTPAuth from "otpauth";
 import { createHmac, randomBytes } from "crypto";
 
 // Generate a new TOTP secret for an admin user
+// Must be valid Base32 (RFC 4648): chars A-Z and 2-7 only, length multiple of 8
 export function generateTotpSecret(): string {
-  return randomBytes(20).toString("base64").replace(/[^A-Z2-7]/gi, "A").slice(0, 32).toUpperCase();
+  const BASE32_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const bytes = randomBytes(20);
+  let result = "";
+  for (let i = 0; i < 32; i++) {
+    result += BASE32_CHARS[bytes[i % 20] % 32];
+  }
+  return result;
 }
 
 // Generate the QR code URI for Google Authenticator
@@ -27,6 +34,6 @@ export function verifyTotp(secret: string, token: string): boolean {
     period: 30,
     secret: OTPAuth.Secret.fromBase32(secret),
   });
-  const delta = totp.validate({ token, window: 1 });
+  const delta = totp.validate({ token, window: 2 });
   return delta !== null;
 }

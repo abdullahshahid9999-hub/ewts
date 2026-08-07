@@ -16,7 +16,7 @@ type AgentAuthContextValue = {
   agent: Agent | null;
   accessToken: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<string | null>;
+  login: (email: string, password: string, totpCode?: string) => Promise<string | null>;
   logout: () => Promise<void>;
   refresh: () => Promise<string | null>;
 };
@@ -54,17 +54,16 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
     tryRefresh();
   }, [tryRefresh]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, totpCode?: string) => {
     const res = await fetch("/api/agent/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, ...(totpCode ? { totpCode } : {}) }),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      return data?.error ?? "Login failed.";
-    }
+    if (res.ok && data.requires2FA) return "__2FA_REQUIRED__";
+    if (!res.ok) return data?.error ?? "Login failed.";
     setAccessToken(data.accessToken);
     setAgent(data.agent);
     return null;

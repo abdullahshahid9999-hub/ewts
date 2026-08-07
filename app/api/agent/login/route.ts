@@ -64,6 +64,15 @@ export async function POST(req: NextRequest) {
     data: { loginAttempts: 0, lockedUntil: null },
   });
 
+  // 2FA check
+  if (agent.totpEnabled && agent.totpSecret) {
+    const totpCode = typeof body?.totpCode === "string" ? body.totpCode.trim() : "";
+    if (!totpCode) return NextResponse.json({ requires2FA: true }, { status: 200 });
+    const { verifyTotp } = await import("@/lib/totp");
+    if (!verifyTotp(agent.totpSecret, totpCode))
+      return NextResponse.json({ error: "Invalid 2FA code. Try again." }, { status: 401 });
+  }
+
   const accessToken = signAccessToken({ sub: agent.id, role: "agent" });
   const refreshToken = signRefreshToken({ sub: agent.id, role: "agent" });
 
