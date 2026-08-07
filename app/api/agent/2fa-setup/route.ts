@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const agent = await requireAgent(req);
   if (!agent) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const dbAgent = await prisma.agent.findUnique({ where: { id: agent.id } });
+  const dbAgent = await prisma.agent.findUnique({ where: { id: agent.id }, select: { id: true, email: true, totpEnabled: true, totpSecret: true } });
   if (!dbAgent) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const secret = generateTotpSecret();
@@ -49,7 +49,7 @@ export async function DELETE(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const { code } = body ?? {};
 
-  const dbAgent = await prisma.agent.findUnique({ where: { id: agent.id } });
+  const dbAgent = await prisma.agent.findUnique({ where: { id: agent.id }, select: { id: true, email: true, totpEnabled: true, totpSecret: true } });
   if (!dbAgent?.totpSecret) return NextResponse.json({ error: "2FA not enabled." }, { status: 400 });
 
   if (!verifyTotp(dbAgent.totpSecret, String(code)))

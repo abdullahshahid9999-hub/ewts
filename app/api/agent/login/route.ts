@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const genericError = () =>
     NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
 
-  const agent = await prisma.agent.findUnique({ where: { email } });
+  const agent = await prisma.agent.findUnique({ where: { email }, select: { id: true, email: true, agentCode: true, fullName: true, passwordHash: true, status: true, tier: true, balance: true, creditLimit: true, loginAttempts: true, lockedUntil: true, totpEnabled: true, totpSecret: true } });
   if (!agent) return genericError();
 
   if (agent.status !== "active")
