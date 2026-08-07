@@ -29,7 +29,7 @@ export default async function BlogIndexPage({ searchParams }: { searchParams: Pr
 
       <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
         <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">Travel Stories &amp; Tips</p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+        <h1 className="font-display text-3xl md:text-5xl font-semibold mb-4">
           Our Travel <span className="italic text-[var(--lp-brass)]">Blog</span>
         </h1>
         <p className="text-white/70 max-w-xl mx-auto mb-4">Destinations, tips, Umrah guides, and travel inspiration — all in one place.</p>

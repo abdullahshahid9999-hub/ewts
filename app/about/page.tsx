@@ -100,7 +100,7 @@ export default function AboutPage() {
             </span>
           </Reveal>
           <Reveal delay={0.1}>
-            <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight mb-5">
+            <h1 className="font-display text-3xl md:text-5xl font-semibold leading-tight mb-5">
               Your Trusted <span className="italic" style={{ color: "var(--lp-brass-light,#D4A94F)" }}>Travel</span> Partner
             </h1>
           </Reveal>

@@ -144,7 +144,7 @@ export default async function Home() {
           <span className="lp-rise lp-rise-1 inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase px-4 py-2 rounded-full mb-7" style={{ color: "var(--lp-brass-light)", background: "rgba(255,253,248,0.08)", border: "1px solid rgba(212,169,79,0.35)" }}>
             📍 Faisalabad&apos;s Trusted Travel Partner · Umrah Ministry Approved
           </span>
-          <h1 className="lp-rise lp-rise-1 font-display text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold leading-tight mb-5" style={{ color: "var(--lp-ivory)" }}>
+          <h1 className="lp-rise lp-rise-1 font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold leading-tight mb-5" style={{ color: "var(--lp-ivory)" }}>
             Where would you<br />
             <span className="italic" style={{ color: "var(--lp-brass-light)" }}>like to go?</span>
           </h1>
@@ -185,7 +185,7 @@ export default async function Home() {
       <TrustStrip />
 
       {/* FEATURED PACKAGES */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
+      <section className="max-w-6xl mx-auto px-6 py-10 sm:py-20">
         <div className="text-center mb-10">
           <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">
             Hand-Picked For You
@@ -251,7 +251,7 @@ export default async function Home() {
       </section>
 
       {/* WHY CHOOSE US */}
-      <section className="bg-surface py-20">
+      <section className="bg-surface py-10 sm:py-20">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10">
             <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">Why Choose Us</p>
@@ -287,7 +287,7 @@ export default async function Home() {
       <ReviewScrollSection />
 
       {/* FAQ */}
-      <section className="bg-surface py-20">
+      <section className="bg-surface py-10 sm:py-20">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-10">
             <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">FAQ</p>
@@ -310,8 +310,8 @@ export default async function Home() {
       </section>
 
       {/* FINAL CTA */}
-      <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <h2 className="font-display text-4xl font-semibold mb-4">
+      <section className="max-w-3xl mx-auto px-6 py-12 sm:py-24 text-center">
+        <h2 className="font-display text-3xl sm:text-4xl font-semibold mb-4">
           Ready to Plan Your <span className="italic text-gold">Next Journey?</span>
         </h2>
         <p className="text-muted mb-8">

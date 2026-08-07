@@ -52,7 +52,7 @@ export default async function ToursPage({ searchParams }: { searchParams: Promis
         <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
           World Tours
         </p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
+        <h1 className="font-display text-3xl md:text-5xl font-semibold mb-4">
           World <span className="italic text-[var(--lp-brass)]">Tour Packages</span>
         </h1>
         <p className="text-white/70 max-w-xl mx-auto mb-4">

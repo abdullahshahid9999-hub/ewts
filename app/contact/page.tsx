@@ -95,7 +95,7 @@ export default function ContactPage() {
       {/* HERO */}
       <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-20 pb-16">
         <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">Get In Touch</p>
-        <h1 className="font-display text-4xl md:text-5xl font-semibold mb-6">
+        <h1 className="font-display text-3xl md:text-5xl font-semibold mb-6">
           Let&apos;s Plan Your <span className="italic text-[var(--lp-brass)]">Dream Journey</span>
         </h1>
         <p className="text-white/70 max-w-2xl mx-auto">
