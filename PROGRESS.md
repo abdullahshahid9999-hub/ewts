@@ -1,926 +1,214 @@
-# EWTS Rebuild — Progress Notes
+# EWTS Platform — Progress Log
 
-## ✅ DB MIGRATIONS — owner confirmed these have been run
-The six `ALTER TABLE` statements below were pending across several
-sessions; owner confirmed running them directly. Not independently
-verified from this sandbox (still can't reach the DB — see next section),
-but taking the owner's word for it. If any save on flight sectors, child
-fare, group-flight arrival time/region/trip type, or bank accounts still
-fails with a column-not-found error, that's the first thing to re-check.
+Full development history of the East & West Travel Services Next.js platform (`eastwestpk.com`). Each entry documents what was built, any schema changes, and pending migration SQL.
+
+---
+
+## Current Stack
+- **Next.js 15** App Router, TypeScript
+- **Tailwind CSS v4** + custom CSS design tokens
+- **Prisma 6** ORM → PostgreSQL on Render (Basic 256MB)
+- **Cloudflare R2** for all image/file uploads
+- **Resend** for transactional email
+- **JWT** auth — access token in React state, refresh token in httpOnly cookie
+- **TOTP** 2FA via `otplib` + `qrcode`
+- **Framer Motion** for scroll-reveal animations
+- **tesseract.js** + `mrz` for client-side passport OCR
+
+---
+
+## Feature Log
+
+### Foundation
+- Next.js 15 App Router scaffold, Prisma + PostgreSQL setup, Tailwind v4, Cloudflare R2 integration, Resend email, JWT auth (agent + admin), bcrypt password hashing, refresh token rotation.
+
+---
+
+### Public Site
+
+**Home Page**
+- Emerald/brass design token system, ticket-stub search widget, per-service filter sidebars with auto-applying checkboxes, scroll-reveal animations via Framer Motion, Trustpilot badge.
+
+**Umrah Packages**
+- Package listing with room type filter (Quad/Triple/Double/Single inline to package creation), seat-hold booking modal (2hr atomic hold), auto-email confirmation on booking.
+
+**World Tours**
+- Tour package listing + detail pages, per-room-type pricing, booking flow.
+
+**Group Flights**
+- Nested airline → route → flight table, filters (region, trip type, departure date, airline), B2C booking modal with PNR capture + 2hr seat hold + auto-email.
+
+**Insurance**
+- Live premium calculator, booking form with traveller count.
+
+**Visa**
+- Per-traveller wizard, passport OCR auto-fill (tesseract.js + MRZ parsing), image quality pre-check, category/nationality scoped document requirements.
+
+**Blog**
+- Admin-managed articles with R2 image upload.
+
+**About**
+- Hero slideshow, zigzag milestone timeline (2004–2026).
+
+---
+
+### Agent Portal
+
+**Auth**
+- JWT login with bcrypt verify, httpOnly refresh cookie, 15min access token, 30-day refresh, brute-force lockout (5 attempts → 15min lock), password reset via email token.
+- **TOTP 2FA** — setup (QR code), enable/disable, verified at login with `__2FA_REQUIRED__` flow.
+- **Staff Sub-User Login** — separate `agent_user` JWT role, `loginAsSubUser()` in `agentAuthClient`, "Staff Login" tab on login page. Sub-users share parent agency balance/bookings/commission.
+
+**Dashboard**
+- Prominent "Amount Payable" card (negative = owes office), date-range booking stats.
+
+**My Bookings**
+- Unified page — all service types, status filter, visual booking status timeline, booking detail expand.
+
+**New Booking Hub**
+- Cards routing to per-service booking pages.
+
+**Per-Service Booking Pages**
+- `/agent/umrah` — room type select, customer capture, sell price
+- `/agent/tours` — tour + room type, traveller details
+- `/agent/group-flights` — sticky live bill panel, OTP-gated issue, PNR expiry countdown, Print with/without Fare options, multi-leg aware
+- `/agent/insurance` — plan select, sell price, traveller count
+- `/agent/visa` — per-traveller wizard, passport OCR, category/nationality scoped docs
+
+**Print Ticket**
+- `/agent/bookings/[id]/print` — exact airline-ticket layout (agency logo, barcode, passenger table, itinerary table, T&Cs), pending=amber/issued=green status, multi-leg aware.
+
+**Saved Clients**
+- Client profile management with quick-fill on booking forms.
+
+**Payment Slip (Top-up)**
+- Agent submits bank transfer confirmation slip (image upload to R2), admin approves → balance credited.
+
+**Finance / Ledger**
+- Agent transaction history, running balance.
+
+**Profile + 2FA**
+- Profile edit, 2FA setup QR, enable/disable TOTP.
+
+**Notifications**
+- In-app bell icon, 30s polling, marks read on open. Triggered on: topup approval, booking issuance, visa decision.
+
+**Mobile Optimisation**
+- Topbar collapses at <480px (icon-only sign out, balance label hidden), page headers stack vertically, tables scroll horizontally.
+
+---
+
+### Admin Panel
+
+**Agents**
+- List view with one-click Deactivate/Activate toggle.
+- `/admin/agents/new` — create agent.
+- `/admin/agents/[id]/edit` — 4-section layout:
+  1. **Agency Info** — name, phone, agency name, address, DTS license toggle + number, tier, status
+  2. **Financial** — balance (negative = owes), credit limit
+  3. **Commission Rates** — visual cards per service (Umrah, Group Ticket, Insurance, World Tour, Visa Services), set/update inline
+  4. **Staff / Sub-Users** — add staff members with designation, set permissions per user (checkbox toggles), deactivate/activate, delete. `canIssueTickets` always forced OFF for sub-users.
+- `/admin/agents/[id]` — full ledger (transactions + payment slips).
+
+**Agent Bookings**
+- All agent bookings across services, approve/issue workflow (ticket number required for group flights), OTP confirmation.
+
+**Direct Bookings**
+- Walk-in / public website bookings, tabbed by service type (Umrah / World Tours / Group Flights), per-tab status filter + count badge + Excel export.
+
+**Packages**
+- Umrah + tour package CRUD, room-type pricing (Quad/Triple/Double/Single) inline with shared `lib/packagePrice.ts` helper.
+
+**Group Flights**
+- Multi-leg flight creation, seat inventory management, region/trip-type tagging.
+
+**Visa Services**
+- Category + nationality document configuration, discount tiers.
+
+**Visa Applications**
+- Pipeline view — status tracking, tracking link/number, final document upload + email send.
+
+**Insurance**
+- Company → Plan → Rate matrix CRUD, application review.
+
+**Payment Slips**
+- Approve (credits agent balance) / reject flow.
+
+**Finance**
+- Real-time total receivables headline, date-range filtering.
+
+**Bank Accounts**
+- Manage bank accounts shown to agents on topup page.
+
+**Blogs**
+- Create/edit/delete posts with R2 image upload.
+
+**Suppliers**
+- Supplier management + transaction ledger.
+
+**Admin 2FA**
+- Admin TOTP setup.
+
+---
+
+## Pending Migration SQL
+
+Run in Render Dashboard → PostgreSQL → Connect before next deploy if not already applied:
+
 ```sql
-ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
-ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
-ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
-ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
-ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
-```
-
-## Blocker on item 1 (build verification) — READ THIS FIRST
-This sandbox's network egress is allowlisted to specific domains and does
-**not** include `binaries.prisma.sh`. `npx prisma generate` fails with
-`403 Forbidden` fetching the schema-engine binary, every time, regardless of
-`PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING`. This is the same limitation the
-previous session hit — it is a sandbox constraint, not a code problem.
-
-**Action needed from a human or an unrestricted environment**: run
-```
-npm install && npx prisma generate && npm run build
-```
-on a machine (or CI runner, e.g. Render's build step) that can reach
-binaries.prisma.sh, and fix whatever TypeScript errors surface. I wrote all
-new code below against the schema and existing conventions carefully, but
-none of it has been through `tsc`/`next build` in this session — treat it as
-"written but not yet build-verified," same caveat as before.
-
-npm install itself works fine (registry.npmjs.org is allowlisted) — only the
-Prisma engine binary download is blocked.
-
-## Done this session
-
-### Public website (item 2) — complete
-- `/umrah`, `/tours` — from `Package` model, filtered by category
-- `/group-tickets` — from `GroupFlight`, shows seats-left / sold-out
-- `/visa` — from `VisaService`
-- `/insurance` — three-level Company → Plan → Rate, rates ordered by
-  `pricePkr` ascending
-- `/blog`, `/blog/[slug]` — from `Blog`, `published: true` only
-- `/about`, `/contact` — static content, real address/phone from Footer
-- Every card has a WhatsApp CTA via `waLink()`, no login/booking forms
-  anywhere on the public site.
-
-### Agent portal (item 3) — backend foundation only, no UI pages yet
-- `lib/apiAuth.ts` — `requireAgent`/`requireAdmin` helpers (verify JWT +
-  re-check DB row status), `stripAgentWriteOnlyFields()` to guarantee
-  balance/creditLimit/tier/commission can never be set by an agent request
-- `lib/rateLimit.ts` — in-memory rate limiter. **Caveat**: only correct on a
-  single server instance — if this ever runs across multiple Render
-  replicas, swap for a shared store (Redis or DB-backed counter) before
-  relying on it.
-- `lib/email.ts` — Resend integration for OTP emails, dev-only console
-  fallback if `RESEND_API_KEY` unset (fallback throws in production)
-- `POST /api/agent/login` — bcrypt verify, JWT + httpOnly refresh cookie,
-  rate-limited by IP and by email, generic error (no account enumeration)
-- `POST /api/agent/refresh`, `POST /api/agent/logout`
-- `POST /api/agent-otp/request` — JWT-authenticated only, generates via
-  `crypto.randomInt`, stores server-side, emails only to the agent's own
-  registered email (never a client-supplied address), rate-limited 3/10min
-- `POST /api/agent-otp/verify` — server-side check, 10-min expiry, 5-attempt
-  lockout, marks used, never echoes the code back
-- `GET/POST /api/agent/bookings` — **single combined where-clause** built
-  from category + status query params (the legacy AND-filter bug this brief
-  calls out is specifically guarded against here — see the comment in the
-  route)
-- `POST /api/agent/bookings/[id]/issue-request` — requires a *server-side
-  verified* recent OTP row (not just a client claim that OTP passed) before
-  flipping status to `issue_requested`; also checks expiry
-- Booking expiry: 30 min for internal-inventory bookings implemented;
-  supplier-API-minus-3-min path has the function signature ready
-  (`computeExpiresAt`) but there's no real supplier API integrated yet, so
-  it currently always takes the 30-min branch — wire in the real supplier
-  limit when that integration exists.
-- Commission is intentionally left at the schema default (0) on booking
-  creation — there's no tier-based commission-rate table/rule yet. Whoever
-  picks this up needs to decide where that rule lives before this is
-  correct; I did not invent a formula.
-
-**Still needed for item 3** (not started):
-- All `/agent/*` UI pages (login form, dashboard, bookings list with the
-  category+status tabs calling the API above, booking flows for
-  umrah/group-tickets/insurance, profile/password change)
-- Password-reset OTP path (pre-login, agent-code + email + phone match,
-  generic "no match" response) — only the issue-request OTP path is built
-- Agent document upload (if needed) via R2
-
-### Admin panel (item 4) — one content type wired end-to-end as a pattern, rest not started
-- `POST /api/admin/login` — same pattern as agent login, plus
-  `isAllowedAdminEmail()` check before *and* after the DB lookup
-- `GET/POST /api/admin/packages`, `PATCH/DELETE /api/admin/packages/[id]` —
-  full pattern for: admin JWT check, multipart form parsing, optional image
-  upload to R2, Prisma write. **Use this file as the template** for the
-  same CRUD shape on visas, flights, blogs, insurance companies/plans/rates.
-- `lib/r2.ts` — S3-compatible client for Cloudflare R2, `uploadToR2()`
-  helper, content-type allowlist (jpeg/png/webp only), credentials
-  server-side only. Needs these env vars in production: `R2_ACCOUNT_ID`,
-  `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`,
-  `R2_PUBLIC_BASE_URL`.
-
-**Still needed for item 4** (not started):
-- Admin UI pages entirely (login, dashboard, content management screens for
-  every model, agent management, agent-bookings review/issue flow, payment
-  slips, finance reporting)
-- CRUD routes for visas/flights/blogs/insurance-companies/plans/rates
-  (copy the packages route pattern)
-- Client-side image compression before upload (~1280px/JPEG q0.8) — the
-  admin route accepts the file as-is and does not re-compress
-
-### Not started
-- Item 5 (R2 wiring) — the `lib/r2.ts` helper exists and is used by the
-  packages route, but nothing else uploads through it yet, and no R2
-  bucket/credentials have been provisioned as far as I know — confirm with
-  whoever owns the Cloudflare account before relying on the env var names
-  above.
-- Item 6 (deploy) — not started, correctly gated on everything else being
-  tested first per the brief.
-
-## Env vars this code now expects (add to `.env` / Render env, not committed)
-```
-DATABASE_URL=...          (already have this)
-JWT_SECRET=...
-JWT_REFRESH_SECRET=...
-ADMIN_EMAILS=you@example.com,other@example.com
-RESEND_API_KEY=...
-RESEND_FROM_EMAIL=no-reply@eastwestpk.com
-R2_ACCOUNT_ID=...
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET_NAME=...
-R2_PUBLIC_BASE_URL=https://...
-```
-`JWT_SECRET`/`JWT_REFRESH_SECRET`/`ADMIN_EMAILS` are read by `lib/auth.ts`
-which already existed — I didn't find them set anywhere; make sure they're
-in the actual deploy environment, not just assumed.
-
-## Honest assessment of what's left
-This is still a large amount of work — essentially all of the agent portal
-UI and all of the admin panel UI are unbuilt. The backend routes I wrote
-give a concrete, security-reviewed pattern to build those UIs against
-(especially the OTP flow and the combined-filter bookings query, since
-those are the two things this brief explicitly flags as previous bugs), but
-someone still needs to build the React pages, wire up forms, and replicate
-the CRUD-route pattern across the remaining five content models. I'd
-estimate this is roughly 25-35% of the total remaining work described in
-the brief, concentrated on the security-sensitive backend pieces first.
-
-## Session 3 update
-
-### Build blocker — still unresolved, confirmed again
-Re-ran `npm install && npx prisma generate` — identical `403 Forbidden` on
-`binaries.prisma.sh`. This is a hard sandbox network-allowlist restriction,
-not something retrying or flags fix. **Needs to be run on Render's build
-step or any unrestricted machine.** `npx tsc --noEmit` was run anyway
-without a generated client — it correctly errors on the missing
-`PrismaClient` export and on a handful of implicit-`any` map callbacks in
-the public pages (`app/page.tsx`, `app/tours/page.tsx`, `app/umrah/page.tsx`,
-`app/visa/page.tsx`, `app/group-tickets/page.tsx`, `app/insurance/page.tsx`,
-`app/blog/page.tsx`). These are very likely just fallout from the missing
-Prisma types (once generate succeeds, `findMany()` results should be typed
-and these should resolve on their own) — but **whoever runs the real build
-should check these six spots specifically** in case any genuinely need an
-explicit type annotation.
-
-### Agent portal UI — started (login + dashboard + bookings list done)
-- `lib/agentAuthClient.tsx` — client-side auth context. Access token is kept
-  in React state only, **never** localStorage/sessionStorage. Refresh token
-  lives in the httpOnly cookie the API already sets; a silent refresh runs
-  on page load and `agentFetch()` retries once on a 401 after refreshing.
-- `components/AgentGuard.tsx` — redirects to `/agent/login` if unauthenticated.
-- `app/agent/layout.tsx` — wraps all `/agent/*` pages in the auth provider.
-- `app/agent/login/page.tsx` — login form, calls `/api/agent/login`.
-- `app/agent/dashboard/page.tsx` — welcome screen + nav card to bookings.
-- `app/agent/bookings/page.tsx` — category + status filters as **one**
-  combined query (not two independent fetches) — this is deliberately built
-  to match the API's single where-clause, guarding against the legacy bug
-  the brief calls out.
-- **Bug found and fixed**: `app/api/agent/refresh/route.ts` returned only
-  `{ accessToken }`, not the agent profile — a page reload would silently
-  drop the display name/tier since the client expects the same shape login
-  returns. Fixed to return both, matching the login route.
-
-**Still not built for the agent portal**: booking creation flows
-(umrah/group-ticket/insurance forms), the issue-request UI + OTP entry
-screen, password-reset (pre-login OTP) flow, profile/password-change page,
-document upload. Admin panel UI is entirely untouched this session — still
-just the one packages CRUD route from last session, no UI, no other content
-types wired.
-
-## Session 3 update, continued — Admin Panel (item 4) built out
-
-All 6 content types now have full CRUD, matching the packages pattern:
-visa-services, group-flights, blogs, insurance (3-level company→plan→rate),
-plus packages from before. Also built: agent management (create agent,
-edit balance/creditLimit/tier/status — this is the ONLY UI/route path that
-can write those fields), per-agent commission-rate setter, agent-bookings
-review (filter + mark issued/cancel), payment-slips review (approve credits
-balance + writes an AgentTransaction atomically, reject just closes it out).
-
-Admin auth client (`lib/adminAuthClient.tsx`) mirrors the agent one —
-same in-memory-token-only design, same silent-refresh-on-401 pattern.
-Added missing `/api/admin/refresh` and `/api/admin/logout` routes (didn't
-exist before, login route existed but nothing to refresh/end the session).
-
-`lib/imageCompression.ts` — client-side compression (canvas resize to
-1280px + JPEG q0.8) used by every admin CRUD form with an image field.
-This is R2 item 5's client half; the server half (`lib/r2.ts`,
-`uploadToR2()`) already existed from an earlier session.
-
-**Not done in admin panel**: finance/reporting dashboard (aggregate
-revenue/commission views — brief mentions "finance reporting" as a
-sub-bullet, no other spec on what it should show; whoever picks this up
-next should decide what metrics matter, or ask). No pagination on any
-list (fine at current data volumes, will need it eventually). No
-bulk actions. Admin login page doesn't have a "forgot password" flow
-(brief didn't ask for one for admins, only agents — deliberately skipped).
-
-## R2 (item 5) — effectively done
-Server upload (`lib/r2.ts`) already existed; client compression now added
-and wired into every admin image field. Nothing else specified in the
-brief for R2 beyond this.
-
-## Deploy (item 6) — not started, and genuinely can't be from here
-This requires a Render account login, DNS access to Cloudflare, and the
-actual domain cutover — none of which are things an AI session can do
-without a human at the keyboard for the account/credential steps. This is
-a "stop and hand back" item, not a "keep going" item.
-
-## Session 4 — Page-matching pass (MATCH-ALL-PAGES-PROMPT.md)
-
-**First finding, corrected before doing anything else**: the brief that kicked
-off this pass claimed the home page had already been matched to the live
-site and could be used as the reference pattern. That was false at the time
-— checked, the home page was still a generic template with no images, no
-stats, no testimonials, no FAQ. Flagged it. A concurrent session then fixed
-exactly that (home page rebuild, real images, Prisma pin) while this session
-continued — merged cleanly, verified the testimonial text matches
-independently-fetched live content word-for-word, so that work is real, not
-fabricated.
-
-### Pages matched — checklist
-- [x] `/about` — full rebuild: hero, stats, partner logos, "Beyond Travel"
-  section, What We Do, 20-years timeline, services grid, team, certs,
-  awards, final CTA. Word-for-word copy from the live page.
-- [x] `/contact` — office hours table, 4 WhatsApp numbers, inquiry form
-  (see note below), map embed, social links.
-- [x] `/umrah` — hero, filter tabs, empty-state card, package card layout.
-- [x] `/tours` — hero, filter tabs, empty-state, package cards.
-- [x] `/visa` — hero, stats bar, how-it-works steps; listing/empty-state
-  kept from before (see note below).
-- [x] `/group-tickets` — hero, category section, features strip, "Book Your
-  Seat" modal.
-- [x] `/insurance` — hero, badges, quote calculator; listing kept/extended
-  (see note below).
-- [x] `/blog` — hero, breadcrumb, empty-state (post cards kept from before —
-  live listing is client-rendered, nothing to extract).
-- [x] `/blog/[slug]` — template only, see note below.
-
-### Honest notes — things I could not verify or had to deviate on
-1. **Contact form has no backend.** No email service or inquiry-storage
-   route exists in this rebuild. The form composes a WhatsApp message and
-   opens `wa.me` instead of submitting anywhere. This matches the site's
-   WhatsApp-first architecture but is NOT the same as the live site, which
-   likely emails the inquiry somewhere. If the owner wants actual form
-   submissions captured (e.g. to a database table or email), that's new
-   backend work, not something I inferred from the brief.
-2. **`/visa` listing markup wasn't fetchable.** The live page's plan cards
-   are rendered by client-side JS with no static fallback in the HTML I
-   could fetch. I kept the existing DB-driven listing/empty-state rather
-   than guess at a card layout I never actually saw.
-3. **`/insurance` calculator does not filter results.** The live site's
-   calculator implies matching by destination + duration + traveler age,
-   but `InsuranceRate` in the schema has no such fields — it's just
-   `planId` + `pricePkr`. I built the calculator UI with all the live
-   site's input fields, but on submit it just reveals the full active plan
-   list and says so in the UI, rather than faking a filter that doesn't
-   work. If real per-destination pricing is wanted, the schema needs new
-   columns on `InsuranceRate` (destination, duration, ageBand at minimum)
-   — that's a real scope decision for the owner, not something to guess at.
-4. **No real blog post was fetchable.** `blog.html`'s post list is loaded
-   by `loadBlogs()` client-side JS with no static content in the page
-   source, and a site search turned up nothing indexed. The `[slug]`
-   template therefore follows the same visual pattern as the other rebuilt
-   pages (navy breadcrumb header, WhatsApp CTA) rather than copying real
-   post content — because there was no real post content available to copy.
-5. **Login/account links intentionally excluded**, on `/tours` and
-   `/blog` specifically — both live pages have leftover "My Account" /
-   "Book Now" / "Customer Login" markup from the old Supabase-auth legacy
-   site. This rebuild's architecture is deliberately WhatsApp-first with no
-   public-site accounts (see the original continuation brief). Reproducing
-   those links would point at pages that don't exist in this rebuild and
-   contradict an already-made architecture decision — so they're left out
-   on purpose, not missed.
-6. **Live site itself is inconsistent** — footer says "Est. 2003", About
-   page says "Founded 2004." Different pages also use two different
-   nav/footer templates (compare the homepage nav to the tours/blog page
-   nav) — the live site appears to be mid-migration on its own end. I went
-   with "2004" / "20+ years" since that's what the About page (the more
-   detailed, presumably more current source) says, and used the newer
-   nav/footer pattern (no login links) consistently, per point 5.
-7. **Images**: partner logos on `/about` are hotlinked from Wikimedia
-   Commons (stable public CDN, not the live site's own assets) since no
-   real partner-logo files exist in this repo. Office photo and team
-   headshots on `/about` use styled placeholder blocks with the real
-   caption/name text, per the brief's instructions — these need real
-   photos from the owner to look finished.
-
-### Not done
-- No new backend for the contact form (see note 1).
-- No schema changes for insurance rate filtering (see note 3) — flagging,
-  not building, since this changes the data model and wasn't asked for
-  explicitly.
-- Real blog posts still need to be written/imported by the owner — the
-  `/blog` and `/blog/[slug]` pages are ready to display them the moment
-  rows exist in the `Blog` table.
-## Session 5 — Admin/agent visual match (LOOP-AND-ADMIN-AGENT-MATCH-PROMPT.md)
-
-Legacy repo (`eastwestpk`, public, no token needed) has `agent/dashboard.html`,
-`agent/login.html`, `admin/dashboard.html` as the approved visual reference.
-Ported the exact CSS (shadows, gradients, spacing) rather than approximating.
-
-**Done:**
-- `app/agent/portal.css` + `app/admin/portal.css` — exact tokens from the
-  reference. Confirmed the two panels use genuinely different palettes on
-  purpose (agent: dark navy gradient + gold-glow balance panel; admin:
-  light gray + muted gold `#B8923A` + DM Sans) — not an inconsistency to fix.
-- Agent portal: sidebar (real balance/credit data, tier pill), topbar,
-  shell, dashboard, bookings (tab-bar status filter + category select,
-  matches the "no legacy AND-filter bug" requirement from the original
-  brief even though the visual reference itself only had a status filter),
-  profile, and a full split-panel login page using the real
-  `makarem_1.jpeg` background from `public/images/`.
-- Admin panel: sidebar/topbar/shell, dashboard, login, and all 8 CRUD/
-  review pages (packages, visa-services, group-flights, blogs, insurance,
-  agents, agent-bookings, payment-slips) converted to `adp-*` classes.
-- Login/refresh API routes for agents now return `balance`/`creditLimit`
-  (needed for the sidebar balance panel — they didn't before).
-
-**Deviations, stated plainly:**
-- Part B (headless-browser fetch of `/visa`, `/blog`) — I don't have a
-  headless-browser tool, only plain HTTP fetch. Could not execute this
-  part of the brief; it needs a different tool than what's available here.
-- Agent login's "Reset Password" is a link to the separate
-  `/agent/forgot-password` route, not an in-page tab swap like the
-  reference. Visual card/tab styling matches; the interaction model is
-  simplified because our app already has that flow as its own page.
-- No dedicated `admin/login.html` exists in the legacy repo to match
-  against, so the admin login page reuses the admin panel's own card
-  style (light theme, muted gold) rather than guessing at an unreferenced
-  design.
-- Given the volume (9 admin pages), forms mostly use the `.adp-fg`
-  input styling via inline `style` props rather than pre-built utility
-  classes in every single field — functionally identical, but if a future
-  pass wants to clean this into proper Tailwind/CSS classes instead of
-  inline styles, that's a legitimate refactor, not a bug.
-- Have NOT visually verified any of this in a real browser — no dev
-  server was run. Every change passed `tsc --noEmit` clean, which confirms
-  the code compiles, not that it renders correctly. First real visual QA
-  needs to happen once `npm run build` succeeds somewhere unblocked.
-
-## Session 5, continued — orphan sweep
-
-Found `/admin/finance` existed (built by a prior concurrent session) but
-was never added to the sidebar nav or dashboard section list, and still
-used old pre-restyle styling — effectively unreachable and visually
-inconsistent. Reviewed its API route (`/api/admin/finance`) before
-touching anything: `requireAdmin`-gated, read-only, scope is exactly two
-things (service-wise revenue/commission breakdown, agent balance/
-outstanding list) with no invented metrics. Left the logic untouched,
-restyled the page, added it to nav + dashboard.
-
-Then swept `app/admin/*`, `app/agent/*`, and `app/api/admin/*` directory
-listings against each other to confirm no other route is missing a page
-or a page is missing from navigation. Nothing else found. Full `tsc
---noEmit` clean across the whole tree as of this commit.
-
-**Everything actionable without a credential, a tool I don't have, or an
-owner decision is now done.** What's left (build verification on an
-unblocked machine, real browser visual QA, deploy, contact-form backend
-decision, insurance schema decision, real photos/blog content from the
-owner) is exactly the same list from the last two closeouts — restating
-it here would just be padding.
-
-## Package Detail Page (room-type selector + live booking calculator) — complete
-
-Built on top of the schema/booking API another session already laid down
-(`Package.slug/departureCity/tier/itinerary`, `PackageRoomType`, `Booking`,
-`/api/bookings`) — reviewed it before extending, it was solid, no rework.
-
-**Built:**
-- Admin: `/api/admin/packages` create/update routes now accept slug (with
-  uniqueness check), departureCity, tier, itinerary (JSON, validated).
-  Also fixed the PATCH route's image upload having no try/catch (this was
-  already flagged as a follow-up from a previous session's R2 fix note —
-  picked it up while in the same file).
-- Admin: new room-type CRUD — `/api/admin/packages/[id]/room-types`
-  (POST) and `/api/admin/packages/[id]/room-types/[roomTypeId]` (PATCH/
-  DELETE), same requireAdmin pattern as everything else.
-- `components/PackageBookingWidget.tsx` — room-type cards, live adult/
-  infant counters clamped to that room type's limits, live price
-  breakdown, booking form, WhatsApp fallback. Explicit "no payment taken
-  yet" messaging on success per the brief.
-- `components/PackageDetailView.tsx` — shared render (header, image,
-  includes/excludes, itinerary timeline) used by both
-  `app/umrah/[slug]/page.tsx` and `app/tours/[slug]/page.tsx`.
-- Listing cards (home Featured, `/umrah`, `/tours`) now link to the detail
-  page when a package has a slug, falling back to the existing WhatsApp-
-  enquiry link when it doesn't — so nothing breaks for packages created
-  before this feature existed.
-- Admin packages form: slug field with a "Generate from name" button,
-  departureCity, tier dropdown, includes/excludes textareas, a repeatable
-  itinerary-step editor (title + newline bullets + comma-separated image
-  URLs), and `PackageRoomTypesManager` — appears once a package is being
-  edited (room types need a real packageId), full add/edit/delete.
-
-**Question for the owner, not guessed at (per the brief's explicit
-instruction):** infants are currently free in the price calculation —
-there's no infant rate field anywhere in the schema. If Umrah/tour infant
-pricing should be a real number, that needs a schema field
-(`PackageRoomType.pricePerInfantPkr` or similar) plus updates to the
-booking API's price computation and the calculator's display. Not built
-speculatively.
-
-**Not verified:** same standing caveat as every other feature in this
-project — `tsc --noEmit` clean, never run against the live database or in
-a real browser.
-
-## Split booking into two pages (detail → booking-form → confirmation) — complete
-
-Built on top of another session's infant-pricing decision (owner chose a
-flat PKR rate per infant, admin-configurable per room type — this resolved
-the open question from the previous closeout, no rework needed there).
-
-**Built:**
-- `components/PackageBookingWidget.tsx` simplified: removed the inline
-  name/phone/email form and direct `/api/bookings` POST. "Book Now" is now
-  a `Link` to `/booking-form?packageId=...&roomType=...&adults=...&infants=...`,
-  disabled until a valid room type + traveller count is selected (same
-  `minAdultsRequired`/`maxAdults`/`maxInfants` validation as before). Also
-  fixed a stale "(free)" infant label that predated the infant-pricing
-  change — it now shows the real per-infant rate when one is set.
-- `app/booking-form/page.tsx` — Server Component. Re-fetches the package
-  and room type from the database using the URL's `packageId`/`roomType`;
-  never trusts the URL for pricing, only for which room type was picked.
-  Clamps adults/infants to that room type's real limits server-side.
-  Missing/invalid params (no packageId, unknown roomType) show a friendly
-  "please pick a package first" message with a link to `/umrah`, not a
-  crash or blank page.
-- `components/BookingFormClient.tsx` — two-column layout: personal info
-  (name, email, phone — all required — plus optional CNIC/passport and
-  special requests) on the left, read-only booking summary (image, room
-  type, price breakdown, total, a link back to the package page to change
-  selections) on the right. Submits to `/api/bookings`, redirects to
-  `/booking-confirmation` with the ref/package/roomType/total as query
-  params on success, shows the real server error on failure.
-- `app/booking-confirmation/page.tsx` — new. Shows the booking ref and
-  summary, explicit **"No payment has been taken yet"** messaging, and a
-  WhatsApp button prefilled with the booking ref.
-- `prisma/schema.prisma` + `/api/bookings`: added optional `passport` and
-  `specialRequests` fields to `Booking`, wired into the create call and
-  the admin notification email. Also made `email` a required field
-  server-side now (it's required on the new form's left column) — this
-  changes prior behavior slightly (email used to be optional), flagging
-  that explicitly in case anything else was relying on email-optional
-  bookings.
-- Caught my own bug before committing: the summary's "go back to package"
-  link was built from `pkg.id`, but detail pages route by `slug`, not id —
-  fixed to use slug with a category-listing fallback if a package has no
-  slug yet.
-
-**Not verified:** same standing caveat — `tsc --noEmit` clean, not run in
-a browser or against the live database.
-
-## Where this leaves the whole project
-
-Items 1 (build verify — blocked on sandbox network, needs re-run
-elsewhere), 3 (agent portal), 4 (admin panel), and 5 (R2) are functionally
-complete pending a real `prisma generate` + build pass. Item 2 (public
-site) was already done. Item 6 (deploy) needs a human.
-
-**The single most important next step, above all remaining polish**: get
-this onto a machine that can reach `binaries.prisma.sh` (Render's own
-build step will do it) and run the real build. Nothing above has been
-verified beyond `tsc --noEmit` against a client-less Prisma import — real
-runtime behavior against the live Postgres database is still unverified.
-Answered by the project owner directly:
-
-- Commission is **per-agent, per-service-type**, admin-configured, either a
-  **flat PKR amount** (e.g. Amazing Holidays gets 2000 PKR flat per flight
-  ticket, 15,000 PKR flat per Umrah booking) or a **percentage** (e.g. 30%
-  on insurance).
-- Admin can change an agent's rate at any time (relationship improves,
-  target hit, etc.) — but changing it **only affects future bookings**.
-  Already-created bookings keep the commission they were created with.
-
-Implemented:
-- `prisma/schema.prisma`: new `AgentCommissionRate` model — one row per
-  `(agentId, serviceType)` (unique constraint), `rateType: "fixed" |
-  "percentage"`, `value: Int`. Admin upserts this row to set/change a rate;
-  there is no history table because the *booking* itself is the history —
-  see below.
-- `lib/commission.ts`: `calculateCommission(agentId, serviceType, sellPrice)`
-  — looks up the current rate and returns the computed PKR amount. Returns
-  0 (with a console warning) if no rate is configured yet for that
-  agent+serviceType, rather than throwing — don't let a missing rate config
-  block booking creation, but it should be visibly wrong and get noticed.
-- `app/api/agent/bookings/route.ts`: now calls `calculateCommission()` once,
-  at booking-creation time, and stores the result directly on
-  `AgentBooking.commission`. This is a **snapshot** — never recompute it
-  later from a booking's serviceType + current rate, that would retroactively
-  change historical commission whenever admin updates a rate, which is
-  exactly what the owner said should NOT happen.
-
-**Still needed** (admin panel work, not yet built): a UI + API route for
-admin to view/set each agent's `AgentCommissionRate` rows per service type
-(simple upsert on `(agentId, serviceType)`). Follow the same JWT+allow-list
-pattern as the other admin routes.
-
-## Fixed: R2 uploads failing (env var name mismatch)
-`lib/r2.ts` read `R2_PUBLIC_BASE_URL` but Render has `R2_PUBLIC_URL` set —
-every image upload across the admin panel was silently failing. Fixed at
-the source (lib/r2.ts), so all 10 routes calling uploadToR2 are fixed.
-Only `app/api/admin/packages/route.ts`'s create handler got an explicit
-try/catch with a specific error message. Good small follow-up: add the same
-try/catch to the other 9 (blogs, visa-services, group-flights,
-insurance-companies — both their POST and [id] PATCH routes) so upload
-failures are never a silent generic 500 again.
-
-## Schema audit + error-surfacing sweep (quick pass)
-- DB unreachable from this sandbox (render.com not in egress allowlist) — audit was static: scanned schema.prisma for scalar fields missing @map. Found none beyond what was already fixed (all flagged camelCase names are relation fields, not real columns, so no bug there). Live DB structure still needs owner's psql/TablePlus confirmation for full certainty.
-- Added missing try/catch error-surfacing (packages/agents pattern) to: blogs, agent-bookings, visa-services GET routes — these were still silently returning empty lists on DB failure.
-- Package detail page display (itinerary/room-types/calculator) already verified correct in code from prior session — could not test live end-to-end (no DB/browser access here).
-
-## Flight sectors + child fare (Umrah packages)
-Admin packages form: repeatable flight-sector rows (city + date + time, minimalistic). Row 1 = Departure, Row 2 = Arrival, both locked (- disabled), required minimum. "+" adds extra removable sectors. Rendered on package detail page as cards.
-Also added: child fare (pricePerChildPkr) alongside existing infant fare on room types — wired through admin room-type manager, booking calculator, booking-form, confirmation.
-
-**DB migration needed (sandbox can't reach the DB — run manually):**
-```sql
-ALTER TABLE package_room_types ADD COLUMN price_per_child_pkr INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE packages ADD COLUMN flight_sectors JSONB;
-ALTER TABLE bookings ADD COLUMN children INTEGER DEFAULT 0;
-```
-Until these run, saving a package with sectors or a room type with a child price will fail — same class of issue as the earlier `price_per_infant_pkr` miss.
-
-## Fixed: group ticket seats never decremented (real inventory bug)
-Confirmed and fixed — creating a group_ticket AgentBooking never touched GroupFlight.seats anywhere in the code. Now atomic (transaction + conditional decrement, sold-out returns 409), and cancelling a booking restores the seat. This was a genuine bug, not a DB/migration issue.
-
-## Fixed: pricing UX confusion in admin packages form
-"Price (listing display)" field is just cosmetic card text — real bookable pricing is in Room Types & Pricing, which was invisible until after first save. Now: label clarified, and the Room Types section always renders (placeholder message before first save instead of vanishing).
-
-## New prompt written: SALES-DASHBOARD-PROMPT.md
-Per owner: admin needs a prominent "Total Receivable" figure + agent needs a prominent "Amount Payable" figure, both filterable by date range. Scoped, not built yet — next session's task.
-
-## Resolved: DB migrations (was "owner away from DB PC")
-Owner ran these — see the confirmed block at the top of this file.
-
-
-## Sales Dashboard — Date-wise Money Owed/Receivable (Admin + Agent)
-
-Build blocker note still applies (see top of file) — `npx prisma generate`
-still 403s on `binaries.prisma.sh` in this sandbox. Ran `npx tsc --noEmit`
-without a generated client anyway: no new error categories beyond the
-existing "implicit any from missing PrismaClient types" class already
-documented above — same six-ish spots per touched file, nothing new. Needs
-a real build (Render or unrestricted machine) to confirm clean, same
-caveat as everything else in this file.
-
-### Backend
-- `GET /api/admin/finance` now accepts `?from=&to=` (yyyy-mm-dd). `to` is
-  treated as inclusive of the whole day. Filters `AgentBooking.createdAt`
-  for the service-wise breakdown and a new per-agent range-activity query.
-  Returns `totals.totalReceivable` (sum of outstanding balances,
-  balance < 0) and, per agent, `rangeBookingCount/rangeSellPrice/
-  rangeCommission/rangeNet` for the selected window.
-  **Deliberate design call**: `Agent.balance` is a cumulative running
-  total (debited in `performIssue()`, credited by approved payment slips)
-  — it has no date axis, so it can't be recomputed "as of" a past date
-  from `AgentBooking` rows alone. `totalReceivable` and each agent's
-  `balance`/`outstanding` are therefore always the *current, real-time*
-  numbers regardless of the date filter — this matches the brief's own
-  wording ("total money the business is owed right now"). The date filter
-  instead scopes a separate "activity in this range" figure
-  (rangeSellPrice/rangeCommission/rangeNet), shown alongside the
-  always-current balance columns so the two aren't confused for each
-  other. Flagging this now in case the intent was actually a historical
-  balance reconstruction — that would need a different data model (e.g.
-  linking PaymentSlip credits to specific bookings) and wasn't something
-  I wanted to fake.
-- `GET /api/agent/bookings` now also accepts `?from=&to=` (same semantics)
-  and returns a `summary: { count, totalSellPrice, totalCommission, net }`
-  alongside the existing `bookings` array, scoped to `requireAgent(req).id`
-  same as before — no cross-agent leakage.
-
-### Admin UI (`/admin/finance`)
-- New "Total Receivable — Right Now" headline card above everything else,
-  gold-tinted, large type, spans full width — explicitly labeled as
-  real-time/not-date-filtered so it doesn't read as contradicting the
-  filter row below it.
-- Date-range filter row: Today / This Week / This Month / All Time preset
-  buttons + custom from/to date inputs (`adp-si`), local-time based.
-  Selecting a preset re-queries `/api/admin/finance` with `from`/`to`;
-  typing a custom date clears the active preset highlight.
-- Service-wise breakdown table unchanged in shape, now genuinely scoped
-  to the selected range (was already querying via the API, no client
-  change needed beyond passing the new params).
-- Agent Balances table gained two columns: "Booked in Range" (count +
-  sell price) and "Net in Range" — existing Balance/Outstanding columns
-  are unchanged and still show the current real figures.
-
-### Agent UI (`/agent/dashboard`)
-- New "Amount Payable" headline card (red when > 0, green "settled" when
-  0) directly under the welcome header — pulls from the existing
-  `agent.balance` already in the auth context, no new fetch needed for
-  this number.
-- New "My Bookings — By Date Range" card: same preset/custom date-range
-  filter pattern as admin, calls `/api/agent/bookings?from=&to=` and
-  shows the returned `summary` (count / total sell price / net) in three
-  small stat tiles. Scoped to the logged-in agent only via
-  `requireAgent(req).id` server-side — not client-trusted.
-- Left `/agent/profile` alone — the brief said dashboard *or* profile,
-  and the Amount Payable card reads better as the first thing an agent
-  sees on login rather than one more line on the profile page.
-
-### Not touched
-- Balance/commission calculation logic — unchanged, per "Don't do".
-- No new Prisma migrations — everything here reads existing columns
-  (`AgentBooking.createdAt`, `Agent.balance`) with new query params, no
-  schema changes needed.
-
-## Room Basis Division at Package Creation + Auto-Derived Display Price
-
-Owner's ask: let room basis (Quad/Triple/Double/...) be set up while
-*creating* a package, not only after, and make the listing-card "Price"
-field track whichever room basis is lowest (normally Quad) instead of
-being freely typed.
-
-- `lib/packagePrice.ts` -- `computeDisplayPrice()` (pure) and
-  `syncPackageDisplayPrice()` (recomputes + persists `Package.price` from
-  current `PackageRoomType` rows). Picks the actual lowest price rather
-  than assuming Quad is always cheapest, in case a package is set up
-  unusually.
-- `POST /api/admin/packages` accepts an optional `roomTypes` array (same
-  shape the room-types sub-route already took) and creates the package +
-  room types together in one `$transaction`. Price is derived server-side
-  from whatever room types were submitted; only falls back to a manually
-  submitted price string if none were given (so an in-progress package
-  with no room basis yet doesn't end up with a blank listing price).
-- The room-type create/update/delete routes (`/api/admin/packages/[id]/
-  room-types` and `.../[roomTypeId]`) all call `syncPackageDisplayPrice`
-  after their write, so the derived price stays correct for the whole
-  life of the package, not just at creation.
-- Admin UI: New Package form gained an inline "Room Basis Division"
-  section (repeatable rows, `<datalist>` presets for Quad/Triple/Double/
-  Single, add/remove) submitted alongside package creation. The old
-  free-text Price input is now read-only and shows the live-computed
-  value as rows are filled in. Once a package exists, the existing Room
-  Types & Pricing manager (unchanged) takes over for further edits.
-
-Not touched: booking/commission calculation, the room-types sub-routes'
-existing validation, PATCH `/api/admin/packages/[id]`'s general fields.
-`npx tsc --noEmit` shows only the same pre-existing "implicit any from
-missing generated PrismaClient" class of errors documented at the top of
-this file (sandbox still can't reach `binaries.prisma.sh`) -- nothing
-structurally new. Needs a real build to confirm clean.
-
-## Agent sidebar nav + New Booking UI rebuild (July 2026)
-
-Root cause: `AgentSidebar.tsx` only had three nav items (Dashboard, My Bookings, My Profile) — the full structure the owner specified was simply never built into the NAV array. Separately, the `/agent/bookings/new` page was a bare single-step form with no service-selection UI. Fixed by: expanding the NAV array to include My Bookings (5 service sub-items), New Booking (5 service sub-items), Finance (Topup + Bank Accounts), and My Profile; rewriting the new booking page as a two-step flow (card-grid service selector → styled details form using existing `ap-card`/`ap-field`/`ap-btn-gold` portal classes); creating placeholder pages for `/agent/topup` and `/agent/bank-accounts`; and updating `/agent/bookings` to read the `?service=` URL param for initial filter and adding `world_tour`/`visa_services` to the CATEGORIES list. `npx tsc --noEmit` clean. No DB changes required.
-
-## Full Topup System (July 2026)
-
-Built the complete agent topup flow end-to-end. Agent side: `/agent/topup` is a real two-panel page — left shows live bank account cards fetched from the DB, right is a form to enter amount + upload a payment slip photo (uploaded to R2 `payments/` folder) with submission history table below. `/agent/bank-accounts` is a standalone card grid of the same data. Admin side: new `/admin/bank-accounts` page gives full CRUD over the bank accounts agents see (add, edit, hide/show, delete, sort order). `/admin/payment-slips` upgraded with filter tabs (pending/approved/rejected/all), pending count badge, reject-with-note modal so admin can give agents a reason, and date/time column. New `BankAccount` model added to Prisma schema (`bank_accounts` table — owner must run the SQL below). New API routes: `POST/GET /api/agent/topup`, `GET /api/agent/bank-accounts`, `GET /api/agent/transactions`, `GET/POST /api/admin/bank-accounts`, `PATCH/DELETE /api/admin/bank-accounts/[id]`. `npx tsc --noEmit` clean.
-## DASHBOARD-INVENTORY-PAYABLE-PROMPT.md corrected (self-contained now)
-Added an explicit warning + cleanup steps at the top of that prompt file itself, so the next session removes my old create-time seat decrement/restore code before adding the issue-time version — no double-decrement risk, no separate note needed here.
-
-## Admin Dashboard Stats + Seat Inventory (issue-time) + Agent Payable/Top-Up Ledger (July 2026)
-
-### Fixed a broken schema file first
-`prisma/schema.prisma`'s `BankAccount` model had literal `\n` escape
-sequences typed into the file instead of real newlines (from a prior
-session), which broke parsing of everything after it. Reformatted with
-real newlines/quotes — no field or column changes, purely a text-encoding
-fix.
-
-### Cleanup per this prompt's own warning (done first, before Part 2/3)
-- `app/api/agent/bookings/route.ts` POST: removed the creation-time
-  `prisma.$transaction` that decremented `GroupFlight.seats` when a
-  group-ticket booking was created. Replaced with a plain
-  `agentBooking.create`, keeping a read-only `seats > 0` check just to
-  reject agents from starting a booking against an already-sold-out
-  flight (doesn't reserve a seat).
-- `app/api/admin/agent-bookings/[id]/route.ts` PATCH: removed the
-  seat-restore-on-cancel block (`releasesSeat`/`groupFlight.update`
-  increment) — no longer correct once decrement moved to issue-time, since
-  a cancelled-but-never-issued booking never touched seats.
-
-### Part 1 — `GET /api/admin/dashboard-stats`
-New admin-gated route: total agents, pending agent-bookings (`pending` +
-`issue_requested`), active packages/group-flights/visa-services (summed
-into `totalActiveListings`, breakdown also returned), revenue this month
-(sum of `sellPrice` for bookings with `status: issued` and `updatedAt` in
-the current calendar month — no dedicated `issuedAt` column exists, so
-`updatedAt` is used as the issue-time marker since it's bumped by Prisma
-exactly when the PATCH route flips status to `issued`), and total payable
-(sum of `Agent.balance` where `balance < 0`, returned as a positive PKR
-number). `app/admin/dashboard/page.tsx` now fetches this on mount via
-`adminFetch` and renders a 5-card stats row above the existing section
-grid.
-
-### Part 2 — Seat decrement moved to ISSUE time
-In the same PATCH route, when `status` transitions to `"issued"` from
-anything else (`isBeingIssued`) and the booking is a `group_ticket` with a
-`groupFlightId`, the transaction runs a conditional
-`groupFlight.updateMany({ where: { seats: { gt: 0 } }, data: { seats: {
-decrement: 1 } } })`. If it affects zero rows (flight sold out between
-booking-creation and issue, or two simultaneous issues racing), the whole
-transaction throws and the route returns 409 — issuing is blocked rather
-than allowing seats to go negative. This is the real oversell guard now
-(the agent-facing check at creation is read-only, as noted above).
-
-### Part 3 — Agent payable ledger wired into the same issue transition
-Same `isBeingIssued` branch, same transaction: computes
-`netOwed = existing.sellPrice - existing.commission` (commission is the
-value already snapshotted on the booking, not recomputed), decrements
-`Agent.balance` by `netOwed` (confirmed sign convention from
-`/api/admin/finance`'s existing `totalReceivable` comment: negative
-balance = agent owes the office), and creates an `AgentTransaction`
-(`amount: -netOwed, type: "debit", note: "Booking issued: <bookingRef>"`).
-All three writes (seat decrement, balance decrement, booking status
-update) happen inside one `$transaction` so they can't go out of sync.
-
-### Part 4 — Agent top-up / payment-slip approval
-Checked `app/api/admin/payment-slips/[id]/route.ts` — the credit-on-approve
-logic (increment `Agent.balance` by slip amount + create a `credit`
-`AgentTransaction`) already existed and matches the spec exactly. No
-changes made here, per "verify rather than duplicate."
-
-### Not touched
-- No new Prisma migrations/columns — `BankAccount` fix was formatting
-  only, everything else reads/writes existing columns.
-- Commission calculation (`lib/commission.ts`) — unchanged.
-- Payment-slip approval logic — verified correct, left as-is.
-
-Build blocker note still applies: `npx prisma generate` 403s on
-`binaries.prisma.sh` in this sandbox (same as documented at the top of
-this file). Ran `npx tsc --noEmit` without a generated client anyway —
-same pre-existing "implicit any from missing generated PrismaClient"
-class of errors as before, nothing new introduced by these changes. Needs
-a real build (Render or unrestricted machine) to confirm clean.
-
-## Group tickets: nested grouping + filters
-Route → Airline nested grouping (logo/name shown once per airline, not per date row). Added `region` (domestic/international/gulf/ksa) and `trip_type` (oneway/return) fields with public filter pills.
-**DB migration needed:**
-```sql
-ALTER TABLE group_flights ADD COLUMN arr_time TEXT;
-ALTER TABLE group_flights ADD COLUMN region TEXT DEFAULT 'international';
-ALTER TABLE group_flights ADD COLUMN trip_type TEXT DEFAULT 'oneway';
-```
-
-## World Tour parity check + new Direct Bookings admin module (July 2026)
-
-**World Tour (name entry, room-type booking, admin creation) — already existed, nothing to build.**
-Checked: `app/tours/[slug]/page.tsx` already shares the exact same
-`PackageDetailView` component as `app/umrah/[slug]/page.tsx` (only the
-`category: "tours"` filter differs), `app/booking-form/page.tsx` is
-category-agnostic (works off `packageId`, not category), and
-`app/admin/packages/page.tsx` already has a `Tours` option in its
-category dropdown with the same Room Basis Division UI as Umrah. So the
-"same as Umrah" ask for World Tour was already fully wired from earlier
-work — confirmed rather than duplicated.
-
-**New: Direct Bookings admin module** — the one genuinely missing piece.
-Direct/walk-in customer bookings (public `/api/bookings` POST, `Booking`
-model — separate from the agent-network `AgentBooking` ledger) had no
-admin-facing view at all. Added:
-- `GET /api/admin/direct-bookings` — list with optional `?category=` (via
-  the related `Package.category`, umrah/tours) and `?status=` filters.
-- `GET/PATCH /api/admin/direct-bookings/[id]` — single-record fetch and
-  status transitions (`pending` → `confirmed`/`cancelled`).
-- `app/admin/direct-bookings/page.tsx` — new admin page, same list+filter
-  pattern as `/admin/agent-bookings`: category/status filter dropdowns,
-  table with Confirm/Cancel actions, expandable row for phone/email/
-  special-requests detail.
-- Linked from `AdminSidebar` (new "Direct Bookings" nav item under the
-  Packages/Visa/Flights section) and the admin dashboard's section grid.
-
-Not touched: `Booking` model/schema (no changes needed, existing columns
-cover this), the public booking-form/checkout flow itself, agent-bookings
-module. `npx tsc --noEmit` shows the same pre-existing baseline errors
-only — nothing new from these files.
-
-## Visa Module — Full Application System (July 2026)
-
-**Schema changes (new tables needed — SQL below):**
-Added `priceAdult/priceChild/priceInfant` (Int?) to `visa_services`. Legacy `price` string kept as display fallback — still read by the public listing card if numeric prices not yet set; NOT deprecated or dropped, deliberately kept for backwards compat with existing visa rows. New models: `VisaRequiredDocument` (child of VisaService, per-visa document checklist), `VisaApplication` (one row per visa per batch; batchRef is a plain string grouping submissions from one session, NOT a FK; totalPricePkr is always server-computed on submission, never trusted from client), `VisaApplicationDocument` (uploaded file rows).
-
-**R2:** Added `application/pdf` to `ALLOWED_CONTENT_TYPES` at the shared helper (not hacked per-caller). Ext logic updated.
-
-**API routes added:**
-- `GET /api/visa/[id]` — public, returns visa + requiredDocuments
-- `POST /api/visa-applications` — public multipart, 1–N applications per batch, server-computes totalPricePkr, uploads docs to R2 `visas/` folder
-- `GET/POST /api/admin/visa-services/[id]/documents` — child-CRUD for doc requirements (mirrors room-types pattern)
-- `PATCH/DELETE /api/admin/visa-services/[id]/documents/[docId]`
-- `GET /api/admin/visa-applications` — list with status/visaId filters
-- `PATCH /api/admin/visa-applications/[id]` — status pipeline + adminNote
-- Extended existing PATCH/POST `/api/admin/visa-services/[id]` with new price fields
-
-**Public pages:**
-- `/visa` — cards now link to `/visa/[id]`; show priceAdult if set, else legacy price string
-- `/visa/[id]` — new detail page: quick facts, age-tiered pricing grid, full required-documents list (the "read first" section the owner asked for), then Apply Now
-- `/visa/[id]/VisaApplyFlow.tsx` — multi-visa cart client component: per-visa applicant info form + traveler counters + per-document file uploads, tab switching between applications in a batch, price preview, "Add Another Visa Application" → Submit All
-
-**Admin pages:**
-- `/admin/visa-services` — extended with Adult/Child/Infant price fields + inline Required Documents repeatable list (loads on demand when editing)
-- `/admin/visa-applications` — new review panel: pending count badge, status filter buttons, table with expandable row showing contact info, uploaded doc links, status pipeline action buttons, add/edit admin note inline
-- AdminSidebar: "Visa Applications" added under Services
-
-`npx tsc --noEmit` clean.
-
-## Group flight direct bookings persisted + Excel export for Direct Bookings (July 2026)
-
-**Bug found: group flight "Book Now" never saved anything.** The public
-`/group-tickets` page's booking modal only built a WhatsApp deep-link and
-opened it — no database write at all, so a customer's request existed
-only in a WhatsApp chat, nowhere else. Fixed:
-- `prisma/schema.prisma`: `Booking` gained `groupFlightId` (relation to
-  `GroupFlight`, reciprocal `directBookings` on `GroupFlight`),
-  `travelClass`, and `seatsRequested` — a Booking row is now either a
-  package booking (`packageId` set) or a group-flight booking
-  (`groupFlightId` set), same table, same "direct customer request"
-  concept already used for Umrah/Tours.
-  **Migration needed:**
-  ```sql
-  ALTER TABLE bookings ADD COLUMN group_flight_id TEXT REFERENCES group_flights(id);
-  ALTER TABLE bookings ADD COLUMN travel_class TEXT;
-  ALTER TABLE bookings ADD COLUMN seats_requested INTEGER;
-  ```
-- New `POST /api/group-flights/book` — public, rate-limited (same
-  pattern as `/api/bookings`), validates the flight is active with
-  `seats > 0` (read-only check, doesn't decrement — mirrors the
-  agent-side rule that seats only actually decrement at admin issue-time,
-  see agent-bookings PATCH route), creates a `Booking` row with
-  `service: "group_ticket"`, emails `ADMIN_EMAILS[0]` a notification.
-- `components/GroupTicketsClient.tsx`'s `BookingModal` now POSTs to this
-  route first (with a loading/error state) and only opens the WhatsApp
-  link after a successful save — so the request is never lost even if
-  the customer doesn't follow through on WhatsApp.
-
-**Direct Bookings admin module (`/admin/direct-bookings`) extended:**
-- `GET /api/admin/direct-bookings` now also accepts `?category=
-  group_ticket` (filters `groupFlightId: { not: null }`) alongside the
-  existing `umrah`/`tours` package-category filters, and includes the
-  related `groupFlight` (airline/route/flightNo/depDate) in the response.
-- New `GET /api/admin/direct-bookings/export` — same filters, returns a
-  real `.xlsx` file (via the new `xlsx` npm dependency) with one row per
-  booking (ref, type, package/flight, customer, contact, room/class,
-  pax/seats, total price, status, timestamp). Admin page gained an
-  "Export to Excel" button next to the filters that always exports
-  whatever's currently filtered/on screen.
-- Table rows now show flight info (airline/route + a "Group Flight"
-  pill) and seats-requested when a row is a group-flight booking instead
-  of a package booking.
-
-Not touched: agent-network `AgentBooking`/seat-decrement-at-issue flow
-(untouched, this is the separate direct-customer path), payment
-collection (still none, per owner's existing "payment pipeline later"
-call). `npx tsc --noEmit` shows only the same pre-existing baseline
-"implicit any" class of error, now also appearing once in the new export
-route (missing generated Prisma types, same root cause as everywhere
-else) — nothing structurally new.
-
-## Passenger-wise details wired up (Umrah/Tours + Agent bookings)
-`Traveller` model existed in schema but nothing ever created rows in it — genuine gap. Fixed both sides:
-- B2C `/booking-form`: one name/passport/CNIC row per adult, required for Umrah, optional for tours. `/api/bookings` validates + creates real `Traveller` rows, includes them in the admin notification email.
-- Agent `/agent/bookings/new`: `AgentBooking` had ZERO customer/passenger fields at all (pure internal sales record) — added `customerName`/`customerPhone`/`customerEmail` + `travellers` (JSON array, same shape as Traveller, consistent with how itinerary/flightSectors are already stored). Required passenger names for Umrah, same as B2C.
-- `/admin/agent-bookings` now shows Customer + Passengers columns — the data was being captured but invisible without this.
-
-**DB migration needed:**
-```sql
-ALTER TABLE agent_bookings ADD COLUMN customer_name TEXT;
-ALTER TABLE agent_bookings ADD COLUMN customer_phone TEXT;
-ALTER TABLE agent_bookings ADD COLUMN customer_email TEXT;
-ALTER TABLE agent_bookings ADD COLUMN travellers JSONB;
-```
-
-## Not done: real online B2C booking for Visa + Insurance
-Owner asked that Visa and Insurance be bookable online like Umrah/Tours/Group-tickets already are — currently both are WhatsApp-enquiry only (Insurance has a quote calculator but no actual booking/order flow). This needs real schema+flow design (what does "a visa booking" or "an insurance booking" actually capture — passport copies? travel dates? which plan/rate?), not something to guess blind. Wrote `VISA-INSURANCE-BOOKING-PROMPT.md` for the next session to pick up properly.
-
-## Agent view matches user (B2C) view — Umrah/Tours
-Built `/agent/umrah` + `/agent/tours` (browse packages, same cards as public site) and `/agent/umrah/[slug]` + `/agent/tours/[slug]` (same content sections, agent-specific booking widget). `AgentPackageBookingWidget` mirrors the public room-selector + adults/children/infants calculator exactly, but: agent sets the actual sell price charged to the customer (a "use suggested price" button pre-fills from real room pricing, editable), submission goes to `/api/agent/bookings` not `/api/bookings` — so commission/payable/balance tracking stays completely separate from the B2C payment-free flow, per the ask ("payment aur record keeping method different hon").
-
-**Real bug fixed in passing**: `VALID_SERVICE_TYPES` on `/api/agent/bookings` never included `"tours"` — only `umrah`/`group_ticket`/`insurance`. Any tours booking through the sidebar's existing "World Tour" link would have silently 400'd. Fixed.
-
-Sidebar nav → New Booking → Umrah/World Tour now point at these new pages instead of the old manual sell-price-only form (which still exists for group_ticket/insurance/visa_services, untouched).
-
-**DB migration needed:**
-```sql
-ALTER TABLE agent_bookings ADD COLUMN room_type_label TEXT;
-ALTER TABLE agent_bookings ADD COLUMN adults INTEGER DEFAULT 1;
-ALTER TABLE agent_bookings ADD COLUMN children INTEGER DEFAULT 0;
-ALTER TABLE agent_bookings ADD COLUMN infants INTEGER DEFAULT 0;
-```
-
-**Not done**: Group Tickets/Insurance/Visa agent views still use the older manual form, not the "browse like a user" pattern — same idea could be applied there once/if the group-tickets ticket-table UI and the visa-application flow (being built concurrently per `VISA-INSURANCE-BOOKING-PROMPT.md`) are agent-portal-ready.
-
-## Insurance: real B2C + agent booking (calculator + filters, matching old site)
-- New `InsuranceApplication` model (mirrors `VisaApplication`'s pattern) — B2C submissions via `/api/insurance/apply`, server-computes `travellers × rate.pricePkr`, never trusts client total.
-- `InsuranceCalculator.tsx`: each search result now has a "Book Now" that expands an inline name/phone/email form, submits, shows a clear "no payment taken yet" confirmation.
-- `/admin/insurance-applications` — review list + confirm/cancel, added to sidebar nav.
-- `/agent/insurance` — same destination/duration/traveller search as the public calculator, but agent sets the sell price charged to the customer and submits through `/api/agent/bookings` (commission/payable tracking stays separate, no direct payment) — added `insurancePlanLabel` snapshot field to `AgentBooking` for this.
-- Found + fixed two nav bugs while wiring this in: the agent "New Booking" landing page's Insurance card pointed at the old manual sell-price-only form instead of the new calculator page, and **World Tours had no card on that page at all** despite `/agent/tours` already existing from a previous session — agents had no way to reach it from the main entry point.
-
-**DB migration needed:**
-```sql
-CREATE TABLE insurance_applications (
+-- Sub-users (staff logins per agency) — REQUIRED for sub-user feature
+CREATE TABLE IF NOT EXISTS agent_users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  phone TEXT,
+  designation TEXT,
+  password_hash TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  permissions JSONB NOT NULL DEFAULT '{}',
+  login_attempts INTEGER NOT NULL DEFAULT 0,
+  locked_until TIMESTAMPTZ,
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_agent_users_agent_id ON agent_users(agent_id);
+
+-- Earlier migrations (run if not already applied)
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS ticket_number TEXT;
+ALTER TABLE package_room_types ADD COLUMN IF NOT EXISTS available_slots INTEGER;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
+ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS applicant_category TEXT;
+ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS nationality TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_country TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_link TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_number TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_url TEXT;
+ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_sent_at TIMESTAMPTZ;
+CREATE TABLE IF NOT EXISTS visa_discount_tiers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  min_travellers INTEGER NOT NULL,
+  discount_percent INTEGER NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT now()
+);
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS room_type_label TEXT;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS insurance_plan_label TEXT;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS adults INTEGER DEFAULT 1;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS children INTEGER DEFAULT 0;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS infants INTEGER DEFAULT 0;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS customer_name TEXT;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS customer_phone TEXT;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS customer_email TEXT;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS travellers JSONB;
+ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS issued_at TIMESTAMP;
+CREATE TABLE IF NOT EXISTS insurance_applications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   rate_id UUID NOT NULL REFERENCES insurance_rates(id),
   full_name TEXT NOT NULL,
@@ -932,945 +220,31 @@ CREATE TABLE insurance_applications (
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
-ALTER TABLE agent_bookings ADD COLUMN insurance_plan_label TEXT;
-```
-(Also confirm the earlier `agent_bookings` migration — room_type_label/adults/children/infants — actually ran; this session's insurance work depends on those columns existing too.)
-## Agent group-flight booking: dedicated browse → book → reference flow (July 2026)
-
-Replaced the generic one-size-fits-all `/agent/bookings/new` form (for
-group tickets specifically) with a proper dedicated flow, per the owner's
-spec:
-
-1. **`/agent/group-flights`** — new browse page, lists every active group
-   flight with full details (airline/logo, route, flight no., dep/arr
-   date+time, baggage, meal, trip type, seats left, price) and a Book Now
-   per flight. Sidebar's "New Booking → Group Flights" now points here
-   instead of the generic form.
-2. **`/agent/group-flights/book/[flightId]`** — the booking page:
-   selected flight shown at the top, adult/child/infant counters, a live
-   **Bill/Summary panel on the right** (agent name/code/tier shown
-   automatically from the logged-in session, per-passenger-type rate
-   inputs pre-filled from the flight's listed fare, running total),
-   passenger detail fields (name/passport/CNIC) that auto-expand to match
-   the adult count, and customer contact fields. Submits to the existing
-   `POST /api/agent/bookings` (`serviceType: "group_ticket"`) — no API
-   changes needed there, it already accepted all of this.
-3. **`/agent/bookings/[id]`** — new booking reference/confirmation page:
-   booking ref, flight + passenger + fare details, and action buttons —
-   **Print with Fare** / **Print without Fare** (toggles a `showFare`
-   flag and calls `window.print()`; a `@media print { .no-print {
-   display:none } }` rule hides all action buttons and chrome from the
-   print output either way), **Issue Booking** (reuses the existing
-   OTP-gated `issue-request` flow/modal from `/agent/bookings` — agents
-   can only *request* issuance, actual `status: issued` is still
-   admin-only via the existing admin/agent-bookings PATCH route, which is
-   where the seat decrement + payable ledger debit already happen — an
-   agent-side "Issue" button intentionally does NOT bypass that),
-   **Cancel Booking** (new, see below), and **Go Back to Dashboard**. Also
-   shows a live countdown against `AgentBooking.expiresAt` ("PNR must be
-   issued within Xm Ys") — this field already existed
-   (`computeExpiresAt`, 30-min default) but had no UI surfacing it before
-   now.
-
-**New supporting API routes:**
-- `GET /api/agent/bookings/[id]` — single booking fetch, agent-scoped
-  (404s if it's not this agent's booking), includes `groupFlight` +
-  `package`.
-- `POST /api/agent/bookings/[id]/cancel` — agent self-service cancel.
-  Blocked once `status === "issued"` (ledger/seats already committed at
-  that point — office has to reverse it manually) and effectively a no-op
-  if already cancelled; anything else (`pending`/`confirmed`/
-  `issue_requested`) can be self-cancelled.
-
-Not touched: `POST /api/agent/bookings` itself (already handled
-group_ticket correctly), the admin-side issue/seat-decrement/ledger logic
-(deliberately left as the only path to `status: issued`). `npx tsc
---noEmit` shows zero new errors from any of these new files.
-
-## Group Flights: Multi-Leg Support + Grouped Table Display (Agent Portal)
-
-Added connecting-flight support to Group Flights, per the owner's exact
-spec. `GroupFlight` previously represented exactly one leg (one flightNo,
-one dep/arr time) — no way to attach a second connecting leg to the same
-bookable option. Added `legs Json?` to the schema: an array of
-`{ flightNo, from, to, depTime, arrTime }`, one entry per leg, following
-the same JSON-array convention already used by `Package.itinerary` and
-`Package.flightSectors`. The row itself still holds ONE price/date/seats
-— that's the bookable "option," legs are just its journey breakdown.
-Existing `route`/`depDate`/`depTime`/`arrTime`/`flightNo` fields kept for
-backward compatibility; when `legs` is null (older rows), those fields
-are treated as a single 1-leg option — see `lib/groupFlightLegs.ts`
-(`legsFromFlight`, shared by admin form, admin table, and agent display
-so all three always agree on the fallback).
-
-**Admin form** (`app/admin/group-flights/page.tsx`): replaced the single
-Flight No./Departure Time/Arrival Time inputs with a repeatable "Flight
-Legs" editor — same UI pattern as the Flight Sectors editor in the
-packages admin form (Leg row: Flight No., From, To, Dep Time, Arr Time;
-minimum 1 leg, "-" disabled on the last remaining row, "+ Add Connecting
-Leg" to append). `route` stayed a separate manually-entered field (not
-auto-derived from legs) since existing rows already use free-text routes
-like "LAHORE→DUBAI" rather than 3-letter codes, and grouping is keyed off
-that same field — changing its semantics would've been a bigger, riskier
-change than the spec called for. Admin list table now shows a stacked
-per-leg summary in place of the old single Flight/Time columns.
-
-**Admin API** (`app/api/admin/group-flights/route.ts` + `[id]/route.ts`):
-both POST and PATCH now accept a `legs` FormData field (JSON string),
-parse and store it, and derive the backward-compat `flightNo`/`depTime`
-(from the first leg) and `arrTime` (from the last leg) so any older code
-path that only reads those single fields keeps working unchanged.
-
-**Agent portal** (`app/agent/group-flights/page.tsx`): flights are now
-grouped client-side by `(airline, route)` under one header each — airline
-logo + name (left) and route as "LHE → DXB"-style text in gold (matching
-the portal's existing gold-accent, card-based style). Below each header,
-a table lists one row per bookable OPTION (not per leg); options with
-multiple legs show them stacked within that row's first cell, with a
-single Date/Meal/Baggage/Seats/Price/Book Now per option. "Book Now"
-still links to `/agent/group-flights/book/[flightId]` using
-`GroupFlight.id` — no changes needed to the booking flow, API route, or
-`POST /api/agent/bookings` (`groupFlightId`), which already worked
-correctly per-option.
-
-**Not touched:** pricing/booking logic, `/api/agent/group-flights` GET
-(already returns full rows, `legs` just rides along), the booking page
-and its `POST /api/agent/bookings` call.
-
-`npx tsc --noEmit` shows only the same pre-existing baseline of
-implicit-`any` errors from before this change (diffed against a captured
-baseline) — zero new errors introduced. Not run against a live database
-or generated Prisma client in this sandbox (same `binaries.prisma.sh` 403
-block as prior sessions).
-
-**Pending manual step — owner must run before this goes live:**
-```sql
-ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS legs JSONB;
+ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS arr_time TEXT;
+ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS region TEXT DEFAULT 'international';
+ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS trip_type TEXT DEFAULT 'oneway';
+ALTER TABLE group_flights ADD COLUMN IF NOT EXISTS flight_no TEXT;
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
 ```
 
-## Visa Applications Admin: Cleaner Approve/Reject UX
-
-Owner's complaint: after approving or rejecting an application, the full
-status pipeline (Under Review, More Info Needed, and even the opposite of
-Approved/Rejected) kept showing as buttons — confusing clutter once a
-decision was already made. Root cause was `STATUS_PIPELINE.filter((s) =>
-s !== app.status)`, which only ever removed the *current* status, not the
-other now-irrelevant ones.
-
-Fixed in `app/admin/visa-applications/page.tsx`:
-- **Contextual next steps** (`NEXT_STEPS` map) — only sensible transitions
-  are offered per current status (e.g. from `under_review`: Approve,
-  Reject, More Info Needed only — no backward-to-pending option).
-- **Terminal-state banner** — once `approved`/`rejected`, the button
-  pipeline is replaced entirely by a clean colored banner (✅/❌ + decided
-  timestamp + note if any) with a single low-emphasis "↺ Reopen for
-  Review" action instead of a wall of buttons, for the rare correction.
-- **Reject now requires a reason** too (previously only More Info Needed
-  did) — reuses the same note-gate flow, so the applicant always knows
-  why. Refactored the old `pendingStatus === app.id` boolean-overload
-  hack into a proper `pendingAction: {appId, status}` so Reject and More
-  Info Needed share the note editor cleanly instead of just being
-  hardcoded to `more_info_needed`.
-- **Approve gets a one-step inline confirm** (`confirmTarget`) since it's
-  the one instant, no-note action that goes straight to the applicant —
-  small "Approve this application?" / Yes / Cancel box instead of firing
-  on the first click.
-- **Quick action icons** (✓ / ✕) added directly on the collapsed table
-  row for pending/under_review/more_info_needed applications, so triage
-  doesn't require expanding first — clicking one auto-expands the row and
-  jumps straight into the confirm/note flow (`startAction` helper, shared
-  by both the collapsed-row icons and the detail-panel buttons).
-
-No API or schema changes — `PATCH /api/admin/visa-applications/[id]`
-already accepted any valid status + optional note. `npx tsc --noEmit`
-diffed clean against the same baseline as before.
-
-**Ideas not implemented (for later if wanted):** a dedicated
-`decidedAt` timestamp column (currently reusing `updatedAt`, which is
-close enough but would drift if a note is edited after the decision);
-an email/WhatsApp notification hook firing on Approve/Reject so "the
-applicant will be notified" in the confirm box is actually wired up
-rather than just descriptive text; an audit trail of status changes.
-
-## Group flight B2C booking: real PNR + 2hr seat hold + email (done)
-6-char PNR, atomic seat hold (2hr, auto-release via lazy sweep, no cron), per-traveller names, automatic customer+admin email via Resend. Real automatic WhatsApp needs paid Business API (not set up) — used auto-open wa.me instead (one tap, not zero-click).
-**DB migration:**
-```sql
-ALTER TABLE bookings ADD COLUMN expires_at TIMESTAMP;
-```
-
-## Agent Visa Wizard: Per-Traveller Documents
-
-Extended the earlier agent visa flow per AGENT-VISA-FLOW-PROMPT.md: added
-`VisaApplicant` (one row per traveller) + `VisaApplicationDocument.applicantId`
-(nullable — public/B2C flow untouched, still application-level-only).
-`lib/visaApplicationSubmit.ts` now also reads `travellerCount_i` /
-`trav_{i}_{t}_*` / `travdoc_{i}_{t}_{docId}` fields when present (agent
-wizard only; public site never sends them) and creates one VisaApplicant
-+ its own documents per traveller.
-
-`components/AgentVisaApplyFlow.tsx` rebuilt as a 5-step wizard: contact →
-traveller count → per-traveller name/passport/documents (compressed
-client-side via existing `compressImage`) → review (per-traveller doc
-counts + price breakdown) → confirmation (batchRef, total, "no payment
-collected yet" tone matching `booking-confirmation`). Submits once, at
-the end, to the same `/api/agent/visa-applications` route as before.
-
-Admin (`/admin/visa-applications`) now also shows a "Travellers" section
-per application (name/passport/age group + their own doc links) when
-`applicants` is present — separate commit, minimal, doesn't touch the
-Source-column change from before.
-
-`npx tsc --noEmit`: clean against the same known implicit-any baseline.
-
-**Migration status: ✅ Done (owner ran it 2026-07-15).** Note for future
-sessions: even though `schema.prisma` declares these ids as
-`String @default(uuid())`, the actual Postgres columns are native `UUID`
-type, not `TEXT` — any new FK-referencing column added via manual
-`ALTER TABLE`/`CREATE TABLE` must be declared `UUID`, not `TEXT`, or the
-foreign key constraint will fail with "incompatible types: text and uuid".
-The SQL actually run (corrected from the TEXT version first given):
-```sql
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS agent_id UUID REFERENCES agents(id);
-
-CREATE TABLE visa_applicants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  application_id UUID NOT NULL REFERENCES visa_applications(id) ON DELETE CASCADE,
-  full_name TEXT NOT NULL,
-  passport_number TEXT,
-  age_group TEXT NOT NULL DEFAULT 'adult',
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-
-ALTER TABLE visa_application_documents ADD COLUMN IF NOT EXISTS applicant_id UUID REFERENCES visa_applicants(id) ON DELETE CASCADE;
-```
-**Rule of thumb for all future manual migrations in this project: any
-column that is or references an `id` should be given as `UUID`, never
-`TEXT`, unless you've confirmed that specific table uses text ids.**
-
-## Print Ticket (agent group-ticket bookings) — complete
-Matches the reference layout exactly: top bar (agent logo, booking ref, ticket number, barcode), booked-by/contact/reserved/ticketed row, Passenger Name table, Travel Itinerary table (multi-leg aware via existing `legsFromFlight`), Terms & Conditions. Status pill reads "Not Confirmed" (amber) until `status === 'issued'`, then "Confirmed" (green) with the real ticket number. Per-agent branding (logo/name/phone) pulled from the booking's own `Agent`, not hardcoded.
-
-**Honest deviation**: admin enters the ticket number via a plain `window.prompt()` when clicking "Mark Issued" on a group-ticket booking, not a dedicated form field/modal — functional and required (won't issue without one), but not a polished UI. Fine for now; upgrade to a proper input if it feels clunky in practice.
-
-Print Invoice is stubbed exactly as instructed — "Ticket not issued yet." before issuance, a placeholder message after, with a `// TODO` comment. Not building a real invoice layout until the owner sends that reference.
-
-**DB migration:**
-```sql
-ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS ticket_number TEXT;
-```
-## My Bookings: Dedicated Per-Type Pages
-
-Split the old flat `/agent/bookings` (one page, one generic table, same 5
-status tabs for every service) into 5 dedicated pages, per the owner's
-ask — sidebar now links straight to each:
-
-- `/agent/bookings/group-tickets` — flight/route detail column, pax
-  count, and a new **Expired** status tab (a pending booking whose
-  seat-hold window lapsed — previously invisible, silently mixed into
-  "Pending"). API (`/api/agent/bookings`) now treats `status=expired` as
-  a pseudo-status for `category=group_ticket` only (`status: pending,
-  expiresAt < now`), and excludes lapsed rows from the real "Pending" tab
-  so it only shows bookings an agent can still act on.
-- `/agent/bookings/umrah`, `/tours`, `/insurance` — same 5 statuses as
-  before, but each shows its own relevant detail column (package+room,
-  package, plan) instead of one generic column for everything.
-- `/agent/bookings/visa` — **bug fix**: the old "Visa Services" filter
-  was dead (API never recognized `visa_services` as a category, and real
-  agent visa submissions live in `VisaApplication`, a different table
-  with a different status vocabulary, not `AgentBooking`). New page hits
-  a new `GET /api/agent/visa-applications` (agent-authed, filtered by
-  `agentId`) with its own real status tabs (pending / under_review /
-  approved / rejected / more_info_needed).
-
-Built one shared `components/AgentBookingsByType.tsx` (parametrized by
-category) for the 4 `AgentBooking`-backed pages instead of duplicating
-table/filter chrome 4x. Extracted the OTP issue-request modal into
-`components/AgentIssueRequestModal.tsx`, shared by all of these plus the
-old flat page (which still exists, unchanged in behavior otherwise,
-reachable from the dashboard's "My Bookings" button as an all-services
-overview — just dropped its now-redundant/previously-dead "Visa
-Services" dropdown option).
-
-No schema changes, no new migration needed. `npx tsc --noEmit`: clean
-against the same known baseline.
-
-## Print Invoice + issuedAt + Agent Logo Upload + Commission Verification
-
-**1. `AgentBooking.issuedAt`** — set server-side (`new Date()`) in the same
-`$transaction` as the status/ticketNumber update in
-`app/api/admin/agent-bookings/[id]/route.ts`, only when `isBeingIssued`.
-PrintTicket's "Ticketed On" now reads this instead of `updatedAt` (more
-precise — `updatedAt` could be touched by unrelated edits later).
-
-**2. Print Invoice** — built `components/PrintInvoice.tsx`, extracted
-`components/print/PrintShared.tsx` (TopBar/SecondRow/PassengerTable/
-Barcode/fmt) so PrintTicket and PrintInvoice share the header/passenger
-sections instead of duplicating ~100 lines. Print page
-(`app/agent/bookings/[id]/print`) now has a Ticket/Invoice toggle;
-Invoice stays blocked with "Ticket not issued yet." pre-issuance, exactly
-as before.
-
-**Honest finding on "Per Person Fare" (as instructed, not guessing):**
-`AgentBooking` only stores ONE `sellPrice` and ONE `commission` for the
-*whole* booking — `calculateCommission()` (`lib/commission.ts`) computes
-commission as a flat fixed amount OR a percentage of the total sellPrice,
-never broken out by Adult/Child/Infant. `GroupFlight.price` is also a
-single field, not per-passenger-type. There is no stored per-type fare
-anywhere in this system to pull a real "Adult fare vs Child fare" from.
-So the Pricing & Fares table's per-row Per Person Fare / Commission is a
-**uniform per-head split** of the one snapshotted total
-(`sellPrice / totalPax`, `commission / totalPax`) — not a true
-age-based fare breakdown. The **Grand Total row is NOT a sum of the
-(rounded) per-row figures** — it's `sellPrice - commission` directly from
-the snapshot, so it always exactly matches the real numbers regardless of
-the row-level approximation. If real per-type pricing is wanted later,
-`GroupFlight`/booking creation would need dedicated adult/child/infant
-fare fields (similar to `VisaService.priceAdult/priceChild/priceInfant`) —
-that's a bigger change than this task's scope.
-
-**3. Agent logo upload** — field already existed (`Agent.logoUrl`), just
-had no UI:
-- Admin (`/admin/agents`): per-row upload/change-logo control in the
-  agents table (compressed client-side, `PATCH /api/admin/agents/[id]/logo`,
-  R2 `folder: "agents"`), thumbnail shown next to the name.
-- Agent (`/agent/profile`): same upload, agent-editable, via new
-  `PATCH /api/agent/profile` (logo-only — balance/tier/creditLimit
-  still untouched by this or any agent-facing route).
-- Already flows into PrintTicket/PrintInvoice automatically (both pull
-  `Agent.logoUrl`), no changes needed there.
-
-**4. Commission workflow — verified end to end, already correct:**
-rate set (`AgentCommissionRate`) → `calculateCommission()` snapshots
-`commission` on `AgentBooking` at creation (fixed or % of sellPrice,
-never recalculated later) → on issuance, `netOwed = sellPrice -
-commission` decrements `Agent.balance` and creates a matching
-`AgentTransaction` audit row, all inside the same `$transaction` as the
-status/ticketNumber/issuedAt update and the seat decrement. Print
-Invoice pulls the same snapshotted `sellPrice`/`commission` fields
-directly — no independent recalculation, so there's only ever one
-commission number in the system.
-
-**Edge case noticed, not fixed (flagging rather than guessing at scope):**
-`isBeingIssued` is `status === "issued" && existing.status !== "issued"`.
-If a booking goes issued → cancelled → issued again, this would fire a
-second time and double-debit the agent's balance. Not currently
-prevented. Worth a guard (e.g. only allow the issued transition once,
-track via `issuedAt !== null`) if this path is ever used in practice.
-
-`npx tsc --noEmit`: clean against the same known baseline throughout.
-
-**Pending manual migration:**
-```sql
-ALTER TABLE agent_bookings ADD COLUMN IF NOT EXISTS issued_at TIMESTAMPTZ;
-```
-
-## Full-Site UX Overhaul — Phase 1: New Landing Page + Real Search
-
-Owner asked for a full mobile-responsive + UI/UX pass across B2C, B2B
-(agent portal), and Admin, starting with a "most beautiful" landing page
-with a Wizz/Kayak-style unified multi-service search widget. Agreed
-approach (owner confirmed): phase-wise, landing page first for review
-before continuing; real filtering (not just routing) from day one; new
-visual direction is welcome, not just current navy/gold re-executed;
-full site scope includes Admin too.
-
-**New design direction (Phase 1, landing page only):** deep emerald-ink
-(`#0E2A26`) + warm brass (`#B8862E`) + parchment/sand (`#F7F2E6`) +
-oxblood accent used rarely — evokes mosque tilework/traditional textile
-warmth, deliberately distinct from generic navy-corporate travel-site
-look and from the AI-generated-design "tells" (cream+terracotta,
-near-black+neon, broadsheet). Kept existing fonts (Cormorant display +
-Plus Jakarta Sans body) — already distinctive choices, not worth
-churning. Signature element: the search card is a literal ticket-stub
-shape (scalloped notch cut into the right edge, CSS radial-gradient
-trick), not a generic rounded rectangle — ties concretely to the travel
-subject.
-
-**Scoped, not global:** all new tokens/classes are `.lp-*`, added
-additively in `app/globals.css` — the existing `--navy`/`--gold` used
-throughout the admin panel, agent portal, and printed
-tickets/invoices is untouched. This was deliberate: changing the global
-palette now would have cascaded into dozens of already-built admin/agent
-screens before the new direction was even approved. Once the owner signs
-off on this look, propagating it site-wide is a separate, explicit later
-step (Phase 3/4).
-
-**`components/landing/SearchWidget.tsx`** — 5 service tabs (Umrah,
-Flights, Tours, Visa, Insurance), horizontally scrollable on mobile so
-all 5 stay reachable, one text input whose placeholder changes per tab,
-submits to that service's real listing page with `?q=`.
-
-**Real filtering, all 5 public listing pages** (`app/umrah`, `/tours`,
-`/group-tickets`, `/visa`, `/insurance`) — each now reads
-`searchParams.q` server-side and adds a case-insensitive `contains`
-`OR` clause (name/destination for packages, airline/route for group
-flights, title/country for visa, company-or-plan-name for insurance).
-New shared `components/SearchResultsNotice.tsx` shows "Showing results
-for '…' · Clear search" and each page's existing empty-state card now
-has query-aware copy ("No Matching Packages" vs the generic message) —
-reused the existing empty-state design rather than building a new one.
-
-`npx tsc --noEmit`: clean against the same known baseline (only line-
-number shifts of the pre-existing implicit-any errors, zero new ones).
-
-**Next (pending owner's review of this phase):**
-- Phase 2: propagate the new direction site-wide if approved (or iterate
-  further on it first)
-- Phase 3: mobile-responsive audit, B2C public site
-- Phase 4: mobile-responsive audit, Agent portal (B2B) + Admin panel
-
-No schema changes, no migration needed for this phase.
-
-## Landing Page Phase 1.1: Bigger Desktop Hero + Structured Filters + Pax Carry-Through
-
-Owner feedback on Phase 1: hero/search widget too small on desktop, and
-filters should be meaningful (package type, airline, direct/connecting,
-duration) rather than one free-text box — plus pax counts entered in the
-search widget shouldn't need retyping later in the booking flow.
-
-**Desktop sizing:** hero heading now scales up to `text-8xl` at `lg:`,
-more vertical padding at `sm:`/`lg:`, search card widened to `max-w-3xl`.
-
-**Structured filters, per service tab** (`components/landing/SearchWidget.tsx`):
-- Umrah/Tours: Package Type (tier), Airline, Duration — all dropdown
-  options pulled live from distinct DB values (`getFilterOptions()` in
-  `app/page.tsx`), never hardcoded, so new tiers/airlines/durations the
-  admin adds later show up automatically.
-- Group Tickets: Airline dropdown + "Direct flights only" checkbox.
-  Direct/connecting can't be a Prisma `where` clause since
-  `GroupFlight.legs` is JSON — filtered in-memory after fetch instead
-  (list sizes here are small, this is fine).
-- Visa: Visa Type dropdown (tourist/umrah/business/work — already a
-  real categorical field).
-- Insurance: kept to its own shape (destination + one combined
-  traveller count) rather than forcing adult/child/infant onto it, since
-  the calculator itself never split them that way.
-- Pax counter (Adults/Children/Infants) shown as a popover for all
-  services except Insurance, so the search bar stays one clean row on
-  desktop instead of sprawling into 6+ always-visible fields.
-
-**Wired into all 5 listing pages** (`app/umrah`, `/tours`,
-`/group-tickets`, `/visa`, `/insurance`) — each now reads the relevant
-extra searchParams and adds them to its Prisma `where` clause alongside
-the existing `q` text filter from Phase 1.
-
-**Pax carry-through (the "don't ask twice" part):** new
-`lib/searchState.ts` (`paxQueryString`/`parsePax`) centralizes the query
-param convention. Umrah/Tours listing → package detail links now carry
-`adults`/`children`/`infants` forward; `[slug]/page.tsx` reads them and
-passes `initialAdults`/`initialChildren`/`initialInfants` down through
-`PackageDetailView` → `PackageBookingWidget` (which now accepts these as
-optional props instead of hardcoding `useState(1)`/`useState(0)`).
-Same pattern for Visa: listing → `/visa/[id]` → `VisaApplyFlow` (only the
-*first* draft in the cart inherits the initial counts — "add another
-application" still starts fresh, correctly, since that's a new person).
-Insurance: `?q=` and `?travellers=` flow into `InsuranceCalculator` as
-`initialDestination`/`initialTravellers`. This reuses the exact
-convention `booking-form` already used (`?packageId=&adults=&children=`)
-— extended backward to where the journey actually starts, not a new
-state-management system.
-
-`npx tsc --noEmit`: clean against the same known baseline (only line-
-number shifts of the pre-existing implicit-any errors from the missing
-generated Prisma client in this sandbox — zero new/real errors).
-
-No schema changes, no migration needed for this phase.
-
-## Real-time seat/slot holds unified (B2C + agent, group flights + Umrah/Tours)
-Group-ticket seats and Umrah/Tours room-type slots now decrement atomically at booking creation (2hr hold, auto-release if unconfirmed) for BOTH public and agent bookings. Reverted agent group-ticket from issue-time back to creation-time per explicit direction. Umrah slots are opt-in per room type (`availableSlots`, blank = unlimited, backward compatible) — admin sets "Total Slots Available" in the room-type manager.
-**DB migration:**
-```sql
-ALTER TABLE agent_bookings ADD COLUMN expires_at TIMESTAMP;
-ALTER TABLE package_room_types ADD COLUMN available_slots INTEGER;
-```
-
-## Landing Page Phase 1.2: Dropdown-only search, meaningful sidebar filters
-
-Owner feedback: free-text search intimidates customers ("kya likhun?"),
-widget felt too "AI generic," and filters needed to be real/structured
-with instant auto-apply — no submit button — plus a left sidebar on
-desktop and a drawer on mobile.
-
-**SearchWidget v3** — the destination field is now a `<select>` dropdown
-of real, existing values per service (never free text): Umrah/Tours
-destinations, Group Tickets routes, Visa countries, Insurance uses the
-same region list as `InsuranceCalculator` (extracted to
-`lib/insuranceDestinations.ts` so both stay identical forever). Detailed
-filters (tier/airline/duration/direct/type) moved OFF the widget — it's
-now just: service tabs + destination dropdown + pax counter + Search.
-Widget styling refined (gradient ticket card, custom select chevron,
-underline-style active tab instead of a flat pill) to read less
-templated.
-
-**`components/FilterSidebar.tsx`** (new, reusable) — desktop: sticky
-left column. Mobile: a "Filters" button (badge shows active count)
-opening a slide-in drawer. Every checkbox calls `router.replace()`
-on change (`lib` pattern lives inline in the component) — **no submit
-button anywhere**, exactly as asked. Wrapped in `<Suspense>` per Next.js
-convention for client components using `useSearchParams()`.
-
-**`lib/filterFacets.ts`** — one shared source of distinct DB values
-(`getUmrahFacets`, `getToursFacets`, `getGroupTicketFacets`,
-`getVisaFacets`), used by both the homepage widget's dropdowns and each
-listing page's sidebar checkboxes, so they can never drift out of sync.
-`parseMulti()` is the shared convention for multi-select query params
-(`?tier=Gold,Platinum`, comma-separated, parsed with `{ in: [...] }` in
-Prisma).
-
-**Per-page sidebars:**
-- Umrah/Tours: Package Type (tier), Airline, Duration — all checkboxes,
-  multi-select.
-- Group Tickets: Airline (multi-select) + "Direct flights only" toggle
-  (in-memory filter, `legs` is JSON so can't be a Prisma `where`).
-- Visa: Visa Type (multi-select).
-- Insurance: Insurance Provider (company name, multi-select) — added
-  minimally without restructuring the page's company/plan grouping.
-
-`npx tsc --noEmit`: clean against the same known baseline (only line-
-number shifts of the pre-existing implicit-any errors — zero new/real
-errors introduced by this work).
-
-No schema changes, no migration needed for this phase.
-
-## Supplier management framework (done)
-Suppliers, encrypted API keys (lib/supplierCrypto.ts, AES-256-GCM, key from
-SUPPLIER_KEY_SECRET env var), per-flight supplier + cost attribution,
-supplier payable ledger (mirrors agent ledger, debited at issuance),
-finance page totals, downloadable Excel report with margin column
-(/admin/agent-bookings -> Download Report). Admin page: /admin/suppliers.
-REQUIRES: SUPPLIER_KEY_SECRET env var on Render + the SQL migration given
-to the owner directly (suppliers, supplier_transactions tables + new
-columns on group_flights/agent_bookings).
-
-## Phase 3: Mobile-Responsive Audit (in progress, owner will do final pass)
-
-**Fixed — real bugs found:**
-- **Public Navbar had NO mobile menu at all.** `<nav>` was `hidden md:flex`
-  with zero replacement below that breakpoint — mobile visitors could
-  not reach Home/About/Services/Blog from the navbar, full stop. Added a
-  proper hamburger → slide-down panel with all the same links +
-  WhatsApp CTA.
-- Two tables (`app/agent/bookings/[id]/page.tsx` passenger list,
-  `app/admin/suppliers/page.tsx` list) weren't wrapped in the
-  `.ap-tw`/`.adp-tw` horizontal-scroll containers every other table in
-  the codebase already uses — wrapped them to match.
-
-**Checked, already solid (no action needed):**
-- Agent portal (`AgentShell`/`AgentTopbar`) and Admin panel
-  (`AdminShell`/`AdminTopbar`) both already have working hamburger →
-  slide-in sidebar on mobile, wired correctly end to end.
-- `FilterSidebar` (new landing-page work) already has an explicit
-  desktop/mobile split (`hidden lg:block` sticky column vs. a mobile
-  drawer button) — built mobile-first from the start.
-- Two more tables initially flagged by an automated grep
-  (`app/contact/page.tsx` office-hours, `app/agent/group-flights/book/
-  [flightId]` price breakdown) turned out to be simple 2-column,
-  `width: 100%` tables that reflow naturally — false positives, no fix
-  needed.
-
-**Known remaining gap, not yet fixed (flagging for the owner's own
-end-of-project audit rather than guessing at priority):** a handful of
-admin/agent forms use inline `style={{ gridTemplateColumns: "1fr 1fr
-1fr" }}` (fixed 3-column grids with no responsive fallback, since inline
-styles can't carry media queries) —
-`app/admin/visa-services/page.tsx`, `app/admin/bank-accounts/page.tsx`,
-`app/agent/group-flights/book/[flightId]/page.tsx`,
-`app/agent/visa/[id]/page.tsx`. These will look cramped on narrow
-screens. Lower priority than the Navbar/table fixes above since these
-are staff-facing forms typically used on desktop, but worth a look.
-
-`npx tsc --noEmit`: clean throughout, zero new errors from any of this
-phase's changes (all Tailwind class renames + a couple of `<div>`
-wrappers, no logic touched).
-
-## Phase 3 — Completed (all fixed-column grids made responsive)
-
-Finished what was flagged as "remaining" earlier: every inline
-`gridTemplateColumns` grid across the whole codebase (not just the 4
-originally flagged) now stacks to 1 column on mobile via
-`className="grid grid-cols-1 sm:grid-cols-2"` (or `sm:grid-cols-3` /
-`sm:grid-cols-4` / `sm:grid-cols-[1fr_1fr_1fr_auto]` for the traveller-row
-+ remove-button case), instead of a fixed inline
-`gridTemplateColumns` that can't carry a media query at all.
-
-Covered: admin visa-services, visa-applications, bank-accounts,
-suppliers; agent insurance, topup, umrah/[slug], tours/[slug],
-group-flights booking, visa/[id], bookings/[id];
-`AgentVisaApplyFlow`, `AgentPackageBookingWidget`. Verified via repo-wide
-grep afterward — zero fixed-column grids remain anywhere.
-
-`npx tsc --noEmit`: clean, zero new errors (pure className/style
-restructuring, no logic changes).
-
-This closes out the mobile-responsive pass for now. Owner will do their
-own end-to-end audit next and report back anything found.
-
-## Cleanup pass: security, SEO, visa commission, document re-upload
-
-Working through the earlier "betterment suggestions" list:
-
-**1. Image security** — `next.config.ts` previously allowed
-`remotePatterns: [{ hostname: "**" }]` (any HTTPS host through Next/Image's
-optimizer). Now derives the real hostname from `R2_PUBLIC_URL` at build
-time and restricts to just that — falls back to the wildcard only if the
-env var isn't set, so it can't break local dev.
-
-**2. SEO basics** — added `app/sitemap.ts` (static pages + all active
-packages/blogs/visa services, DB-driven) and `app/robots.ts`
-(disallows `/admin`, `/agent`, `/api`, booking-flow pages from being
-crawled/indexed). Both read `NEXT_PUBLIC_SITE_URL` with a fallback to
-the current Render URL — **set this env var once the final public domain
-is confirmed**.
-
-**3. Agent commission for Visa Services — real gap, now fixed:**
-- `VisaApplication.commission` (new, nullable) — snapshotted via the
-  same `calculateCommission()` used everywhere else, at submission time,
-  only when an agent is attached (`agentId` set).
-- Admin's commission-rate dropdown (`/admin/agents`) was missing **two**
-  service types entirely — `world_tour` and `visa_services` — added
-  both (world_tour bookings existed and could never get a real rate set
-  either).
-- `PATCH /api/admin/visa-applications/[id]` now debits
-  `Agent.balance` by `totalPricePkr - commission` + logs an
-  `AgentTransaction`, in a `$transaction`, the moment an agent-submitted
-  application moves into "approved" — mirrors `AgentBooking` issuance
-  exactly. Same known edge case as bookings (documented there too):
-  approved → rejected → approved again would double-debit; not guarded.
-- Admin review page now shows commission next to the price when an
-  agent submitted it.
-
-**4. Document re-upload flow — real gap, now fixed:** previously, once
-admin marked a visa application "More Info Needed", there was no way for
-an agent to actually act on it — no detail view existed at all, only the
-status list. Added:
-- `GET /api/agent/visa-applications/[id]` — single application detail
-  (agent-owned only), with applicants + their documents + the visa's
-  required-document slots.
-- `POST` on the same route — uploads new documents against specific
-  applicants (`doc_{applicantId}_{docId}` field convention), restricted
-  to `more_info_needed` status only (can't be used to tamper with a
-  decided application), auto-bumps status back to `under_review` so it
-  doesn't sit silently.
-- `/agent/bookings/visa/[id]` — new detail page: status + admin's note,
-  each traveller's documents on file, and the re-upload form (only shown
-  while `more_info_needed`). List page rows now link here.
-
-`npx tsc --noEmit`: clean throughout (only the same known implicit-any
-baseline from the missing generated Prisma client in this sandbox).
-
-**Deliberately not done this pass (scope/effort call, not forgotten):**
-a public/B2C re-upload flow — would need some way for an unauthenticated
-customer to prove they own an application (e.g. batchRef + phone/email
-verification), which is a bigger, separate design decision rather than a
-quick addition. Flagging for later if wanted.
-
-**Pending manual migration:**
-```sql
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS commission INTEGER;
-```
-
-## Agent Portal: My Bookings Consolidated + Dark Mode Sidebar Fix
-
-Owner feedback: sidebar stays dark navy in both light AND dark mode
-(theme toggle never touched it), dark theme needed more polish, and "My
-Bookings" should be one page with selectable service options (like New
-Booking's card picker) instead of 5 separate sidebar links/URLs.
-Sign Out/theme-toggle "missing" in one screenshot — checked
-`AgentTopbar.tsx`, both render unconditionally with no gating logic, so
-that was very likely a stale cached tab (pre-deploy JS bundle), not a
-real bug — flagged to owner rather than chased blind.
-
-**Dark mode sidebar** — `.ap-sb` was deliberately always-navy
-("distinct from admin's light sidebar"), which is why the toggle never
-changed it. Added `.ap-dark .ap-sb` with its own deep-charcoal gradient
-(`#161B22 → #0A0D12`, matching the dark palette's own tones) so dark
-mode reads as one deliberate theme end-to-end instead of a light-only
-toggle that leaves the sidebar untouched. Also polished `.ap-tab-bar`/
-`.ap-tab-btn` dark-mode contrast, which had the same gap.
-
-**My Bookings consolidated** — was 5 sidebar links → 5 separate pages
-(`/agent/bookings/{umrah,group-tickets,insurance,tours,visa}`), each
-re-fetching/re-rendering independently. Now one page
-(`/agent/bookings`) with a pill-style service selector at the top
-(`?service=` query param, shareable/bookmarkable) that swaps between the
-already-existing `AgentBookingsByType` (umrah/group_ticket/insurance/
-world_tour) and a newly-extracted `AgentVisaBookingsList` component
-(visa) — no new data-fetching logic written, this is pure reuse/
-reorganization of what already existed. Sidebar now has a single "My
-Bookings" entry. The 5 old URLs still work — each is now a one-line
-redirect to `/agent/bookings?service=X` so no bookmark/link breaks.
-
-`npx tsc --noEmit`: clean — the one non-implicit-any error present
-(`app/api/admin/agents/route.ts` TS7031) is pre-existing, unrelated to
-this work (confirmed against the prior baseline).
-
-No schema changes, no migration needed for this pass.
-
-## Real Fix: Sign Out / Dark Toggle Were Invisible (Not a Cache Issue)
-
-Owner reported Sign Out + theme toggle still missing after many hard
-refreshes on the latest deploy — correctly suspected it wasn't cache.
-Root cause found: `AgentTopbar.tsx`'s Sign Out button used `.ap-sb-out`
-— a class actually meant for the **sidebar's** dark-navy background
-(translucent-white text/border, by design invisible-ish against navy so
-it reads as subtle). The topbar background is white. White-on-white =
-button was rendering the whole time, just impossible to see. Same root
-cause for the dark-mode toggle (`.ap-dark-toggle`'s track/knob colors
-also assumed a dark background).
-
-Fixed with dedicated topbar-scoped classes (`.ap-tbar-signout`, and an
-`.ap-tbar .ap-dark-toggle` override) with colors that actually contrast
-against white — sidebar's own dark styling untouched.
-
-**My Bookings redesign** — owner wanted the same image-card visual
-language as the New Booking hub applied to My Bookings' service
-selector (previously plain pill buttons). Rebuilt with the same
-Unsplash-image + gradient-overlay card style, except clicking a card
-selects it as the active filter inline (ring + checkmark badge) instead
-of navigating to a new page — content below swaps via the same
-`AgentBookingsByType`/`AgentVisaBookingsList` reuse as before.
-
-`npx tsc --noEmit`: clean (only the one pre-existing unrelated TS7031 in
-`admin/agents/route.ts`, confirmed present before this session too).
-
-## Visa: New Status Stages, Tracking + Auto-Delivery, Group Discounts
-
-Owner asked for: clearer status labels for visa applications (whether
-from direct/B2C or agent), a way to track an application once formally
-lodged with the embassy, automatic document delivery on arrival, and
-admin-configurable group discounts. Verified first (already done by a
-prior session, no work needed): agent commission on visa applications
-(snapshotted at submission via `calculateCommission`, paid out at
-approval, matching `AgentBooking`) and multi-traveller billing
-(adults×priceAdult + children×priceChild + infants×priceInfant).
-
-**Honest scope note on "AI automation to auto-check and auto-download":**
-not realistically buildable for free/generically — every country's visa
-tracking portal is different, most require login/CAPTCHA, none have a
-public API. Explained this plainly rather than half-building something
-that wouldn't reliably work. Built the practical, fully-reliable
-alternative instead (below).
-
-**New pipeline stage: "Applied"** — sits between Under Review and a
-decision. `pending` is now labeled "Under Consideration" in the UI (no
-data/enum change, purely `STATUS_LABELS` display text) to match the
-owner's exact wording for "something just came in, from either a direct
-customer or an agent." `NEXT_STEPS` updated so Applied is reachable from
-Pending/Under Review/More Info Needed, and itself only leads to
-Approved/Rejected/More Info Needed.
-
-**Tracking info** — `VisaApplication.trackingCountry/trackingLink/
-trackingNumber` (nullable). Once status is "Applied," admin sees a panel
-to enter these, plus a "🔗 Check Status" button that opens the saved
-link directly — no need to re-find/re-type the portal URL each time.
-
-**Automatic document delivery** — new
-`POST /api/admin/visa-applications/[id]/document`: admin uploads the
-arrived visa (R2), which sets `finalDocumentUrl` +
-`finalDocumentSentAt`, flips status to `approved`, and **automatically
-emails the applicant (and the agent too, if this was an agent
-submission)** with a download link — one action instead of "approve,
-then separately remember to email the file."
-
-**Group discount tiers** — new `VisaDiscountTier` model
-(`minTravellers`, `discountPercent`), fully admin-configurable (owner
-chose "admin sets it themselves" over fixed defaults) via new
-`/admin/visa-discount-tiers` page. Applied in
-`submitVisaApplicationBatch`: highest-qualifying tier for that
-application's total traveller count discounts the gross total;
-commission is computed on the *discounted* total (what the customer
-actually pays), consistent with how commission works everywhere else in
-this codebase.
-
-`npx tsc --noEmit`: clean (only the same pre-existing unrelated
-TS7031 in `admin/agents/route.ts`).
-
-**Pending manual migration:**
-```sql
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_country TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_link TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS tracking_number TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_url TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS final_document_sent_at TIMESTAMPTZ;
-
-CREATE TABLE IF NOT EXISTS visa_discount_tiers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  min_travellers INTEGER NOT NULL,
-  discount_percent INTEGER NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-```
-
-**Suggestion (asked for): other international-visa features worth
-considering later** — per-country dynamic document checklists (some
-countries need bank statements, others don't — already partially
-supported via `VisaRequiredDocument`, just needs more countries added);
-a "days until expected decision" estimate per country to set customer
-expectations; SMS notification alongside email for markets where email
-open-rates are low.
-
-## Visa: Category/Nationality-Scoped Documents, Passport Expiry, Doc Quality, WhatsApp Notify
-
-Requirements differ by applicant category (Job Holder/Business
-Owner/Retired/Student/Other) and by nationality — implemented end to end:
-
-- Schema: `applicantCategory`/`nationality`/`passportExpiry` on
-  `VisaApplication` (B2C, one set) and `VisaApplicant` (agent, per
-  traveller — a family can have a retiree and a student, each with
-  different requirements). `VisaRequiredDocument` gained the same two
-  scoping fields (nullable = applies to everyone).
-- `lib/visaApplicantCategory.ts` — single shared source for the category
-  list, the applies-to-this-applicant filter logic, and the passport
-  6-month-validity warning. Used identically by admin config, B2C flow,
-  and agent flow so they can't drift.
-- Admin (`/admin/visa-services`): each required document can be scoped
-  to one category and/or one nationality when adding it.
-- Both apply flows (B2C `VisaApplyFlow.tsx`, agent `AgentVisaApplyFlow.tsx`):
-  applicant states their category + nationality + passport expiry date
-  *before* seeing the document checklist — checklist is filtered live,
-  so nobody's asked for a business registration they don't have.
-  Passport-expiry warning is soft (not blocking, since not every country
-  needs 6 months).
-- `lib/imageQualityCheck.ts` — client-side check on every document
-  upload (image dimensions + file size); warns, doesn't block, on likely
-  low-quality scans — a common real cause of embassy rejection.
-- Admin visa-applications list: WhatsApp quick-notify button per
-  application (`waLinkTo()` in `lib/whatsapp.ts` — opens a pre-filled
-  message to the applicant's own number). Not a paid WhatsApp Business
-  API integration (none set up) — one tap from admin, not automatic, but
-  genuinely reliable rather than a broken promise of full automation.
-
-`npx tsc --noEmit`: clean (only the same pre-existing unrelated TS7031).
-
-**Pending manual migration:**
-```sql
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS applicant_category TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS nationality TEXT;
-ALTER TABLE visa_applications ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
-
-ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS applicant_category TEXT;
-ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS nationality TEXT;
-ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS passport_expiry TEXT;
-
-ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS applicant_category TEXT;
-ALTER TABLE visa_required_documents ADD COLUMN IF NOT EXISTS nationality TEXT;
-```
-
-## Passport Auto-Read (OCR + MRZ Parsing) — Free, Client-Side
-
-`lib/passportScan.ts`: entirely free, runs in the customer's/agent's own
-browser (`tesseract.js` for OCR, `mrz` npm package to decode the
-result) — no paid API, no server cost. Reads the passport's MRZ (the
-two standardized lines at the bottom of the photo page, ICAO 9303
-format) rather than trying to OCR the whole page, which is far more
-reliable. Extracts full name, passport number, nationality (ICAO
-3-letter code mapped to a readable name for ~25 common countries), and
-expiry date.
-
-Wired into both apply flows, but **only on the file input for a document
-literally named "passport"** (`/passport/i.test(doc.name)`), not every
-upload — a CNIC or bank statement scan shouldn't trigger passport
-parsing. On upload: shows "🔍 Reading passport…", then either:
-- Success → auto-fills fullName/passportNumber/passportExpiry/nationality
-  (still fully editable) + "✨ Auto-filled from your passport!"
-- Failure (blurry, wrong document, MRZ not found) → **file is rejected,
-  not attached** — clear warning explaining why, so a bad scan never
-  silently gets used.
-
-Nationality is always asked as its own field regardless (was already
-built last session) — the OCR just saves typing it when it can read it
-cleanly.
-
-No schema changes — reuses fields already added for applicant category/
-nationality.
-
-## Agent Portal: Notifications, Timeline, Saved Clients, Bulk Booking (confirmed existing)
-
-Implemented 4 of the 5 requested features:
-1. **In-app notifications** — `AgentNotification` model, bell icon in
-   topbar (30s poll, unread badge, mark-read), triggered on topup
-   approve/reject, booking issued/cancelled, visa approved/rejected.
-2. **Booking status timeline** — `components/BookingStatusTimeline.tsx`,
-   visual pipeline (Pending → Confirmed → Issue Requested → Issued) on
-   the booking detail page, with per-step timestamps; cancelled/expired
-   shown as a distinct banner rather than forced into the pipeline.
-3. **Saved client profiles** — `AgentSavedClient` model, CRUD page
-   (`/agent/saved-clients`), and a `SavedClientPicker` dropdown wired
-   into `AgentPackageBookingWidget`'s traveller rows for instant fill.
-9. **Bulk booking** — verified already existed (group-ticket and
-   package booking forms already support multiple travellers per
-   booking); no new work needed here.
-10. **Mobile-optimized view** — not yet started; tables already scroll
-    horizontally (`.ap-tw { overflow-x: auto }`) and the shell already
-    has a 900px breakpoint, but a full pass hasn't been done.
-
-`npx tsc --noEmit`: clean (only the same pre-existing unrelated TS7031).
-
-**Pending manual migration:**
-```sql
-CREATE TABLE IF NOT EXISTS agent_notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  body TEXT,
-  link TEXT,
-  read_at TIMESTAMPTZ,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_agent_notifications_agent_read ON agent_notifications(agent_id, read_at);
-
-CREATE TABLE IF NOT EXISTS agent_saved_clients (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-  full_name TEXT NOT NULL,
-  passport_number TEXT,
-  cnic TEXT,
-  phone TEXT,
-  email TEXT,
-  dob TEXT,
-  passport_expiry TEXT,
-  notes TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
-);
-```
-
-## Feature #10: Mobile-Optimized View (agent portal)
-
-Focused pass rather than exhaustive per-page audit — targeted the two
-most common real overflow/crowding points across a mobile-heavy portal:
-- **Topbar** (`<480px`): "Sign Out" collapses to an icon-only button,
-  balance label hides (amount stays), so hamburger + balance + bell +
-  dark-toggle + sign-out no longer fight for one cramped row.
-- **Page headers** (`.ap-ph`, used at the top of every agent page):
-  title/subtitle and the action button now stack vertically with the
-  button full-width, instead of squeezing side-by-side and wrapping
-  badly on narrow screens.
-
-Already fine before this pass (verified, not touched): tables
-(`.ap-tw { overflow-x: auto }`), sidebar (slide-out drawer under 900px),
-My Bookings service-picker grid (5→3→2 columns), traveller-row forms
-(Tailwind `sm:` stacks to 1 column).
-
-`npx tsc --noEmit`: clean (CSS-only change, same pre-existing baseline).
-
-## Admin: Agents Add/Edit split + Deactivate, Direct Bookings tabbed sections
-
-- **Agents**: `/admin/agents` is now a list-only view. New pages:
-  `/admin/agents/new` (create), `/admin/agents/[id]/edit` (balance,
-  credit limit, tier, status, commission rates — same fields as before,
-  just its own page instead of an inline row-edit). List page also got
-  a one-click **Deactivate/Activate** button (toggles `status` between
-  `active`/`suspended` directly, with a confirm prompt on deactivate) so
-  the owner doesn't need to open the edit page just to lock an agent out.
-  Ledger page (`/admin/agents/[id]`) unchanged.
-- **Direct Bookings** (`/admin/direct-bookings`): replaced the single
-  dropdown category filter with three tabs — Umrah / World Tours / Group
-  Flights — each its own section with its own status filter, count
-  badge, and Excel export. Same underlying API
-  (`/api/admin/direct-bookings?category=...`), no schema/API changes.
-
-No new migrations. `npx tsc --noEmit`: clean on all touched files (same
-pre-existing unrelated errors as before — ledger route, agents route
-TS7031, direct-bookings `[id]`/export routes — none in the files
-touched this session).
+---
+
+## Rules (apply every session)
+
+- `npx tsc --noEmit` clean before every commit (one pre-existing TS7031 in `app/api/admin/agents/route.ts` is known — ignore)
+- Commit as **Abdullah Shahid** (`git config user.name "Abdullah Shahid"`)
+- Commit in logical chunks, push after each chunk
+- `npx prisma generate` is blocked in sandbox — every schema change needs manual SQL on Render Postgres console
+- Always use `UUID` type (not `TEXT`) for columns referencing `id` fields
+- Always use `IF NOT EXISTS` in migration SQL
+- Never guess business logic — ask if ambiguous
+- Never implement payment processing (explicitly out of scope)
+- Never trust client-submitted prices — always recompute server-side
+- WhatsApp = `wa.me` link only. No automatic sending (no Meta Cloud API)
+- All image uploads via `uploadToR2()` in `lib/r2.ts`, env var `R2_PUBLIC_URL`
+
+---
+
+*East & West Travel Services — Faisalabad, Pakistan*
+*Developer: Abdullah Shahid*
