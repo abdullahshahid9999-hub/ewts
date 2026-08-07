@@ -9,6 +9,7 @@ import { getAllFacets } from "@/lib/filterFacets";
 import { waLink } from "@/lib/whatsapp";
 import LogoScroll from "@/components/LogoScroll";
 import GoogleReviewsSection from "@/components/GoogleReviewsSection";
+import ReviewScrollSection from "@/components/ReviewScrollSection";
 
 export const revalidate = 120;
 
@@ -283,32 +284,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-10">
-          <p className="text-gold font-semibold tracking-widest text-xs uppercase mb-3">Real Reviews</p>
-          <h2 className="font-display text-3xl font-semibold">
-            Words from Our <span className="italic text-gold">Travelers</span>
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="bg-white border border-border rounded-2xl p-6 shadow-sm">
-              <div className="text-gold mb-3">★★★★★</div>
-              <p className="text-text2 text-sm mb-5 italic">&ldquo;{t.quote}&rdquo;</p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gold-bg text-gold font-bold flex items-center justify-center text-sm">
-                  {t.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="font-semibold text-sm">{t.name}</div>
-                  <div className="text-xs text-muted">{t.location} · {t.trip}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* REVIEWS — auto-scroll horizontal */}
+      <ReviewScrollSection />
 
       {/* FAQ */}
       <section className="bg-surface py-20">

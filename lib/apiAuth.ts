@@ -19,6 +19,12 @@ export type AgentSession = {
   balance: number;
   creditLimit: number;
   status: string;
+  phone: string | null;
+  logoUrl: string | null;
+  agencyName: string | null;
+  agencyAddress: string | null;
+  dtsLicense: boolean;
+  dtsLicenseNumber: string | null;
   totpSecret: string | null;
   totpEnabled: boolean;
   subUser: {
