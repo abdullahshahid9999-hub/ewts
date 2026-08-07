@@ -8,8 +8,9 @@ import { useAgentAuth } from "@/lib/agentAuthClient";
 import "../portal.css";
 
 export default function AgentLoginPage() {
-  const { login } = useAgentAuth();
+  const { login, loginAsSubUser } = useAgentAuth();
   const router = useRouter();
+  const [tab, setTab] = useState<"owner" | "staff">("owner");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [totpCode, setTotpCode] = useState("");
@@ -21,7 +22,9 @@ export default function AgentLoginPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const err = await login(email, password, step === "totp" ? totpCode : undefined);
+    const err = tab === "staff"
+      ? await loginAsSubUser(email, password)
+      : await login(email, password, step === "totp" ? totpCode : undefined);
     setSubmitting(false);
     if (err === "__2FA_REQUIRED__") { setStep("totp"); return; }
     if (err) { setError(err); return; }
@@ -75,16 +78,25 @@ export default function AgentLoginPage() {
 
           <div className="ap-login-card p-6">
             <div className="flex gap-1 rounded-lg p-1 mb-5" style={{ background: "#F0EDE8" }}>
-              <button type="button" className="flex-1 rounded-md py-2 text-xs font-semibold" style={{ background: "var(--white)", color: "var(--text)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
-                Sign In
+              <button type="button" onClick={() => { setTab("owner"); setStep("creds"); setError(null); }} className="flex-1 rounded-md py-2 text-xs font-semibold transition" style={tab === "owner" ? { background: "var(--white)", color: "var(--text)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" } : { color: "var(--muted)" }}>
+                Agency Owner
+              </button>
+              <button type="button" onClick={() => { setTab("staff"); setStep("creds"); setError(null); }} className="flex-1 rounded-md py-2 text-xs font-semibold transition" style={tab === "staff" ? { background: "var(--white)", color: "var(--text)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" } : { color: "var(--muted)" }}>
+                Staff Login
               </button>
               <Link href="/agent/forgot-password" className="flex-1 rounded-md py-2 text-xs font-semibold text-center text-[var(--muted)]">
                 Reset Password
               </Link>
             </div>
 
+            {tab === "staff" && (
+              <p className="text-[11px] rounded-lg px-3 py-2 mb-4" style={{ background: "rgba(184,142,62,0.1)", color: "#9C7E3A", border: "1px solid rgba(184,142,62,0.25)" }}>
+                Staff member? Use the login credentials given to you by your agency owner.
+              </p>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
-              {step === "creds" ? (<>
+              {(tab === "staff" || step === "creds") ? (<>
                 <div className="ap-field">
                   <label>Email Address</label>
                   <input type="email" required placeholder="agent@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
@@ -118,7 +130,7 @@ export default function AgentLoginPage() {
                 className="w-full rounded-lg py-3 text-sm font-bold text-white transition disabled:opacity-70"
                 style={{ background: "var(--navy)" }}
               >
-                {submitting ? (step === "totp" ? "Verifying…" : "Signing in…") : (step === "totp" ? "Verify Code" : "Sign In")}
+                {submitting ? (step === "totp" ? "Verifying…" : "Signing in…") : step === "totp" ? "Verify Code" : tab === "staff" ? "Sign In as Staff" : "Sign In"}
               </button>
             </form>
           </div>

@@ -567,8 +567,38 @@ model Agent {
   transactions AgentTransaction[]
   otps         AgentOtp[]
   paymentSlips PaymentSlip[]
+  subUsers     AgentUser[]
 
   @@map("agents")
+}
+
+// Sub-users belong to an Agency (Agent row). They share the agency's
+// balance, commission rates, and bookings — but have their own login,
+// designation, and permission set. The parent Agent account is the
+// "owner" and always has full access; sub-users are staff with
+// configurable (but restricted) access set by the admin.
+model AgentUser {
+  id           String    @id @default(uuid())
+  agentId      String    @map("agent_id")
+  fullName     String    @map("full_name")
+  email        String    @unique
+  phone        String?
+  designation  String?
+  passwordHash String    @map("password_hash")
+  status       String    @default("active")   // "active" | "suspended"
+  // Permission flags — stored as JSON. Missing key = false.
+  // canCreateBookings | canViewBookings | canSubmitPaymentSlip |
+  // canViewLedger | canManageSavedClients | canViewNotifications
+  // canIssueTickets is always false — only owner can issue.
+  permissions  Json      @default("{}")
+  loginAttempts Int      @default(0) @map("login_attempts")
+  lockedUntil  DateTime? @map("locked_until")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_users")
 }
 
 model AgentBooking {

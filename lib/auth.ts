@@ -15,17 +15,19 @@ export async function verifyPassword(password: string, hash: string) {
 // Access tokens are short-lived and sent in the Authorization header.
 // Refresh tokens are longer-lived and belong in an httpOnly cookie —
 // never localStorage (readable by any injected script).
-export function signAccessToken(payload: { sub: string; role: 'agent' | 'admin' }) {
+export type JwtRole = 'agent' | 'agent_user' | 'admin';
+
+export function signAccessToken(payload: { sub: string; role: JwtRole }) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
 }
 
-export function signRefreshToken(payload: { sub: string; role: 'agent' | 'admin' }) {
+export function signRefreshToken(payload: { sub: string; role: JwtRole }) {
   return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '30d' });
 }
 
 export function verifyAccessToken(token: string) {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string; role: 'agent' | 'admin' };
+    return jwt.verify(token, JWT_SECRET) as { sub: string; role: JwtRole };
   } catch {
     return null;
   }
@@ -33,7 +35,7 @@ export function verifyAccessToken(token: string) {
 
 export function verifyRefreshToken(token: string) {
   try {
-    return jwt.verify(token, JWT_REFRESH_SECRET) as { sub: string; role: 'agent' | 'admin' };
+    return jwt.verify(token, JWT_REFRESH_SECRET) as { sub: string; role: JwtRole };
   } catch {
     return null;
   }

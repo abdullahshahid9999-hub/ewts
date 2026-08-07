@@ -4,7 +4,7 @@ import { useAgentAuth } from "@/lib/agentAuthClient";
 import AgentNotificationBell from "@/components/AgentNotificationBell";
 
 export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMenuToggle: () => void; dark?: boolean; onToggleDark?: () => void }) {
-  const { agent, logout } = useAgentAuth();
+  const { agent, subUser, logout } = useAgentAuth();
   const balance = agent ? Number(agent.balance ?? 0) : 0;
 
   return (
@@ -16,6 +16,12 @@ export default function AgentTopbar({ onMenuToggle, dark, onToggleDark }: { onMe
       >
         ☰
       </button>
+      {subUser && (
+        <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, padding:"3px 10px", borderRadius:20, background:"rgba(184,142,62,0.12)", border:"1px solid rgba(184,142,62,0.3)", color:"#9C7E3A", maxWidth:200, overflow:"hidden" }}>
+          <span style={{ fontWeight:600, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{subUser.fullName}</span>
+          {subUser.designation && <span style={{ opacity:0.7, whiteSpace:"nowrap" }}>· {subUser.designation}</span>}
+        </div>
+      )}
       <div className="ap-tbar-bal">
         <span className="ap-tbar-bal-label">Balance</span>
         <span className={`ap-tbar-bal-amt ${balance < 0 ? "neg" : ""}`}>

@@ -2,42 +2,73 @@ import { NextRequest } from "next/server";
 import { verifyAccessToken, isAllowedAdminEmail } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-/**
- * Extracts the bearer access token from the Authorization header.
- * Access tokens are short-lived and sent this way (not cookies) —
- * refresh tokens are the ones that live in httpOnly cookies.
- */
 function getBearerToken(req: NextRequest): string | null {
   const header = req.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) return null;
   return header.slice("Bearer ".length).trim();
 }
 
+// The shape returned by requireAgent — always has the parent agency's
+// id so ALL existing routes work unchanged (balance, bookings, ledger etc.)
+export type AgentSession = {
+  id: string;            // ALWAYS parent agency id — use for all DB queries
+  agentCode: string;
+  fullName: string;
+  email: string;
+  tier: string;
+  balance: number;
+  creditLimit: number;
+  status: string;
+  totpSecret: string | null;
+  totpEnabled: boolean;
+  subUser: {
+    id: string;
+    fullName: string;
+    email: string;
+    designation: string | null;
+    permissions: Record<string, boolean>;
+  } | null;              // null = owner login
+};
+
 /**
- * Verifies the request carries a valid agent JWT and returns the agent's
- * row from the database (so callers always work with fresh DB state, e.g.
- * current status, rather than trusting stale JWT claims for anything but
- * identity). Returns null if unauthenticated/invalid — callers must
- * respond 401 in that case.
+ * Verifies agent OR sub-user JWT. Returns AgentSession whose .id is
+ * always the parent agency — existing routes need zero changes.
  */
-export async function requireAgent(req: NextRequest) {
+export async function requireAgent(req: NextRequest): Promise<AgentSession | null> {
   const token = getBearerToken(req);
   if (!token) return null;
 
   const payload = verifyAccessToken(token);
-  if (!payload || payload.role !== "agent") return null;
+  if (!payload) return null;
 
-  const agent = await prisma.agent.findUnique({ where: { id: payload.sub } });
-  if (!agent || agent.status !== "active") return null;
+  if (payload.role === "agent") {
+    const agent = await prisma.agent.findUnique({ where: { id: payload.sub } });
+    if (!agent || agent.status !== "active") return null;
+    return { ...agent, subUser: null };
+  }
 
-  return agent;
+  if (payload.role === "agent_user") {
+    const subUser = await prisma.agentUser.findUnique({
+      where: { id: payload.sub },
+      include: { agent: true },
+    });
+    if (!subUser || subUser.status !== "active") return null;
+    if (subUser.agent.status !== "active") return null;
+    return {
+      ...subUser.agent,
+      subUser: {
+        id: subUser.id,
+        fullName: subUser.fullName,
+        email: subUser.email,
+        designation: subUser.designation ?? null,
+        permissions: (subUser.permissions ?? {}) as Record<string, boolean>,
+      },
+    };
+  }
+
+  return null;
 }
 
-/**
- * Verifies the request carries a valid admin JWT AND that the email is on
- * the ADMIN_EMAILS allow-list — a valid token alone is not sufficient for
- * admin routes.
- */
 export async function requireAdmin(req: NextRequest) {
   const token = getBearerToken(req);
   if (!token) return null;
@@ -51,11 +82,6 @@ export async function requireAdmin(req: NextRequest) {
   return admin;
 }
 
-/**
- * Strips fields that agents must never be able to set themselves, even if
- * an admin-facing field name is included in a request body. Call this on
- * every agent-authenticated write route that touches the Agent model.
- */
 export function stripAgentWriteOnlyFields<T extends Record<string, unknown>>(body: T): T {
   const clone = { ...body };
   delete (clone as Record<string, unknown>).balance;
@@ -64,4 +90,10 @@ export function stripAgentWriteOnlyFields<T extends Record<string, unknown>>(bod
   delete (clone as Record<string, unknown>).tier;
   delete (clone as Record<string, unknown>).commission;
   return clone;
+}
+
+/** Sub-user permission check — owner always passes */
+export function agentCan(session: AgentSession, permission: string): boolean {
+  if (!session.subUser) return true; // owner
+  return !!session.subUser.permissions[permission];
 }
