@@ -550,6 +550,10 @@ model Agent {
   tier         String   @default("standard")
   status       String   @default("active")
   logoUrl      String?  @map("logo_url")
+  agencyName   String?  @map("agency_name")
+  agencyAddress String? @map("agency_address")
+  dtsLicense   Boolean  @default(false) @map("dts_license")
+  dtsLicenseNumber String? @map("dts_license_number")
   // Brute-force lockout — incremented on each wrong password, reset on
   // successful login. lockedUntil: if set and in the future, login is blocked.
   loginAttempts Int     @default(0) @map("login_attempts")

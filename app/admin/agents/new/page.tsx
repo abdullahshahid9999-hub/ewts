@@ -7,7 +7,6 @@ import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 
-// Preview what the next Agent ID will look like
 function useNextAgentCodePreview(accessToken: string | null, refresh: () => Promise<string | null>) {
   const [preview, setPreview] = useState<string | null>(null);
   useEffect(() => {
@@ -20,24 +19,90 @@ function useNextAgentCodePreview(accessToken: string | null, refresh: () => Prom
   return preview;
 }
 
-const empty = { fullName: "", email: "", phone: "", password: "" };
+const SERVICE_TYPES = [
+  { value: "umrah",        label: "Umrah" },
+  { value: "group_ticket", label: "Group Ticket" },
+  { value: "insurance",    label: "Insurance" },
+  { value: "world_tour",   label: "World Tour" },
+  { value: "visa_services",label: "Visa Services" },
+];
+
+type RateRow = { serviceType: string; rateType: string; value: string; enabled: boolean };
+
+const defaultRates = (): RateRow[] =>
+  SERVICE_TYPES.map((s) => ({ serviceType: s.value, rateType: "percentage", value: "", enabled: false }));
+
+const L: React.CSSProperties = { fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--a-muted)", marginBottom: 4, display: "block" };
+const INP: React.CSSProperties = { width: "100%", padding: "9px 12px", border: "1px solid var(--a-border)", borderRadius: 8, fontSize: 14, background: "var(--a-surface, #fff)", color: "var(--a-text)" };
+const SEP: React.CSSProperties = { gridColumn: "1 / -1", borderTop: "1px solid var(--a-border)", margin: "8px 0" };
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="adp-card" style={{ marginBottom: 16 }}>
+      <div className="adp-ch"><h3>{title}</h3></div>
+      <div style={{ padding: "16px 18px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 20px" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, span, children }: { label: string; span?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={span ? { gridColumn: "1 / -1" } : {}}>
+      <label style={L}>{label}</label>
+      {children}
+    </div>
+  );
+}
 
 function NewAgentInner() {
   const router = useRouter();
   const { accessToken, refresh } = useAdminAuth();
-  const [form, setForm] = useState(empty);
+  const nextCode = useNextAgentCodePreview(accessToken, refresh);
+
+  // Basic info
+  const [basic, setBasic] = useState({ fullName: "", email: "", phone: "", password: "" });
+  // Agency info
+  const [agency, setAgency] = useState({ agencyName: "", agencyAddress: "" });
+  // DTS
+  const [dtsLicense, setDtsLicense] = useState(false);
+  const [dtsNumber, setDtsNumber] = useState("");
+  // Account settings
+  const [tier, setTier] = useState("standard");
+  const [creditLimit, setCreditLimit] = useState("0");
+  // Commission rates
+  const [rates, setRates] = useState<RateRow[]>(defaultRates());
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const nextCode = useNextAgentCodePreview(accessToken, refresh);
+
+  function setRate(idx: number, field: keyof RateRow, val: string | boolean) {
+    setRates((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: val } : r));
+  }
 
   async function createAgent(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaving(true);
+
+    const commissionRates = rates
+      .filter((r) => r.enabled && r.value !== "")
+      .map((r) => ({ serviceType: r.serviceType, rateType: r.rateType, value: Number(r.value) }));
+
     const res = await adminFetch("/api/admin/agents", accessToken, refresh, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...basic,
+        agencyName: agency.agencyName || undefined,
+        agencyAddress: agency.agencyAddress || undefined,
+        dtsLicense,
+        dtsLicenseNumber: dtsLicense ? dtsNumber : undefined,
+        tier,
+        creditLimit: Number(creditLimit),
+        commissionRates,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
@@ -53,84 +118,173 @@ function NewAgentInner() {
       </div>
       {error && <p style={{ color: "var(--a-red)", fontSize: "12px", marginBottom: "12px" }}>{error}</p>}
 
-      <div className="adp-card">
-        <div className="adp-ch"><h3>Agent Details</h3></div>
-        <form onSubmit={createAgent} className="adp-fg adp-fr" style={{ padding: "16px 18px" }}>
+      <form onSubmit={createAgent}>
 
-          {/* Auto-generated Agent ID preview */}
-          <div style={{ gridColumn: "1 / -1" }}>
-            <label>Agent ID <span style={{ color: "var(--a-muted)", fontSize: "11px" }}>(auto-generated)</span></label>
-            <div style={{
-              padding: "10px 14px",
-              background: "var(--a-surface-2, #f7f7f7)",
-              border: "1px solid var(--a-border)",
-              borderRadius: "8px",
-              fontFamily: "monospace",
-              fontWeight: 700,
-              fontSize: "18px",
-              letterSpacing: "0.08em",
-              color: "var(--a-gold)",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}>
+        {/* ── Agent ID preview ── */}
+        <div className="adp-card" style={{ marginBottom: 16 }}>
+          <div className="adp-ch"><h3>Agent ID</h3></div>
+          <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 22, letterSpacing: "0.08em", color: "var(--a-gold)" }}>
               {nextCode ?? "Loading…"}
-              <span style={{ fontSize: "11px", fontFamily: "inherit", fontWeight: 400, color: "var(--a-muted)", letterSpacing: 0 }}>
-                will be assigned on save
-              </span>
+            </span>
+            <span style={{ fontSize: 12, color: "var(--a-muted)" }}>auto-generated · assigned on save</span>
+          </div>
+        </div>
+
+        {/* ── Section 1: Basic Info ── */}
+        <Section title="Basic Information">
+          <Field label="Full Name *">
+            <input style={INP} value={basic.fullName} onChange={(e) => setBasic((f) => ({ ...f, fullName: e.target.value }))} placeholder="e.g. Muhammad Ali" required />
+          </Field>
+          <Field label="Email *">
+            <input style={INP} type="email" value={basic.email} onChange={(e) => setBasic((f) => ({ ...f, email: e.target.value }))} placeholder="agent@example.com" required />
+          </Field>
+          <Field label="Phone">
+            <input style={INP} value={basic.phone} onChange={(e) => setBasic((f) => ({ ...f, phone: e.target.value }))} placeholder="03001234567" />
+          </Field>
+          <Field label="Temporary Password * (min 8 chars)">
+            <input style={INP} type="password" value={basic.password} onChange={(e) => setBasic((f) => ({ ...f, password: e.target.value }))} required minLength={8} placeholder="Agent's first login password" />
+          </Field>
+        </Section>
+
+        {/* ── Section 2: Agency Info ── */}
+        <Section title="Agency Information">
+          <Field label="Agency / Company Name" span>
+            <input style={INP} value={agency.agencyName} onChange={(e) => setAgency((f) => ({ ...f, agencyName: e.target.value }))} placeholder="e.g. Al-Noor Travels, Lahore" />
+          </Field>
+          <Field label="Agency Address" span>
+            <textarea
+              style={{ ...INP, resize: "vertical", minHeight: 72 }}
+              value={agency.agencyAddress}
+              onChange={(e) => setAgency((f) => ({ ...f, agencyAddress: e.target.value }))}
+              placeholder="Full address — shop no., street, city"
+            />
+          </Field>
+
+          {/* DTS License — Yes/No toggle */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={L}>DTS (Pakistan Tourism) License</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setDtsLicense(true)}
+                style={{
+                  padding: "8px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  border: "2px solid",
+                  borderColor: dtsLicense ? "var(--a-gold)" : "var(--a-border)",
+                  background: dtsLicense ? "var(--a-gold)" : "transparent",
+                  color: dtsLicense ? "#fff" : "var(--a-text)",
+                  transition: "all 0.15s",
+                }}
+              >
+                ✓ Yes, Licensed
+              </button>
+              <button
+                type="button"
+                onClick={() => { setDtsLicense(false); setDtsNumber(""); }}
+                style={{
+                  padding: "8px 20px", borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  border: "2px solid",
+                  borderColor: !dtsLicense ? "var(--a-border)" : "var(--a-border)",
+                  background: !dtsLicense ? "var(--a-surface-2, #f2f2f2)" : "transparent",
+                  color: "var(--a-text)",
+                  transition: "all 0.15s",
+                }}
+              >
+                ✗ No License
+              </button>
             </div>
           </div>
 
-          <div>
-            <label>Full Name</label>
-            <input
-              value={form.fullName}
-              onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
-              placeholder="e.g. Muhammad Ali"
-              required
-            />
-          </div>
+          {dtsLicense && (
+            <Field label="DTS License Number" span>
+              <input
+                style={INP}
+                value={dtsNumber}
+                onChange={(e) => setDtsNumber(e.target.value)}
+                placeholder="e.g. DTS-2024-00123"
+              />
+            </Field>
+          )}
+        </Section>
 
-          <div>
-            <label>Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              placeholder="agent@example.com"
-              required
-            />
-          </div>
+        {/* ── Section 3: Account Settings ── */}
+        <Section title="Account Settings">
+          <Field label="Tier">
+            <select style={INP} value={tier} onChange={(e) => setTier(e.target.value)}>
+              <option value="standard">Standard</option>
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
+            </select>
+          </Field>
+          <Field label="Credit Limit (PKR)">
+            <input style={INP} type="number" min={0} value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} placeholder="0" />
+          </Field>
+        </Section>
 
-          <div>
-            <label>Phone <span style={{ color: "var(--a-muted)", fontSize: "11px" }}>(optional)</span></label>
-            <input
-              value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-              placeholder="03001234567"
-            />
+        {/* ── Section 4: Commission Rates ── */}
+        <div className="adp-card" style={{ marginBottom: 16 }}>
+          <div className="adp-ch"><h3>Commission Rates <span style={{ fontSize: 11, fontWeight: 400, color: "var(--a-muted)" }}>(optional — can be set later)</span></h3></div>
+          <div style={{ padding: "14px 18px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto 100px", gap: "10px 12px", alignItems: "center", fontSize: 12, fontWeight: 700, color: "var(--a-muted)", letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid var(--a-border)" }}>
+              <span>Enable</span><span>Service</span><span>Type</span><span>Rate</span>
+            </div>
+            {rates.map((r, i) => (
+              <div key={r.serviceType} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto 100px", gap: "8px 12px", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--a-border)" }}>
+                {/* Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setRate(i, "enabled", !r.enabled)}
+                  style={{
+                    width: 32, height: 18, borderRadius: 9, border: "none", cursor: "pointer",
+                    background: r.enabled ? "var(--a-gold)" : "var(--a-border)",
+                    position: "relative", transition: "background 0.2s", flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: "absolute", top: 2, left: r.enabled ? 16 : 2,
+                    width: 14, height: 14, borderRadius: "50%", background: "#fff",
+                    transition: "left 0.2s", display: "block",
+                  }} />
+                </button>
+                {/* Service label */}
+                <span style={{ fontSize: 13, fontWeight: r.enabled ? 600 : 400, color: r.enabled ? "var(--a-text)" : "var(--a-muted)" }}>
+                  {SERVICE_TYPES.find((s) => s.value === r.serviceType)?.label}
+                </span>
+                {/* Rate type */}
+                <select
+                  disabled={!r.enabled}
+                  value={r.rateType}
+                  onChange={(e) => setRate(i, "rateType", e.target.value)}
+                  style={{ ...INP, width: "auto", fontSize: 12, padding: "6px 8px", opacity: r.enabled ? 1 : 0.4 }}
+                >
+                  <option value="percentage">%</option>
+                  <option value="fixed">PKR</option>
+                </select>
+                {/* Value */}
+                <input
+                  type="number"
+                  min={0}
+                  disabled={!r.enabled}
+                  value={r.value}
+                  onChange={(e) => setRate(i, "value", e.target.value)}
+                  placeholder={r.rateType === "percentage" ? "e.g. 5" : "e.g. 2000"}
+                  style={{ ...INP, fontSize: 13, padding: "6px 10px", opacity: r.enabled ? 1 : 0.4 }}
+                />
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <label>Temporary Password <span style={{ color: "var(--a-muted)", fontSize: "11px" }}>(min 8 chars)</span></label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              required
-              minLength={8}
-              placeholder="Agent will use this to first login"
-            />
-          </div>
-
-          <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8 }}>
-            <button type="submit" className="adp-btn adp-btn-g" disabled={saving}>
-              {saving ? "Creating…" : "Create Agent"}
-            </button>
-            <Link href="/admin/agents" className="adp-btn adp-btn-s" style={{ textDecoration: "none" }}>Cancel</Link>
-          </div>
-        </form>
-      </div>
+        {/* ── Submit ── */}
+        <div style={SEP} />
+        <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+          <button type="submit" className="adp-btn adp-btn-g" disabled={saving} style={{ minWidth: 130 }}>
+            {saving ? "Creating…" : "✓ Create Agent"}
+          </button>
+          <Link href="/admin/agents" className="adp-btn adp-btn-s" style={{ textDecoration: "none" }}>Cancel</Link>
+        </div>
+      </form>
     </>
   );
 }
