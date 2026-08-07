@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const valid = await verifyPassword(currentPassword, agent.passwordHash);
+  const dbAgent = await prisma.agent.findUnique({ where: { id: agent.id }, select: { passwordHash: true } });
+  if (!dbAgent) return NextResponse.json({ error: "Agent not found." }, { status: 404 });
+  const valid = await verifyPassword(currentPassword, dbAgent.passwordHash);
   if (!valid) {
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 401 });
   }
