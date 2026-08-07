@@ -9,14 +9,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json().catch(() => null);
 
-  // This is the ONLY route in the system that may write balance,
-  // creditLimit, or tier — agent-authenticated routes strip these fields
-  // via stripAgentWriteOnlyFields before they ever reach Prisma.
   const data: Record<string, unknown> = {};
-  if (typeof body?.fullName === "string") data.fullName = body.fullName;
-  if (typeof body?.phone === "string") data.phone = body.phone;
-  if (typeof body?.status === "string") data.status = body.status;
-  if (typeof body?.tier === "string") data.tier = body.tier;
+  if (typeof body?.fullName          === "string")  data.fullName         = body.fullName;
+  if (typeof body?.phone             === "string")  data.phone            = body.phone;
+  if (typeof body?.status            === "string")  data.status           = body.status;
+  if (typeof body?.tier              === "string")  data.tier             = body.tier;
+  if (typeof body?.agencyName        === "string")  data.agencyName       = body.agencyName;
+  if (typeof body?.agencyAddress     === "string")  data.agencyAddress    = body.agencyAddress;
+  if (typeof body?.dtsLicense        === "boolean") data.dtsLicense       = body.dtsLicense;
+  if (typeof body?.dtsLicenseNumber  === "string")  data.dtsLicenseNumber = body.dtsLicenseNumber;
   if (body?.balance !== undefined) {
     const n = Number(body.balance);
     if (!Number.isFinite(n)) return NextResponse.json({ error: "balance must be a number." }, { status: 400 });

@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: "East & West Travel Services | Umrah, Tours, Visa & Group Tickets",
   description:
     "Faisalabad-based IATA/DTS certified travel agency since 2003 — Umrah packages, tours, group air tickets, visa services, and travel insurance.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/images/favicon-180.png",
+  },
 };
 
 export default function RootLayout({
