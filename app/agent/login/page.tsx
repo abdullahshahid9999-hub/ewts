@@ -8,132 +8,171 @@ import { useAgentAuth } from "@/lib/agentAuthClient";
 import "../portal.css";
 
 export default function AgentLoginPage() {
-  const { login, loginAsSubUser } = useAgentAuth();
+  const { login } = useAgentAuth();
   const router = useRouter();
-  const [tab, setTab] = useState<"owner" | "staff">("owner");
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [totpCode, setTotpCode] = useState("");
-  const [step, setStep] = useState<"creds" | "totp">("creds");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [showPw, setShowPw]     = useState(false);
+  const [step, setStep]         = useState<"creds" | "totp">("creds");
+  const [error, setError]       = useState<string | null>(null);
+  const [submitting, setSub]    = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setSubmitting(true);
-    const err = tab === "staff"
-      ? await loginAsSubUser(email, password)
-      : await login(email, password, step === "totp" ? totpCode : undefined);
-    setSubmitting(false);
+    setSub(true);
+    const err = await login(email, password, step === "totp" ? totpCode : undefined);
+    setSub(false);
     if (err === "__2FA_REQUIRED__") { setStep("totp"); return; }
     if (err) { setError(err); return; }
     router.push("/agent/dashboard");
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-[1.05fr_1fr]" style={{ background: "var(--navy)" }}>
-      {/* LEFT: ATMOSPHERE PANEL */}
-      <div className="relative hidden md:flex flex-col justify-between overflow-hidden p-11">
-        <Image src="/images/makarem_1.jpeg" alt="" fill className="object-cover opacity-55" style={{ objectPosition: "center 30%" }} />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(10,22,38,.55) 0%, rgba(10,22,38,.35) 38%, rgba(10,22,38,.92) 100%), linear-gradient(100deg, rgba(10,22,38,.9) 0%, rgba(10,22,38,.15) 55%)",
-          }}
-        />
+    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr", background: "var(--bg)" }}
+      className="md:grid-cols-[1.1fr_1fr]">
+
+      {/* ── LEFT PANEL ── */}
+      <div className="relative hidden md:flex flex-col justify-between overflow-hidden" style={{ padding: "44px 48px" }}>
+        <Image src="/images/makarem_1.jpeg" alt="" fill className="object-cover"
+          style={{ objectPosition: "center 30%", opacity: 0.5 }} />
+        {/* Gradient overlays */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(180deg,rgba(7,17,32,.6) 0%,rgba(7,17,32,.3) 40%,rgba(7,17,32,.95) 100%),linear-gradient(105deg,rgba(7,17,32,.92) 0%,rgba(7,17,32,.1) 55%)"
+        }} />
+
+        {/* Brand */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="text-white font-display text-lg font-semibold">East &amp; <span className="italic text-gold">West</span></div>
+          <Image src="/images/logo.jpg" alt="East & West" width={38} height={38}
+            style={{ borderRadius: 10, objectFit: "cover", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }} />
+          <span className="font-display text-white text-base font-semibold">
+            East &amp; <span className="italic" style={{ color: "var(--gold)" }}>West</span>
+          </span>
         </div>
+
+        {/* Hero text */}
         <div className="relative z-10">
-          <p className="inline-flex items-center gap-2 text-[10.5px] font-bold tracking-widest uppercase text-gold-light mb-4">
-            <span className="w-4 h-px bg-[var(--gold-l)]" /> Agent Network Portal
+          <p className="flex items-center gap-2 mb-5" style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--gold-l)" }}>
+            <span style={{ width: 18, height: 1, background: "var(--gold-l)", display: "inline-block" }} />
+            Agent Network Portal
           </p>
-          <h1 className="font-display text-white text-3xl md:text-4xl font-medium leading-tight max-w-md mb-4">
-            Every booking you issue carries <span className="italic text-gold">our name</span> across the counter.
+
+          <h1 className="font-display text-white font-medium leading-tight mb-5"
+            style={{ fontSize: "clamp(26px,3.2vw,40px)", maxWidth: 420 }}>
+            Every booking you issue carries{" "}
+            <span className="italic" style={{ color: "var(--gold)" }}>our name</span>{" "}
+            across the counter.
           </h1>
-          <p className="text-white/60 text-sm max-w-sm mb-7">
-            Sign in to manage group tickets, Umrah packages and insurance for your clients — with
-            live credit tracking and instant OTP-confirmed issuance.
+
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, lineHeight: 1.7, maxWidth: 360, marginBottom: 32 }}>
+            Manage group tickets, Umrah packages, insurance and visa services for your clients —
+            with live credit tracking and real-time booking status.
           </p>
-          <div className="flex gap-7 border-t border-white/15 pt-5">
-            <div><strong className="block font-display text-xl font-semibold text-white">3</strong><span className="text-[10px] text-white/50 uppercase tracking-wide font-semibold">Agent Tiers</span></div>
-            <div><strong className="block font-display text-xl font-semibold text-white">24/7</strong><span className="text-[10px] text-white/50 uppercase tracking-wide font-semibold">Issue Window</span></div>
-            <div><strong className="block font-display text-xl font-semibold text-white">OTP</strong><span className="text-[10px] text-white/50 uppercase tracking-wide font-semibold">Secured</span></div>
+
+          {/* Stats */}
+          <div style={{ display: "flex", gap: 32, borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 24 }}>
+            {[
+              { value: "5+",   label: "Services" },
+              { value: "24/7", label: "Availability" },
+              { value: "OTP",  label: "Secured" },
+            ].map(({ value, label }) => (
+              <div key={label}>
+                <div className="font-display text-white font-semibold" style={{ fontSize: 22 }}>{value}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", marginTop: 3 }}>{label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* RIGHT: FORM PANEL */}
-      <div className="flex items-center justify-center p-9" style={{ background: "var(--bg)" }}>
-        <div className="w-full max-w-sm">
-          <div className="mb-6">
-            <p className="inline-flex items-center gap-1.5 text-[10.5px] font-bold tracking-widest uppercase mb-2" style={{ color: "var(--gold-dim, #9C7E3A)" }}>
+      {/* ── RIGHT PANEL ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", background: "var(--bg)" }}>
+        <div style={{ width: "100%", maxWidth: 380 }}>
+
+          {/* Header */}
+          <div style={{ marginBottom: 28 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9C7E3A", marginBottom: 10 }}>
               🔒 Authorized Access Only
             </p>
-            <h2 className="font-display text-2xl font-semibold text-[var(--text)]">Agent Sign In</h2>
-            <p className="text-[12.5px] text-[var(--muted)] mt-1">Enter your credentials to access your dashboard.</p>
+            <h2 className="font-display" style={{ fontSize: 26, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
+              {step === "totp" ? "Two-Factor Auth" : "Agent Sign In"}
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--muted)" }}>
+              {step === "totp"
+                ? "Enter the 6-digit code from your authenticator app."
+                : "Sign in to access your bookings and commission dashboard."}
+            </p>
           </div>
 
-          <div className="ap-login-card p-6">
-            <div className="flex gap-1 rounded-lg p-1 mb-5" style={{ background: "#F0EDE8" }}>
-              <button type="button" onClick={() => { setTab("owner"); setStep("creds"); setError(null); }} className="flex-1 rounded-md py-2 text-xs font-semibold transition" style={tab === "owner" ? { background: "var(--white)", color: "var(--text)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" } : { color: "var(--muted)" }}>
-                Agency Owner
-              </button>
-              <button type="button" onClick={() => { setTab("staff"); setStep("creds"); setError(null); }} className="flex-1 rounded-md py-2 text-xs font-semibold transition" style={tab === "staff" ? { background: "var(--white)", color: "var(--text)", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" } : { color: "var(--muted)" }}>
-                Staff Login
-              </button>
-              <Link href="/agent/forgot-password" className="flex-1 rounded-md py-2 text-xs font-semibold text-center text-[var(--muted)]">
-                Reset Password
-              </Link>
-            </div>
+          {/* Card */}
+          <div className="ap-login-card" style={{ padding: 24 }}>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {tab === "staff" && (
-              <p className="text-[11px] rounded-lg px-3 py-2 mb-4" style={{ background: "rgba(184,142,62,0.1)", color: "#9C7E3A", border: "1px solid rgba(184,142,62,0.25)" }}>
-                Staff member? Use the login credentials given to you by your agency owner.
-              </p>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {(tab === "staff" || step === "creds") ? (<>
+              {step === "creds" ? (<>
                 <div className="ap-field">
                   <label>Email Address</label>
-                  <input type="email" required placeholder="agent@email.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                  <input type="email" required placeholder="agent@email.com" value={email}
+                    onChange={e => setEmail(e.target.value)} autoComplete="email" />
                 </div>
+
                 <div className="ap-field">
                   <label>Password</label>
-                  <input type="password" required placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                  <div style={{ position: "relative" }}>
+                    <input type={showPw ? "text" : "password"} required placeholder="Enter password"
+                      value={password} onChange={e => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                      style={{ paddingRight: 42, width: "100%", boxSizing: "border-box" }} />
+                    <button type="button" onClick={() => setShowPw(!showPw)}
+                      style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 15, color: "var(--muted)" }}>
+                      {showPw ? "🙈" : "👁"}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: "right" }}>
+                  <Link href="/agent/forgot-password" style={{ fontSize: 12, color: "var(--gold)", textDecoration: "none", fontWeight: 600 }}>
+                    Forgot password?
+                  </Link>
                 </div>
               </>) : (
                 <div className="ap-field">
                   <label>Authenticator Code</label>
-                  <input type="text" inputMode="numeric" maxLength={6} autoFocus required placeholder="000000"
-                    value={totpCode} onChange={(e) => setTotpCode(e.target.value)}
-                    style={{ fontSize: 24, fontWeight: 700, letterSpacing: "0.3em", textAlign: "center" }} />
+                  <input type="text" inputMode="numeric" maxLength={6} autoFocus required
+                    placeholder="000000" value={totpCode} onChange={e => setTotpCode(e.target.value)}
+                    style={{ fontSize: 26, fontWeight: 700, letterSpacing: "0.35em", textAlign: "center" }} />
                   <button type="button" onClick={() => { setStep("creds"); setTotpCode(""); setError(null); }}
-                    style={{ fontSize: 12, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", marginTop: 4 }}>
-                    ← Use different account
+                    style={{ fontSize: 12, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", marginTop: 4, padding: 0 }}>
+                    ← Different account
                   </button>
                 </div>
               )}
 
               {error && (
-                <p className="rounded-lg px-3 py-2 text-xs font-medium" style={{ background: "#FEF2F2", color: "var(--red)", border: "1px solid #FECACA" }}>
-                  {error}
+                <p style={{ background: "#FEF2F2", color: "var(--red)", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 12px", fontSize: 12, fontWeight: 500 }}>
+                  ⚠️ {error}
                 </p>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
+              <button type="submit" disabled={submitting}
                 className="w-full rounded-lg py-3 text-sm font-bold text-white transition disabled:opacity-70"
-                style={{ background: "var(--navy)" }}
-              >
-                {submitting ? (step === "totp" ? "Verifying…" : "Signing in…") : step === "totp" ? "Verify Code" : tab === "staff" ? "Sign In as Staff" : "Sign In"}
+                style={{ background: "var(--navy)", marginTop: 4, cursor: submitting ? "not-allowed" : "pointer" }}>
+                {submitting
+                  ? (step === "totp" ? "Verifying…" : "Signing in…")
+                  : step === "totp" ? "Verify Code" : "Sign In →"}
               </button>
             </form>
           </div>
+
+          {/* Footer note */}
+          <p style={{ textAlign: "center", fontSize: 11, color: "var(--muted)", marginTop: 20 }}>
+            Not an agent yet?{" "}
+            <a href="https://wa.me/923336515349?text=Assalam+o+Alaikum!+I+want+to+become+an+agent."
+              target="_blank" rel="noopener noreferrer"
+              style={{ color: "var(--gold)", fontWeight: 600, textDecoration: "none" }}>
+              Contact us on WhatsApp
+            </a>
+          </p>
         </div>
       </div>
     </div>
