@@ -82,10 +82,11 @@ export default function Footer() {
       <div className="border-t border-border py-6">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
           <span>© {new Date().getFullYear()} East &amp; West Travel Services. All rights reserved.</span>
-          <div className="flex gap-4">
-            <Link href="/about" className="hover:text-[var(--lp-brass)]">About</Link>
-            <Link href="/contact" className="hover:text-[var(--lp-brass)]">Contact</Link>
-            <Link href="/insurance" className="hover:text-[var(--lp-brass)]">Insurance</Link>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center sm:justify-end">
+            <Link href="/terms" className="hover:text-[var(--lp-brass)]">Terms &amp; Conditions</Link>
+            <Link href="/privacy" className="hover:text-[var(--lp-brass)]">Privacy Policy</Link>
+            <Link href="/refund-policy" className="hover:text-[var(--lp-brass)]">Refund Policy</Link>
+            <Link href="/disclaimer" className="hover:text-[var(--lp-brass)]">Disclaimer</Link>
           </div>
         </div>
       </div>
