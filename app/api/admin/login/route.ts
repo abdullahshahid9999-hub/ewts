@@ -47,8 +47,11 @@ export async function POST(req: NextRequest) {
     admin: { id: admin.id, email: admin.email, fullName: admin.fullName },
   });
 
+  const host = req.headers.get("host") ?? "";
+  const isSubdomain = host.includes("admin.eastwestpk.com");
   res.cookies.set("admin_refresh_token", refreshToken, {
-    httpOnly: true, secure: true, sameSite: "lax",
+    httpOnly: true, secure: true,
+    sameSite: isSubdomain ? "none" : "lax",
     path: "/api/admin", maxAge: 30 * 24 * 60 * 60,
   });
 
