@@ -189,6 +189,7 @@ model VisaService {
   refundPolicy   String?  @map("refund_policy")
   countryFlag    String?  @map("country_flag")
   countryImage   String?  @map("country_image")
+  mobileImage    String?  @map("mobile_image")
   status         String   @default("active")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")

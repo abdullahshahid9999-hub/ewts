@@ -24,6 +24,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     countryImage = await uploadToR2({ buffer, contentType: file.type, folder: "visas" });
   }
 
+  let mobileImage: string | undefined;
+  const mfile = form.get("mobileImage");
+  if (mfile instanceof File) {
+    const buffer = Buffer.from(await mfile.arrayBuffer());
+    mobileImage = await uploadToR2({ buffer, contentType: mfile.type, folder: "visas" });
+  }
+
   const visaService = await prisma.visaService.update({
     where: { id },
     data: {
@@ -31,7 +38,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       country: str("country"),
       type: str("type"),
       price: str("price"),
-      // Age-tiered pricing — convert empty string to null, keep 0 as valid
       priceAdult: form.get("priceAdult") !== null && form.get("priceAdult") !== "" ? Number(form.get("priceAdult")) || 0 : undefined,
       priceChild: form.get("priceChild") !== null && form.get("priceChild") !== "" ? Number(form.get("priceChild")) || 0 : undefined,
       priceInfant: form.get("priceInfant") !== null && form.get("priceInfant") !== "" ? Number(form.get("priceInfant")) || 0 : undefined,
@@ -45,6 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       refundPolicy: str("refundPolicy"),
       countryFlag: str("countryFlag"),
       countryImage,
+      mobileImage,
       status: str("status"),
     },
   });

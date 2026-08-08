@@ -46,6 +46,13 @@ export async function POST(req: NextRequest) {
     countryImage = await uploadToR2({ buffer, contentType: file.type, folder: "visas" });
   }
 
+  let mobileImage: string | undefined;
+  const mfile = form.get("mobileImage");
+  if (mfile instanceof File) {
+    const buffer = Buffer.from(await mfile.arrayBuffer());
+    mobileImage = await uploadToR2({ buffer, contentType: mfile.type, folder: "visas" });
+  }
+
   const visaService = await prisma.visaService.create({
     data: {
       title,
@@ -65,6 +72,7 @@ export async function POST(req: NextRequest) {
       refundPolicy: str("refundPolicy"),
       countryFlag: str("countryFlag"),
       countryImage,
+      mobileImage,
       status: str("status") ?? "active",
     },
   });
