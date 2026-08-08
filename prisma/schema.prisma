@@ -490,6 +490,7 @@ model AgentCommissionRate {
   serviceType String   @map("service_type") // "umrah" | "group_ticket" | "insurance"
   rateType    String   @map("rate_type")    // "fixed" (flat PKR amount) | "percentage" (of sell_price)
   value       Int      // fixed: PKR amount, e.g. 2000 or 15000. percentage: whole number, e.g. 30 for 30%
+  effectiveAt DateTime @default(now()) @map("effective_at") // rate applies from this date forward only
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -552,8 +553,11 @@ model Agent {
   logoUrl      String?  @map("logo_url")
   agencyName   String?  @map("agency_name")
   agencyAddress String? @map("agency_address")
+  agencyCity   String?  @map("agency_city")
   dtsLicense   Boolean  @default(false) @map("dts_license")
   dtsLicenseNumber String? @map("dts_license_number")
+  creditLimitEffectiveAt DateTime? @map("credit_limit_effective_at")
+  creditLimitUpdatedAt   DateTime? @map("credit_limit_updated_at")
   // Brute-force lockout — incremented on each wrong password, reset on
   // successful login. lockedUntil: if set and in the future, login is blocked.
   loginAttempts Int     @default(0) @map("login_attempts")

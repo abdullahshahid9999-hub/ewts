@@ -18,6 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof body?.agencyAddress     === "string")  data.agencyAddress    = body.agencyAddress;
   if (typeof body?.dtsLicense        === "boolean") data.dtsLicense       = body.dtsLicense;
   if (typeof body?.dtsLicenseNumber  === "string")  data.dtsLicenseNumber = body.dtsLicenseNumber;
+  if (typeof body?.agencyCity        === "string")  data.agencyCity       = body.agencyCity;
   if (body?.balance !== undefined) {
     const n = Number(body.balance);
     if (!Number.isFinite(n)) return NextResponse.json({ error: "balance must be a number." }, { status: 400 });
@@ -27,6 +28,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const n = Number(body.creditLimit);
     if (!Number.isFinite(n)) return NextResponse.json({ error: "creditLimit must be a number." }, { status: 400 });
     data.creditLimit = n;
+    data.creditLimitUpdatedAt = new Date();
+    data.creditLimitEffectiveAt = new Date();
   }
 
   const agent = await prisma.agent.update({ where: { id }, data }).catch(() => null);
