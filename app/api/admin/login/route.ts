@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
 
-  if (!checkRateLimit(`admin-login:ip:${ip}`, 10, 10 * 60 * 1000) ||
-      !checkRateLimit(`admin-login:email:${email}`, 5, 10 * 60 * 1000))
-    return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
+  if (!checkRateLimit(`admin-login:ip:${ip}`, 30, 15 * 60 * 1000) ||
+      !checkRateLimit(`admin-login:email:${email}`, 20, 15 * 60 * 1000))
+    return NextResponse.json({ error: "Too many attempts. Try again in 15 minutes." }, { status: 429 });
 
   const genericError = () => NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
 

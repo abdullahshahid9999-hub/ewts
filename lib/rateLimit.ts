@@ -40,3 +40,8 @@ export function checkRateLimit(key: string, max: number, windowMs: number): bool
   bucket.count += 1;
   return true;
 }
+
+/** Immediately clear a rate-limit bucket — use for emergency unlock. */
+export function clearRateLimit(key: string): void {
+  buckets.delete(key);
+}
