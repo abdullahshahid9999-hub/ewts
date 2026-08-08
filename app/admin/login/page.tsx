@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import "../portal.css";
 
 type Step = "credentials" | "totp";
@@ -37,183 +37,136 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="adp-body" style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: "#f4f3ef" }}>
 
-      {/* ── LEFT PANEL — branding ── */}
-      <div style={{
-        flex: "0 0 420px",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
-        padding: "48px 44px", position: "relative", overflow: "hidden",
-      }}
-        className="admin-login-left"
-      >
-        <Image src="/images/makarem_1.jpeg" alt="" fill style={{ objectFit: "cover", objectPosition: "center 30%", opacity: 0.45 }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(10,18,32,.7) 0%,rgba(10,18,32,.35) 40%,rgba(10,18,32,.97) 100%),linear-gradient(105deg,rgba(10,18,32,.92) 0%,rgba(10,18,32,.1) 55%)" }} />
+      {/* ── LEFT PANEL ── */}
+      <div className="admin-login-left" style={{
+        width: 440, flexShrink: 0, position: "relative", overflow: "hidden",
+        background: "#0d1220", display: "flex", flexDirection: "column",
+        justifyContent: "space-between", padding: "44px 44px",
+      }}>
+        {/* Background image */}
+        <div style={{ position: "absolute", inset: 0 }}>
+          <Image src="/images/makarem_1.jpeg" alt="" fill
+            style={{ objectFit: "cover", objectPosition: "center 30%", opacity: 0.35 }} />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(10,18,32,.85) 0%,rgba(10,18,32,.4) 50%,rgba(10,18,32,.97) 100%)" }} />
+        </div>
 
-        {/* Logo */}
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 56 }}>
-            <Image src="/images/logo.jpg" alt="East & West Travel" width={48} height={48} style={{ borderRadius: 12, objectFit: "cover", boxShadow: "0 4px 12px rgba(0,0,0,0.35)" }} />
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>East &amp; West Travel</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Management System</div>
-            </div>
+        {/* Brand */}
+        <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 12 }}>
+          <Image src="/images/logo.jpg" alt="East & West" width={44} height={44}
+            style={{ borderRadius: 10, objectFit: "cover" }} />
+          <div>
+            <div style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>East &amp; West Travel</div>
+            <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em" }}>Management System</div>
           </div>
+        </div>
 
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.2, letterSpacing: -0.5 }}>
+        {/* Tagline */}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <h2 style={{ color: "#fff", fontSize: 28, fontWeight: 800, lineHeight: 1.25, margin: "0 0 14px", letterSpacing: -0.5 }}>
             One panel.<br />
             <span style={{ color: "#B8923A" }}>Complete control.</span>
           </h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, margin: 0 }}>
+          <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, lineHeight: 1.7, margin: "0 0 28px" }}>
             Agents, bookings, payments, visa, insurance and content — all managed from here.
           </p>
-        </div>
-
-        {/* Stats strip */}
-        <div style={{ display: "flex", gap: 24 }}>
-          {[
-            { label: "Services", value: "5+" },
-            { label: "Agents", value: "Multi" },
-            { label: "Secured", value: "2FA" },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#B8923A" }}>{value}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-            </div>
-          ))}
+          <div style={{ display: "flex", gap: 28, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 20 }}>
+            {[["5+", "Services"], ["Multi", "Agents"], ["2FA", "Secured"]].map(([v, l]) => (
+              <div key={l}>
+                <div style={{ color: "#B8923A", fontWeight: 800, fontSize: 18 }}>{v}</div>
+                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 3 }}>{l}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ── RIGHT PANEL — form ── */}
-      <div style={{
-        flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "40px 24px", background: "var(--a-bg)",
-      }}>
+      {/* ── RIGHT PANEL ── */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
 
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px", color: "var(--a-text)" }}>
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 6px", color: "#1a1a2e" }}>
               {step === "totp" ? "Two-Factor Auth" : "Admin Sign In"}
             </h1>
-            <p style={{ fontSize: 13, color: "var(--a-muted)", margin: 0 }}>
-              {step === "totp"
-                ? "Enter the 6-digit code from your authenticator app"
-                : "Sign in with your admin credentials to continue"}
+            <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+              {step === "totp" ? "Enter the 6-digit code from your authenticator app" : "Sign in with your admin credentials to continue"}
             </p>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
             {step === "credentials" ? (<>
               {/* Email */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
-                  Email Address
-                </label>
-                <input
-                  type="email" required value={email}
-                  onChange={e => setEmail(e.target.value)}
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Email Address</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSubmit()}
                   placeholder="admin@eastwestpk.com"
-                  style={{ width: "100%", padding: "11px 14px", border: "1.5px solid var(--a-border)", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff", transition: "border-color .15s" }}
-                  onFocus={e => (e.target.style.borderColor = "var(--a-gold)")}
-                  onBlur={e  => (e.target.style.borderColor = "var(--a-border)")}
-                />
+                  style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                  onFocus={e => e.target.style.borderColor = "#B8923A"}
+                  onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
               </div>
 
               {/* Password */}
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
-                  Password
-                </label>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Password</label>
                 <div style={{ position: "relative" }}>
-                  <input
-                    type={showPw ? "text" : "password"} required value={password}
+                  <input type={showPw ? "text" : "password"} value={password}
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSubmit()}
                     placeholder="••••••••"
-                    style={{ width: "100%", padding: "11px 44px 11px 14px", border: "1.5px solid var(--a-border)", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff", transition: "border-color .15s" }}
-                    onFocus={e => (e.target.style.borderColor = "var(--a-gold)")}
-                    onBlur={e  => (e.target.style.borderColor = "var(--a-border)")}
-                  />
-                  <button
-                    type="button" onClick={() => setShowPw(!showPw)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "var(--a-muted)", padding: 0 }}
-                  >
+                    style={{ width: "100%", padding: "11px 44px 11px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                    onFocus={e => e.target.style.borderColor = "#B8923A"}
+                    onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
+                  <button type="button" onClick={() => setShowPw(p => !p)}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "#9ca3af", lineHeight: 1 }}>
                     {showPw ? "🙈" : "👁"}
                   </button>
                 </div>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <Link href="/admin/forgot-password" style={{ fontSize: 12, color: "var(--a-gold)", textDecoration: "none" }}>
-                  Forgot password?
-                </Link>
+                <div style={{ textAlign: "right", marginTop: 6 }}>
+                  <Link href="/admin/forgot-password" style={{ fontSize: 12, color: "#B8923A", textDecoration: "none", fontWeight: 600 }}>Forgot password?</Link>
+                </div>
               </div>
 
             </>) : (
-              /* TOTP step */
+              /* TOTP */
               <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
-                  Authenticator Code
-                </label>
-                <input
-                  type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6}
-                  required autoFocus value={totpCode}
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Authenticator Code</label>
+                <input type="text" inputMode="numeric" maxLength={6} autoFocus value={totpCode}
                   onChange={e => setTotp(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSubmit()}
                   placeholder="000000"
-                  style={{ width: "100%", padding: "14px", border: "1.5px solid var(--a-border)", borderRadius: 10, fontSize: 28, fontWeight: 700, letterSpacing: "0.4em", textAlign: "center", outline: "none", boxSizing: "border-box", background: "#fff" }}
-                  onFocus={e => (e.target.style.borderColor = "var(--a-gold)")}
-                  onBlur={e  => (e.target.style.borderColor = "var(--a-border)")}
-                />
-                <button
-                  type="button"
-                  onClick={() => { setStep("credentials"); setTotp(""); setError(null); }}
-                  style={{ marginTop: 10, fontSize: 12, color: "var(--a-muted)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
+                  style={{ width: "100%", padding: "14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 28, fontWeight: 700, letterSpacing: "0.4em", textAlign: "center", outline: "none", boxSizing: "border-box", background: "#fff" }}
+                  onFocus={e => e.target.style.borderColor = "#B8923A"}
+                  onBlur={e => e.target.style.borderColor = "#e5e7eb"} />
+                <button type="button" onClick={() => { setStep("credentials"); setTotp(""); setError(null); }}
+                  style={{ marginTop: 8, fontSize: 12, color: "#9ca3af", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
                   ← Use different account
                 </button>
               </div>
             )}
 
             {error && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--a-red-bg)", border: "1px solid rgba(220,38,38,0.2)", borderRadius: 8, padding: "10px 14px" }}>
-                <span style={{ fontSize: 14 }}>⚠️</span>
-                <span style={{ fontSize: 13, color: "var(--a-red)", fontWeight: 500 }}>{error}</span>
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#dc2626", fontWeight: 500 }}>
+                ⚠️ {error}
               </div>
             )}
 
-            <button
-              onClick={handleSubmit} disabled={loading}
-              style={{
-                background: loading ? "var(--a-gold-hi)" : "linear-gradient(135deg, #B8923A, #D4AF5A)",
-                color: "#fff", fontWeight: 800, padding: "13px",
-                borderRadius: 10, border: "none", cursor: loading ? "not-allowed" : "pointer",
-                fontSize: 15, letterSpacing: 0.2,
-                boxShadow: loading ? "none" : "0 4px 12px rgba(184,146,58,0.35)",
-                transition: "opacity .15s", opacity: loading ? 0.75 : 1,
-              }}
-            >
-              {loading
-                ? (step === "totp" ? "Verifying…" : "Signing in…")
-                : (step === "totp" ? "Verify Code" : "Sign In")}
+            <button onClick={handleSubmit} disabled={loading}
+              style={{ background: loading ? "#c9a85c" : "linear-gradient(135deg,#B8923A,#D4AF5A)", color: "#fff", fontWeight: 800, padding: "13px", borderRadius: 10, border: "none", cursor: loading ? "not-allowed" : "pointer", fontSize: 15, boxShadow: "0 4px 12px rgba(184,146,58,0.35)", opacity: loading ? 0.75 : 1 }}>
+              {loading ? (step === "totp" ? "Verifying…" : "Signing in…") : step === "totp" ? "Verify Code" : "Sign In"}
             </button>
           </div>
 
-          {/* Footer */}
-          <p style={{ textAlign: "center", fontSize: 12, color: "var(--a-dim)", marginTop: 32 }}>
+          <p style={{ textAlign: "center", fontSize: 12, color: "#9ca3af", marginTop: 28 }}>
             East &amp; West Travel Services &copy; {new Date().getFullYear()}
           </p>
         </div>
       </div>
 
-      {/* Responsive — collapse left panel on small screens */}
-      <style>{`
-        @media (max-width: 700px) {
-          .admin-login-left { display: none !important; }
-        }
-      `}</style>
+      <style>{`@media(max-width:700px){.admin-login-left{display:none!important}}`}</style>
     </div>
   );
 }
