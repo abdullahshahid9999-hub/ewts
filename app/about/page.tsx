@@ -7,12 +7,12 @@ import HeroSlideshow from "@/components/HeroSlideshow";
 import Reveal, { RevealStagger, RevealItem } from "@/components/Reveal";
 
 const HERO_IMAGES = [
-  { src: "/images/makarem_1.jpeg", alt: "East & West Travel Services office" },
-  { src: "/images/pullman_1.jpeg", alt: "East & West Travel Services" },
+  { src: "/assets/office-photo-1.jpeg", alt: "East & West Travel Services office" },
+  { src: "/assets/office-photo-2.jpeg", alt: "East & West Travel Services" },
 ];
 
 const OFFICE_STRIP = [
-  { src: "/images/makarem_2.jpeg", alt: "Reception" },
+  { src: "/assets/office-photo-3.jpeg", alt: "Reception" },
   { src: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=500&q=80", alt: "Team at work" },
   { src: "https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=500&q=80", alt: "Certificates wall" },
   { src: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=500&q=80", alt: "Team meeting" },
@@ -58,15 +58,15 @@ const AWARDS_GALLERY = [
 ];
 
 const SERVICES = [
-  { title: "Umrah Packages", icon: "🕋", color: "#D4A843", img: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=500&q=80", desc: "Expertly curated Umrah packages — economy, standard & luxury — with visa, flights, hotel, and ground transport. Trusted by thousands since 2008." },
-  { title: "Hajj Packages", icon: "🏔️", color: "#22C55E", img: "https://images.unsplash.com/photo-1519659528534-7fd733a832a0?w=500&q=80", desc: "Complete Hajj solutions for individuals and groups — government & private quotas, full documentation, accommodation in Mina & Azizia, and spiritual guidance." },
-  { title: "Air Ticketing", icon: "✈️", color: "#3B82F6", img: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=80", desc: "IATA-accredited ticketing for 200+ airlines worldwide. Best fares for economy, business & first class — domestic and international, B2B & B2C." },
-  { title: "Group Tours", icon: "👨‍👩‍👧", color: "#8B5CF6", img: "https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=500&q=80", desc: "Tailor-made group tour packages for families, corporates & institutions — from Europe to Asia, managed end-to-end with expert tour managers." },
-  { title: "Domestic Packages", icon: "⛰️", color: "#22C55E", img: "https://images.unsplash.com/photo-1500534623283-312aade485b7?w=500&q=80", desc: "Explore Pakistan's breathtaking beauty — Hunza, Swat, Naran, Murree, Lahore & more. Weekend getaways, honeymoon specials & family holidays." },
-  { title: "Hotel Bookings", icon: "🏨", color: "#A16207", img: "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=500&q=80", desc: "Best-rate hotel reservations worldwide — budget to 5-star luxury. Makkah, Madinah, Istanbul, Dubai, Bangkok & beyond at unbeatable rates." },
-  { title: "Visa Consultancy", icon: "🛂", color: "#8B5CF6", img: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=500&q=80", desc: "Expert visa guidance for tourist, business, student, family & Umrah visas. We navigate requirements for 50+ countries with a high approval rate." },
-  { title: "Travel Insurance", icon: "🛡️", color: "#EC4899", img: "https://images.unsplash.com/photo-1503220317375-aaad61436b1b?w=500&q=80", desc: "Comprehensive travel insurance with ICI — medical cover, trip cancellation, baggage loss & Umrah/Hajj-specific policies for complete protection." },
-  { title: "Corporate Travel", icon: "💼", color: "#0E2A26", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&q=80", desc: "Dedicated corporate travel management — bulk ticketing, account management, meeting & conference travel, priority handling for your business teams." },
+  { title: "Umrah Packages", icon: "🕋", color: "#D4A843", img: "/assets/service-umrah.jpg", desc: "Expertly curated Umrah packages — economy, standard & luxury — with visa, flights, hotel, and ground transport. Trusted by thousands since 2008." },
+  { title: "Hajj Packages", icon: "🏔️", color: "#22C55E", img: "/assets/service-hajj.jpg", desc: "Complete Hajj solutions for individuals and groups — government & private quotas, full documentation, accommodation in Mina & Azizia, and spiritual guidance." },
+  { title: "Air Ticketing", icon: "✈️", color: "#3B82F6", img: "/assets/service-flights.jpg", desc: "IATA-accredited ticketing for 200+ airlines worldwide. Best fares for economy, business & first class — domestic and international, B2B & B2C." },
+  { title: "Group Tours", icon: "👨‍👩‍👧", color: "#8B5CF6", img: "/assets/service-tours.jpg", desc: "Tailor-made group tour packages for families, corporates & institutions — from Europe to Asia, managed end-to-end with expert tour managers." },
+  { title: "Domestic Packages", icon: "⛰️", color: "#22C55E", img: "/assets/service-domestic.jpg", desc: "Explore Pakistan's breathtaking beauty — Hunza, Swat, Naran, Murree, Lahore & more. Weekend getaways, honeymoon specials & family holidays." },
+  { title: "Hotel Bookings", icon: "🏨", color: "#A16207", img: "/assets/service-hotels.jpg", desc: "Best-rate hotel reservations worldwide — budget to 5-star luxury. Makkah, Madinah, Istanbul, Dubai, Bangkok & beyond at unbeatable rates." },
+  { title: "Visa Consultancy", icon: "🛂", color: "#8B5CF6", img: "/assets/service-flights.jpg", desc: "Expert visa guidance for tourist, business, student, family & Umrah visas. We navigate requirements for 50+ countries with a high approval rate." },
+  { title: "Travel Insurance", icon: "🛡️", color: "#EC4899", img: "/assets/service-insurance.jpg", desc: "Comprehensive travel insurance with ICI — medical cover, trip cancellation, baggage loss & Umrah/Hajj-specific policies for complete protection." },
+  { title: "Corporate Travel", icon: "💼", color: "#0E2A26", img: "/assets/service-corporate.jpg", desc: "Dedicated corporate travel management — bulk ticketing, account management, meeting & conference travel, priority handling for your business teams." },
 ];
 
 const WHY_US = [
@@ -164,7 +164,7 @@ export default function AboutPage() {
             <div className="h-80 rounded-2xl overflow-hidden relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=700&q=80"
+                src="/assets/office-interior.jpeg"
                 alt="East & West Travel Services director's office"
                 className="w-full h-full object-cover"
               />
