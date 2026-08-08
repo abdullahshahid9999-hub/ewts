@@ -236,7 +236,8 @@ export default function GoogleReviewsSection() {
                     <span style={{ fontWeight: 800, fontSize: 28, color: "#111", lineHeight: 1 }}>{RATING}</span>
                     <Stars n={5} />
                   </div>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0" }}>{TOTAL} verified Google Reviews</p>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0" }}>{TOTAL} Google Reviews · 5★ only shown</p>
+                  <p style={{ fontSize: 11, color: "#00B67A", margin: "2px 0 0", fontWeight: 700 }}>✓ Also on Trustpilot 4.9★</p>
                 </div>
                 <a href={GREVIEW_URL} target="_blank" rel="noopener noreferrer"
                   style={{ marginLeft: "auto", fontSize: 12, color: BRASS, fontWeight: 700, textDecoration: "none", border: `1.5px solid ${BRASS}`, padding: "6px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>
