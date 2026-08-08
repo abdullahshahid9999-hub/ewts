@@ -2,28 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") ?? "";
-  const { pathname } = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
 
-  // admin.eastwestpk.com → serve /admin/* routes directly
-  if (host.startsWith("admin.")) {
-    // Already on an /admin path — let it through
-    if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin") || pathname.startsWith("/_next") || pathname.startsWith("/assets")) {
-      return NextResponse.next();
-    }
-    // Root of admin subdomain → go to admin dashboard
+  const isStatic = pathname.startsWith("/_next") || pathname.startsWith("/assets") || pathname === "/favicon.ico";
+  if (isStatic) return NextResponse.next();
+
+  // admin.eastwestpk.com → /admin/*
+  if (host === "admin.eastwestpk.com") {
     const url = req.nextUrl.clone();
-    url.pathname = "/admin" + (pathname === "/" ? "" : pathname);
+    if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/admin")) {
+      url.pathname = pathname === "/" ? "/admin" : `/admin${pathname}`;
+    }
     return NextResponse.rewrite(url);
   }
 
-  // b2b.eastwestpk.com → serve /agent/* routes directly
-  if (host.startsWith("b2b.")) {
-    if (pathname.startsWith("/agent") || pathname.startsWith("/api/agent") || pathname.startsWith("/_next") || pathname.startsWith("/assets")) {
-      return NextResponse.next();
-    }
+  // b2b.eastwestpk.com → /agent/*
+  if (host === "b2b.eastwestpk.com") {
     const url = req.nextUrl.clone();
-    url.pathname = "/agent" + (pathname === "/" ? "" : pathname);
+    if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/agent")) {
+      url.pathname = pathname === "/" ? "/agent" : `/agent${pathname}`;
+    }
     return NextResponse.rewrite(url);
+  }
+
+  // www redirect to naked domain
+  if (host === "www.eastwestpk.com") {
+    const url = req.nextUrl.clone();
+    url.host = "eastwestpk.com";
+    return NextResponse.redirect(url, 301);
   }
 
   return NextResponse.next();
