@@ -27,15 +27,19 @@ type VisaService = {
   priceChild: number | null;
   priceInfant: number | null;
   days: string | null;
+  validity: string | null;
+  maxStay: string | null;
+  entryType: string | null;
   status: string;
   termsAndConditions: string | null;
   refundPolicy: string | null;
+  _docCount?: number;
 };
 
 const emptyForm = {
   title: "", country: "", type: "tourist", price: "",
   priceAdult: "", priceChild: "", priceInfant: "",
-  days: "", validity: "", status: "active",
+  days: "", validity: "", maxStay: "", entryType: "", status: "active",
   termsAndConditions: "", refundPolicy: "",
 };
 
@@ -55,14 +59,26 @@ function VisaServicesInner() {
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [newDoc, setNewDoc] = useState({ name: "", description: "", isRequired: true, applicantCategory: "", nationality: "" });
   const [savingDoc, setSavingDoc] = useState(false);
+  // Doc counts per visa id for the listing table
+  const [docCounts, setDocCounts] = useState<Record<string, number>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/admin/visa-services");
     const data = await res.json().catch(() => ({}));
-    setItems(data.visaServices ?? []);
+    const services: VisaService[] = data.visaServices ?? [];
+    setItems(services);
     setLoading(false);
-  }, []);
+    // Fetch doc counts for all visas in parallel (lightweight)
+    const counts = await Promise.all(
+      services.map(async (v) => {
+        const r = await adminFetch(`/api/admin/visa-services/${v.id}/documents`, accessToken, refresh);
+        const d = await r.json().catch(() => ({}));
+        return [v.id, (d.docs ?? []).length] as const;
+      })
+    );
+    setDocCounts(Object.fromEntries(counts));
+  }, [accessToken, refresh]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -163,6 +179,16 @@ function VisaServicesInner() {
             </div>
             <div><label>Processing Days</label><input style={iStyle} value={form.days} onChange={(e) => setForm((f) => ({ ...f, days: e.target.value }))} placeholder="e.g. 7–10 days" /></div>
             <div><label>Validity</label><input style={iStyle} value={form.validity} onChange={(e) => setForm((f) => ({ ...f, validity: e.target.value }))} placeholder="e.g. 30 days" /></div>
+            <div><label>Period of Stay</label><input style={iStyle} value={form.maxStay} onChange={(e) => setForm((f) => ({ ...f, maxStay: e.target.value }))} placeholder="e.g. 30 days" /></div>
+            <div>
+              <label>Entry Type</label>
+              <select style={iStyle} value={form.entryType} onChange={(e) => setForm((f) => ({ ...f, entryType: e.target.value }))}>
+                <option value="">— Select —</option>
+                <option value="single">Single Entry</option>
+                <option value="multiple">Multiple Entry</option>
+                <option value="transit">Transit</option>
+              </select>
+            </div>
             <div>
               <label>Status</label>
               <select style={iStyle} value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
@@ -379,7 +405,7 @@ function VisaServicesInner() {
           {loading ? <p className="etd">Loading…</p> : items.length === 0 ? <p className="etd">No visa services yet.</p> : (
             <table className="adp-table">
               <thead>
-                <tr><th>Title</th><th>Country</th><th>Type</th><th>Adult Price</th><th>Status</th><th></th></tr>
+                <tr><th>Title</th><th>Country</th><th>Type</th><th>Entry</th><th>Stay</th><th>Adult Price</th><th>Req. Docs</th><th>Status</th><th></th></tr>
               </thead>
               <tbody>
                 {items.map((v) => (
@@ -387,10 +413,25 @@ function VisaServicesInner() {
                     <td><strong>{v.title}</strong></td>
                     <td>{v.country}</td>
                     <td style={{ textTransform: "capitalize" }}>{v.type}</td>
+                    <td>{v.entryType ? <span style={{ fontSize:11, padding:"2px 8px", borderRadius:20, background:"rgba(255,255,255,0.07)", border:"1px solid var(--a-border)", whiteSpace:"nowrap" }}>{v.entryType === "single" ? "Single" : v.entryType === "multiple" ? "Multiple" : "Transit"}</span> : <span style={{ opacity:0.35 }}>—</span>}</td>
+                    <td style={{ whiteSpace:"nowrap" }}>{v.maxStay ?? <span style={{ opacity:0.35 }}>—</span>}</td>
                     <td>
                       {v.priceAdult != null
                         ? `PKR ${v.priceAdult.toLocaleString()}`
                         : v.price ?? <span style={{ color: "var(--a-muted)" }}>—</span>}
+                    </td>
+                    <td>
+                      {docCounts[v.id] !== undefined ? (
+                        <button
+                          onClick={() => { setEditingId(v.id); setForm({ title: v.title, country: v.country, type: v.type, price: v.price ?? "", priceAdult: v.priceAdult != null ? String(v.priceAdult) : "", priceChild: v.priceChild != null ? String(v.priceChild) : "", priceInfant: v.priceInfant != null ? String(v.priceInfant) : "", days: v.days ?? "", validity: v.validity ?? "", maxStay: v.maxStay ?? "", entryType: v.entryType ?? "", status: v.status, termsAndConditions: v.termsAndConditions ?? "", refundPolicy: v.refundPolicy ?? "" }); loadDocs(v.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                          className="adp-btn adp-btn-t"
+                          style={{ fontSize:11, display:"flex", alignItems:"center", gap:4, whiteSpace:"nowrap" }}
+                        >
+                          <span style={{ fontWeight:700, fontSize:13, color: docCounts[v.id] > 0 ? "var(--a-gold)" : "var(--a-muted)" }}>{docCounts[v.id]}</span>
+                          <span style={{ opacity:0.6 }}>doc{docCounts[v.id] !== 1 ? "s" : ""}</span>
+                          {docCounts[v.id] === 0 && <span style={{ color:"var(--a-red)", fontSize:10 }}>⚠ none</span>}
+                        </button>
+                      ) : <span style={{ opacity:0.3, fontSize:11 }}>…</span>}
                     </td>
                     <td><span className={`adp-pill adp-p-${v.status}`}>{v.status}</span></td>
                     <td style={{ display: "flex", gap: "6px" }}>
@@ -403,7 +444,9 @@ function VisaServicesInner() {
                             priceAdult: v.priceAdult != null ? String(v.priceAdult) : "",
                             priceChild: v.priceChild != null ? String(v.priceChild) : "",
                             priceInfant: v.priceInfant != null ? String(v.priceInfant) : "",
-                            days: v.days ?? "", validity: "", status: v.status,
+                            days: v.days ?? "", validity: v.validity ?? "",
+                            maxStay: v.maxStay ?? "", entryType: v.entryType ?? "",
+                            status: v.status,
                             termsAndConditions: v.termsAndConditions ?? "",
                             refundPolicy: v.refundPolicy ?? "",
                           });

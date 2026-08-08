@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       days: str("days"),
       validity: str("validity"),
       maxStay: str("maxStay"),
+      entryType: str("entryType"),
       processingTime: str("processingTime"),
       requirements: str("requirements"),
       termsAndConditions: str("termsAndConditions"),

@@ -38,6 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       days: str("days"),
       validity: str("validity"),
       maxStay: str("maxStay"),
+      entryType: str("entryType"),
       processingTime: str("processingTime"),
       requirements: str("requirements"),
       termsAndConditions: str("termsAndConditions"),

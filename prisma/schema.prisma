@@ -182,6 +182,7 @@ model VisaService {
   days           String?
   validity       String?
   maxStay        String?  @map("max_stay")
+  entryType      String?  @map("entry_type")   // "single" | "multiple" | "transit"
   processingTime String?  @map("processing_time")
   requirements   String?
   termsAndConditions String? @map("terms_and_conditions")
