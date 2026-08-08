@@ -42,16 +42,13 @@ export default function AdminLoginPage() {
       {/* ── LEFT PANEL — branding ── */}
       <div style={{
         flex: "0 0 420px",
-        background: "linear-gradient(155deg, #1C1E26 0%, #2a2d3a 60%, #1a1c24 100%)",
         display: "flex", flexDirection: "column", justifyContent: "space-between",
         padding: "48px 44px", position: "relative", overflow: "hidden",
       }}
         className="admin-login-left"
       >
-        {/* decorative circles */}
-        <div style={{ position: "absolute", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", border: "1.5px solid rgba(184,146,58,0.15)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", border: "1.5px solid rgba(184,146,58,0.1)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -60, left: -60, width: 220, height: 220, borderRadius: "50%", border: "1.5px solid rgba(184,146,58,0.1)", pointerEvents: "none" }} />
+        <Image src="/images/makarem_1.jpeg" alt="" fill style={{ objectFit: "cover", objectPosition: "center 30%", opacity: 0.45 }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(10,18,32,.7) 0%,rgba(10,18,32,.35) 40%,rgba(10,18,32,.97) 100%),linear-gradient(105deg,rgba(10,18,32,.92) 0%,rgba(10,18,32,.1) 55%)" }} />
 
         {/* Logo */}
         <div>
@@ -63,12 +60,12 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <h2 style={{ fontSize: 32, fontWeight: 800, color: "#fff", margin: "0 0 16px", lineHeight: 1.2, letterSpacing: -0.5 }}>
-            Manage your<br />
-            <span style={{ color: "#B8923A" }}>travel business</span>
+          <h2 style={{ fontSize: 30, fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.2, letterSpacing: -0.5 }}>
+            One panel.<br />
+            <span style={{ color: "#B8923A" }}>Complete control.</span>
           </h2>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, margin: 0 }}>
-            Bookings, agents, packages, visas and finance — all in one secure panel.
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, margin: 0 }}>
+            Agents, bookings, payments, visa, insurance and content — all managed from here.
           </p>
         </div>
 
