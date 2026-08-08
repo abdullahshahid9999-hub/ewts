@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
   const host = req.headers.get("host") ?? "";
-  const { pathname, search } = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
-  const isStatic = pathname.startsWith("/_next") || pathname.startsWith("/assets") || pathname === "/favicon.ico";
+  const isStatic = pathname.startsWith("/_next") || pathname.startsWith("/assets") || pathname.startsWith("/images") || pathname === "/favicon.ico" || pathname === "/sitemap.xml" || pathname === "/robots.txt";
   if (isStatic) return NextResponse.next();
 
   // admin.eastwestpk.com → /admin/*
   if (host === "admin.eastwestpk.com") {
     const url = req.nextUrl.clone();
-    if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/admin")) {
-      url.pathname = pathname === "/" ? "/admin" : `/admin${pathname}`;
+    if (pathname === "/") {
+      url.pathname = "/admin/login";
+    } else if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/")) {
+      url.pathname = `/admin${pathname}`;
     }
     return NextResponse.rewrite(url);
   }
@@ -19,17 +21,12 @@ export function middleware(req: NextRequest) {
   // b2b.eastwestpk.com → /agent/*
   if (host === "b2b.eastwestpk.com") {
     const url = req.nextUrl.clone();
-    if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/agent")) {
-      url.pathname = pathname === "/" ? "/agent" : `/agent${pathname}`;
+    if (pathname === "/") {
+      url.pathname = "/agent/login";
+    } else if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/")) {
+      url.pathname = `/agent${pathname}`;
     }
     return NextResponse.rewrite(url);
-  }
-
-  // www redirect to naked domain
-  if (host === "www.eastwestpk.com") {
-    const url = req.nextUrl.clone();
-    url.host = "eastwestpk.com";
-    return NextResponse.redirect(url, 301);
   }
 
   return NextResponse.next();
