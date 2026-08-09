@@ -29,14 +29,16 @@ export default function AgentLoginPage() {
       const d = await res.json().catch(() => ({}));
       setLoading(false);
       if (!res.ok) { setError(d.error ?? "Invalid credentials."); return; }
-      router.push("/agent/dashboard");
+      router.push(d.mustChangePassword ? "/agent/change-password" : "/agent/dashboard");
       return;
     }
     const err = await login(email, password, step === "totp" ? totpCode : undefined);
     setLoading(false);
     if (err === "__2FA_REQUIRED__") { setStep("totp"); return; }
     if (err) { setError(err); return; }
-    router.push("/agent/dashboard");
+    // mustChangePassword is set on the response — agentAuthClient stores it
+    const stored = sessionStorage.getItem("agent_must_change_pw");
+    router.push(stored === "1" ? "/agent/change-password" : "/agent/dashboard");
   }
 
   return (

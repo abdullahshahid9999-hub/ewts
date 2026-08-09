@@ -9,6 +9,7 @@ import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 type AgentBooking = {
   id: string;
   bookingRef: string;
+  createdByStaffName?: string | null;
   serviceType: string;
   status: string;
   sellPrice: number;
@@ -117,7 +118,7 @@ function AgentBookingsInner() {
             <table className="adp-table">
               <thead>
                 <tr>
-                  <th>Ref</th><th>Agent</th><th>Customer</th><th>Passengers</th><th>Service</th><th>Sell Price</th><th>Commission</th><th>Status</th><th></th>
+                  <th>Ref</th><th>Agent</th><th>Booked By</th><th>Customer</th><th>Passengers</th><th>Service</th><th>Sell Price</th><th>Commission</th><th>Status</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -125,6 +126,7 @@ function AgentBookingsInner() {
                   <tr key={b.id}>
                     <td><strong>{b.bookingRef}</strong></td>
                     <td>{b.agent.agentCode} — {b.agent.fullName}</td>
+                    <td style={{ fontSize: 12, color: "var(--a-muted)" }}>{b.createdByStaffName ?? <span style={{ color: "#ccc" }}>Owner</span>}</td>
                     <td>
                       {b.customerName ?? <span style={{ color: "var(--a-dim)" }}>—</span>}
                       {b.customerPhone && <div style={{ fontSize: 11, color: "var(--a-muted)" }}>{b.customerPhone}</div>}

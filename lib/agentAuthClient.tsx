@@ -44,6 +44,9 @@ export function AgentAuthProvider({ children }: { children: ReactNode }) {
     if (res.ok && data.requires2FA) return "__2FA_REQUIRED__";
     if (!res.ok) return data?.error ?? "Login failed.";
     setAccessToken(data.accessToken); setAgent(data.agent); setSubUser(null);
+    if (typeof window !== "undefined") {
+      data.mustChangePassword ? sessionStorage.setItem("agent_must_change_pw", "1") : sessionStorage.removeItem("agent_must_change_pw");
+    }
     return null;
   }, []);
 

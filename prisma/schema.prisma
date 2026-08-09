@@ -562,11 +562,12 @@ model Agent {
   creditLimitUpdatedAt   DateTime? @map("credit_limit_updated_at")
   // Brute-force lockout — incremented on each wrong password, reset on
   // successful login. lockedUntil: if set and in the future, login is blocked.
-  loginAttempts Int     @default(0) @map("login_attempts")
-  lockedUntil  DateTime? @map("locked_until")
-  totpSecret   String?  @map("totp_secret")
-  totpEnabled  Boolean  @default(false) @map("totp_enabled")
-  createdAt    DateTime @default(now()) @map("created_at")
+  loginAttempts      Int       @default(0) @map("login_attempts")
+  lockedUntil        DateTime? @map("locked_until")
+  totpSecret         String?   @map("totp_secret")
+  totpEnabled        Boolean   @default(false) @map("totp_enabled")
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   bookings        AgentBooking[]
@@ -601,9 +602,10 @@ model AgentUser {
   // canViewLedger | canManageSavedClients | canViewNotifications
   // canIssueTickets is always false — only owner can issue.
   permissions  Json      @default("{}")
-  loginAttempts Int      @default(0) @map("login_attempts")
-  lockedUntil  DateTime? @map("locked_until")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  loginAttempts      Int       @default(0) @map("login_attempts")
+  lockedUntil        DateTime? @map("locked_until")
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
@@ -660,6 +662,8 @@ model AgentBooking {
   bookingRef        String    @unique @map("booking_ref")
   issueRequestedAt  DateTime? @map("issue_requested_at")
   issueRequestedBy  String?   @map("issue_requested_by")
+  createdByStaffId  String?   @map("created_by_staff_id")
+  createdByStaffName String?  @map("created_by_staff_name")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 

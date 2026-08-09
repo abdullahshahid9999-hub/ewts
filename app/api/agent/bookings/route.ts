@@ -208,6 +208,8 @@ export async function POST(req: NextRequest) {
           return tx.agentBooking.create({
             data: {
               agentId: agent.id,
+          createdByStaffId: agent.subUser?.id ?? null,
+          createdByStaffName: agent.subUser?.fullName ?? null,
               serviceType,
               groupFlightId,
               sellPrice,
@@ -258,7 +260,9 @@ export async function POST(req: NextRequest) {
             if (slotUpdate.count === 0) throw new Error("SOLD_OUT_SLOTS");
             return tx.agentBooking.create({
               data: {
-                agentId: agent.id, serviceType, groupFlightId,
+                agentId: agent.id,
+          createdByStaffId: agent.subUser?.id ?? null,
+          createdByStaffName: agent.subUser?.fullName ?? null, serviceType, groupFlightId,
                 packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
                 sellPrice, commission, customerName, customerPhone, customerEmail,
                 travellers: travellers.length > 0 ? travellers : undefined,
@@ -283,6 +287,8 @@ export async function POST(req: NextRequest) {
         booking = await prisma.agentBooking.create({
           data: {
             agentId: agent.id,
+          createdByStaffId: agent.subUser?.id ?? null,
+          createdByStaffName: agent.subUser?.fullName ?? null,
             serviceType,
             groupFlightId,
             packageId: serviceType === "umrah" || serviceType === "tours" ? packageId : undefined,
