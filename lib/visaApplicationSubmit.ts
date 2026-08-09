@@ -55,9 +55,9 @@ export async function submitVisaApplicationBatch(
     const nationality = ((form.get(`nationality_${i}`) as string | null) ?? "").trim() || null;
     const passportExpiry = ((form.get(`passportExpiry_${i}`) as string | null) ?? "").trim() || null;
 
-    if (!visaId || !fullName || !passportNumber || !phone || !email) {
+    if (!visaId || !fullName) {
       throw new VisaSubmissionError(
-        `Application ${i + 1}: Full name, passport number, phone, email and visa are required.`
+        `Application ${i + 1}: Full name and visa are required.`
       );
     }
 

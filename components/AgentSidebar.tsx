@@ -32,7 +32,7 @@ const NAV = [
   },
   {
     section: "Account",
-    items: [{ href: "/agent/profile", icon: "👤", label: "My Profile" }],
+    items: [{ href: "/agent/profile", icon: "👤", label: "My Profile" }, { href: "/agent/team", icon: "👥", label: "My Team" }],
   },
 ];
 

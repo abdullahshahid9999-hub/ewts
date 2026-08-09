@@ -26,36 +26,35 @@ export default async function AgentVisaDetailPage({ params }: { params: Promise<
   return (
     <AgentGuard>
       <AgentShell>
-        {/* Hero header */}
-        <div style={{ marginBottom: 24 }}>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
-            <Link href="/agent/visa" style={{ color: "var(--muted)" }}>← Back to Visa Services</Link>
-            {" · "}{visa.country} · <span style={{ textTransform: "capitalize" }}>{visa.type} Visa</span>
-          </p>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
-                {visa.countryFlag && <span style={{ marginRight: 8 }}>{visa.countryFlag}</span>}
-                {visa.title}
+        {/* Hero image */}
+        {visa.countryImage && (
+          <div style={{ position: "relative", width: "100%", height: 220, borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={visa.countryImage} alt={visa.country} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.55) 100%)" }} />
+            <div style={{ position: "absolute", bottom: 20, left: 24 }}>
+              <h2 style={{ color: "#fff", fontSize: 24, fontWeight: 800, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+                {visa.countryFlag && <span style={{ marginRight: 8 }}>{visa.countryFlag}</span>}{visa.title}
               </h2>
-              {visa.entryType && (
-                <span style={{ display: "inline-block", marginTop: 6, fontSize: 11, padding: "3px 10px", borderRadius: 20, background: "rgba(184,142,62,0.12)", border: "1px solid rgba(184,142,62,0.3)", color: "var(--gold-dim,#9C7E3A)", fontWeight: 600 }}>
-                  {visa.entryType === "single" ? "Single Entry" : visa.entryType === "multiple" ? "Multiple Entry" : "Transit"}
-                </span>
-              )}
+              <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, marginTop: 4 }}>
+                <Link href="/agent/visa" style={{ color: "rgba(255,255,255,0.7)" }}>← Back to Visa Services</Link>
+                {" · "}<span style={{ textTransform: "capitalize" }}>{visa.country} · {visa.type} Visa</span>
+              </p>
             </div>
-            {hasPricing && (
-              <div style={{ display: "flex", gap: 10 }}>
-                {[["Adult", visa.priceAdult], ["Child", visa.priceChild], ["Infant", visa.priceInfant]].map(([l, p]) => (
-                  <div key={String(l)} style={{ textAlign: "center", background: "var(--bg)", border: "1px solid var(--bdr)", borderRadius: 10, padding: "8px 14px" }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", textTransform: "uppercase", fontWeight: 700, marginBottom: 2 }}>{l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>PKR {Number(p).toLocaleString()}</div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
+        )}
+        {/* Header — only shown when no hero image */}
+        {!visa.countryImage && (
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginBottom: 6 }}>
+              <Link href="/agent/visa" style={{ color: "var(--muted)" }}>← Back to Visa Services</Link>
+              {" · "}{visa.country} · <span style={{ textTransform: "capitalize" }}>{visa.type} Visa</span>
+            </p>
+            <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
+              {visa.countryFlag && <span style={{ marginRight: 8 }}>{visa.countryFlag}</span>}{visa.title}
+            </h2>
+          </div>
+        )}
 
         {/* Two-column info strip */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 10, marginBottom: 24 }}>
