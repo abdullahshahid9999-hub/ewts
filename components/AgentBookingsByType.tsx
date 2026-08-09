@@ -22,6 +22,8 @@ type Booking = {
   adults: number | null;
   children: number | null;
   infants: number | null;
+  ticketNumber?: string | null;
+  travellers?: { fullName?: string }[] | null;
 };
 
 type Category = "group_ticket" | "umrah" | "world_tour" | "insurance";
@@ -149,10 +151,12 @@ export default function AgentBookingsByType({
               ? bookings.filter(b =>
                   b.bookingRef.toLowerCase().includes(q) ||
                   (b.customerName ?? "").toLowerCase().includes(q) ||
+                  (b.ticketNumber ?? "").toLowerCase().includes(q) ||
                   (b.groupFlight?.route ?? "").toLowerCase().includes(q) ||
                   (b.groupFlight?.airline ?? "").toLowerCase().includes(q) ||
                   (b.groupFlight?.flightNo ?? "").toLowerCase().includes(q) ||
-                  (b.package?.name ?? "").toLowerCase().includes(q)
+                  (b.package?.name ?? "").toLowerCase().includes(q) ||
+                  (Array.isArray(b.travellers) && b.travellers.some((t: {fullName?: string}) => (t.fullName ?? "").toLowerCase().includes(q)))
                 )
               : bookings;
             if (filtered.length === 0) return <p className="etd">No bookings match{q ? ` "${search}"` : " these filters"}.</p>;

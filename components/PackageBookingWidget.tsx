@@ -13,6 +13,7 @@ type RoomType = {
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
+  availableSlots?: number | null;
 };
 
 export default function PackageBookingWidget({
@@ -100,12 +101,21 @@ export default function PackageBookingWidget({
           <button
             key={rt.id}
             type="button"
-            onClick={() => selectRoomType(rt)}
+            onClick={() => rt.availableSlots !== 0 && selectRoomType(rt)}
+            disabled={rt.availableSlots === 0}
             className={`text-left rounded-xl border-2 p-4 transition-colors ${
-              selectedId === rt.id ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"
+              rt.availableSlots === 0 ? "border-border opacity-50 cursor-not-allowed" : selectedId === rt.id ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"
             }`}
           >
             <p className="font-semibold mb-1">{rt.roomType}</p>
+            {rt.availableSlots != null && (
+              <span style={{ display: "inline-block", fontSize: 10, fontWeight: 700, borderRadius: 99, padding: "2px 8px", marginBottom: 6,
+                color: rt.availableSlots <= 3 ? "#dc2626" : rt.availableSlots <= 10 ? "#d97706" : "#16a34a",
+                background: rt.availableSlots <= 3 ? "#fef2f2" : rt.availableSlots <= 10 ? "#fffbeb" : "#f0fdf4",
+                border: `1px solid ${rt.availableSlots <= 3 ? "#fecaca" : rt.availableSlots <= 10 ? "#fde68a" : "#bbf7d0"}` }}>
+                {rt.availableSlots === 0 ? "❌ Fully Booked" : rt.availableSlots <= 3 ? `🔴 Only ${rt.availableSlots} slots left!` : rt.availableSlots <= 10 ? `⚡ ${rt.availableSlots} slots left` : `✅ ${rt.availableSlots} slots available`}
+              </span>
+            )}
             <p className="font-display text-lg font-semibold text-gold mb-1">
               Rs. {rt.pricePerPersonPkr.toLocaleString()} <span className="text-muted text-xs font-sans font-normal">/ person</span>
             </p>

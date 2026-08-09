@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAgentAuth } from "@/lib/agentAuthClient";
+import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
+import { useEffect, useState } from "react";
 
 const NAV = [
   {
@@ -45,8 +46,21 @@ function tierClass(tier: string) {
 }
 
 export default function AgentSidebar({ open, onClose, dark, onToggleDark }: { open: boolean; onClose: () => void; dark?: boolean; onToggleDark?: () => void }) {
-  const { agent, logout } = useAgentAuth();
+  const { agent, logout, accessToken, refresh } = useAgentAuth();
   const pathname = usePathname();
+
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    agentFetch("/api/agent/notifications?unreadOnly=true", accessToken, refresh)
+      .then(r => r.json()).then(d => setUnread(d.unreadCount ?? 0)).catch(() => {});
+    const t = setInterval(() => {
+      agentFetch("/api/agent/notifications?unreadOnly=true", accessToken, refresh)
+        .then(r => r.json()).then(d => setUnread(d.unreadCount ?? 0)).catch(() => {});
+    }, 30000);
+    return () => clearInterval(t);
+  }, [accessToken, refresh]);
 
   function isActive(href: string) {
     const [hrefPath] = href.split("?");
@@ -85,8 +99,14 @@ export default function AgentSidebar({ open, onClose, dark, onToggleDark }: { op
                 href={item.href}
                 onClick={onClose}
                 className={`ap-sbn ${isActive(item.href) ? "active" : ""}`}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
               >
-                <span>{item.icon}</span> {item.label}
+                <span><span>{item.icon}</span> {item.label}</span>
+                {item.href === "/agent/notifications" && unread > 0 && (
+                  <span style={{ background: "#ef4444", color: "#fff", fontSize: 10, fontWeight: 800, borderRadius: 99, padding: "1px 7px", flexShrink: 0 }}>
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

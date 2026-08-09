@@ -27,6 +27,7 @@ type PackageWithRoomTypes = {
     maxAdults: number;
     maxInfants: number;
     minAdultsRequired: number | null;
+    availableSlots?: number | null;
   }[];
 };
 
