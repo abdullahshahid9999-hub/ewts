@@ -1,47 +1,42 @@
 /**
- * Minimal in-memory rate limiter, keyed by an arbitrary string (e.g.
- * `login:${email}` or `otp:${agentId}`).
- *
- * LIMITATION: this only works correctly on a single server instance. If
- * this app is ever deployed across multiple Render instances/replicas,
- * replace this with a shared store (Redis, or a database-backed counter)
- * so limits are enforced across all instances. Documented here rather than
- * silently under-enforcing in production.
+ * Simple in-memory rate limiter
+ * Resets on server restart — sufficient for Render single-instance
+ * For multi-instance, replace Map with Redis
  */
 
-type Bucket = { count: number; resetAt: number };
+type Entry = { count: number; resetAt: number };
+const store = new Map<string, Entry>();
 
-const buckets = new Map<string, Bucket>();
+export function rateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+): { allowed: boolean; remaining: number; resetAt: number } {
+  const now = Date.now();
+  const entry = store.get(key);
 
-// Periodically clear expired buckets so the map doesn't grow unbounded.
+  if (!entry || now > entry.resetAt) {
+    const resetAt = now + windowMs;
+    store.set(key, { count: 1, resetAt });
+    return { allowed: true, remaining: limit - 1, resetAt };
+  }
+
+  entry.count++;
+  const remaining = Math.max(0, limit - entry.count);
+  const allowed = entry.count <= limit;
+
+  if (!allowed) {
+    // Auto-cleanup after window expires
+    setTimeout(() => store.delete(key), entry.resetAt - now + 100);
+  }
+
+  return { allowed, remaining, resetAt: entry.resetAt };
+}
+
+// Cleanup old entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt < now) buckets.delete(key);
+  for (const [key, entry] of store.entries()) {
+    if (now > entry.resetAt) store.delete(key);
   }
-}, 5 * 60 * 1000).unref?.();
-
-/**
- * Returns true if the action is allowed, false if the caller is
- * rate-limited. `windowMs` is the sliding window length, `max` is the
- * number of allowed attempts within that window.
- */
-export function checkRateLimit(key: string, max: number, windowMs: number): boolean {
-  const now = Date.now();
-  const bucket = buckets.get(key);
-
-  if (!bucket || bucket.resetAt < now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (bucket.count >= max) return false;
-
-  bucket.count += 1;
-  return true;
-}
-
-/** Immediately clear a rate-limit bucket — use for emergency unlock. */
-export function clearRateLimit(key: string): void {
-  buckets.delete(key);
-}
+}, 5 * 60 * 1000);
