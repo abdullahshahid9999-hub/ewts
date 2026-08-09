@@ -138,7 +138,10 @@ function GroupFlightsInner() {
                           <td>{f.depDate ?? "—"}</td>
                           <td>{f.meal ?? "—"}</td>
                           <td>{f.baggage ?? "—"}</td>
-                          <td>{f.seats}</td>
+                          <td style={{ fontWeight: 700,
+                            color: f.seats >= 9 ? "#16a34a" : f.seats >= 4 ? "#d97706" : "#dc2626" }}>
+                            * {String(f.seats).padStart(2, "0")} seats *
+                          </td>
                           <td style={{ fontWeight: 700 }}>{f.price}</td>
                           <td>
                             <Link href={`/agent/group-flights/book/${f.id}`} className="ap-btn ap-btn-gold" style={{ whiteSpace: "nowrap" }}>

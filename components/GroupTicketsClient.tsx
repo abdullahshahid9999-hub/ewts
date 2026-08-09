@@ -324,17 +324,17 @@ export default function GroupTicketsClient({ flights }: { flights: Flight[] }) {
                               <td className="px-4 py-3 font-display font-semibold text-[var(--lp-brass)] whitespace-nowrap">{f.price}</td>
                               <td className="px-4 py-3">
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                                  {f.seats > 0 && f.seats <= 10 && (
-                                    <span style={{ fontSize: 10, fontWeight: 700, color: f.seats <= 3 ? "#dc2626" : "#d97706", background: f.seats <= 3 ? "#fef2f2" : "#fffbeb", border: `1px solid ${f.seats <= 3 ? "#fecaca" : "#fde68a"}`, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" }}>
-                                      {f.seats <= 3 ? `🔴 Only ${f.seats} left!` : `⚡ ${f.seats} seats left`}
+                                  {f.seats > 0 && (
+                                    <span style={{ fontSize: 11, fontWeight: 700,
+                                      color: f.seats >= 9 ? "#16a34a" : f.seats >= 4 ? "#d97706" : "#dc2626" }}>
+                                      * {String(f.seats).padStart(2, "0")} seats *
                                     </span>
                                   )}
                                   <button
                                     onClick={() => setBookingFlight(f)}
-                                    disabled={f.seats <= 0}
-                                    className="bg-[var(--lp-ink)] hover:bg-[var(--lp-brass)] hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                    className="bg-[var(--lp-ink)] hover:bg-[var(--lp-brass)] hover:text-black text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
                                   >
-                                    {f.seats > 0 ? "Book Now" : "Sold Out"}
+                                    Book Now
                                   </button>
                                 </div>
                               </td>

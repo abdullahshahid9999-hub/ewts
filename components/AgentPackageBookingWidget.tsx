@@ -14,6 +14,7 @@ type RoomType = {
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
+  availableSlots?: number | null;
 };
 
 export default function AgentPackageBookingWidget({
@@ -142,6 +143,12 @@ export default function AgentPackageBookingWidget({
               }}
             >
               <p style={{ fontWeight: 600, fontSize: 12.5 }}>{rt.roomType}</p>
+              {rt.availableSlots != null && rt.availableSlots > 0 && (
+                <p style={{ fontSize: 11, fontWeight: 700, marginBottom: 2,
+                  color: rt.availableSlots >= 9 ? "#16a34a" : rt.availableSlots >= 4 ? "#d97706" : "#dc2626" }}>
+                  * {String(rt.availableSlots).padStart(2, "0")} slots *
+                </p>
+              )}
               <p style={{ fontSize: 13, fontWeight: 700, color: "var(--gold)" }}>Rs. {rt.pricePerPersonPkr.toLocaleString()}<span style={{ fontSize: 10, fontWeight: 400, color: "var(--muted)" }}> /person</span></p>
               <p style={{ fontSize: 10, color: "var(--muted)" }}>Up to {rt.maxAdults} adults{rt.maxInfants > 0 ? `, ${rt.maxInfants} infants` : ""}</p>
               {rt.minAdultsRequired && <p style={{ fontSize: 10, color: "var(--muted)" }}>Min {rt.minAdultsRequired} adults</p>}
