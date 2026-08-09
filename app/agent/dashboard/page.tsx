@@ -101,8 +101,8 @@ function DashboardInner() {
 
       {/* Agent Identity Card */}
       <div style={{ background: `linear-gradient(135deg, ${tierBg}, #fff)`, border: `1.5px solid ${tierColor}33`, borderRadius: 20, padding: "20px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ width: 52, height: 52, borderRadius: "50%", background: `linear-gradient(135deg, ${tierColor}, ${tierColor}99)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 20, flexShrink: 0 }}>
-          {(agent?.fullName ?? "A")[0]}
+        <div style={{ width: 52, height: 52, borderRadius: "50%", border: `2px solid ${tierColor}`, overflow: "hidden", flexShrink: 0, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img src="/assets/logo.png" alt="Logo" width={44} height={44} style={{ objectFit: "contain", borderRadius: "50%" }} onError={(e) => { const el = e.currentTarget as HTMLImageElement; el.style.display="none"; const p = el.parentElement; if(p){ p.style.background=`linear-gradient(135deg,${tierColor},${tierColor}99)`; p.innerHTML=`<span style="color:#fff;font-weight:900;font-size:20px">${(agent?.fullName??"A")[0]}</span>`; } }} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
