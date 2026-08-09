@@ -39,9 +39,8 @@ export default function AgentLoginPage() {
         <div style={{ position: "relative", overflow: "hidden", background: "#0d1220" }}
           className="agent-login-left">
           <div style={{ position: "absolute", inset: 0 }}>
-            <Image src="/images/makarem_1.jpeg" alt="" fill
-              style={{ objectFit: "cover", objectPosition: "center 30%", opacity: 0.4 }} />
-            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(7,17,32,.75) 0%,rgba(7,17,32,.3) 45%,rgba(7,17,32,.97) 100%)" }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/makarem_1.jpeg')", backgroundSize: "cover", backgroundPosition: "center 30%" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(7,17,32,.82) 0%,rgba(7,17,32,.45) 45%,rgba(7,17,32,.97) 100%)" }} />
           </div>
 
           {/* Brand */}
