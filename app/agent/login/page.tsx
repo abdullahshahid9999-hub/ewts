@@ -9,8 +9,11 @@ import "../portal.css";
 export default function AgentLoginPage() {
   const { login } = useAgentAuth();
   const router = useRouter();
+  const [tab, setTab]           = useState<"owner" | "staff">("owner");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPw, setStaffPw]   = useState("");
   const [totpCode, setTotp]     = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [step, setStep]         = useState<"creds" | "totp">("creds");
@@ -21,6 +24,14 @@ export default function AgentLoginPage() {
     e?.preventDefault();
     setError(null);
     setLoading(true);
+    if (tab === "staff") {
+      const res = await fetch("/api/agent/sub-user-login", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ email: staffEmail, password: staffPw }) });
+      const d = await res.json().catch(() => ({}));
+      setLoading(false);
+      if (!res.ok) { setError(d.error ?? "Invalid credentials."); return; }
+      router.push("/agent/dashboard");
+      return;
+    }
     const err = await login(email, password, step === "totp" ? totpCode : undefined);
     setLoading(false);
     if (err === "__2FA_REQUIRED__") { setStep("totp"); return; }
@@ -83,16 +94,43 @@ export default function AgentLoginPage() {
           <div style={{ width: "100%", maxWidth: 360 }}>
 
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#9C7E3A", marginBottom: 10 }}>🔒 Authorized Access Only</p>
-            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#14142B", margin: "0 0 6px" }}>
-              {step === "totp" ? "Two-Factor Auth" : "Agent Sign In"}
-            </h2>
-            <p style={{ fontSize: 13, color: "#7A7A95", margin: "0 0 24px" }}>
-              {step === "totp" ? "Enter the 6-digit code from your authenticator app." : "Sign in to access your bookings and commission dashboard."}
-            </p>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#14142B", margin: "0 0 16px" }}>Agent Sign In</h2>
+
+            {/* Tab switcher */}
+            <div style={{ display: "flex", background: "#ede9e0", borderRadius: 10, padding: 4, marginBottom: 20 }}>
+              {(["owner", "staff"] as const).map(t => (
+                <button key={t} type="button" onClick={() => { setTab(t); setError(null); }}
+                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, transition: "all .15s", background: tab === t ? "#fff" : "transparent", color: tab === t ? "#14142B" : "#9ca3af", boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none" }}>
+                  {t === "owner" ? "Agency Owner" : "Staff Login"}
+                </button>
+              ))}
+            </div>
+
+            {tab === "staff" && (
+              <div style={{ background: "rgba(212,168,67,0.06)", border: "1px solid rgba(212,168,67,0.25)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: "#7a6030", marginBottom: 16 }}>
+                Staff members use the credentials given by their agency owner.
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-              {step === "creds" ? (<>
+              {tab === "staff" ? (<>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#7A7A95", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Email Address</label>
+                  <input type="email" required value={staffEmail} onChange={e => setStaffEmail(e.target.value)} placeholder="staff@email.com" autoComplete="email"
+                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E4DFD4", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                    onFocus={e => e.target.style.borderColor = "#D4A843"} onBlur={e => e.target.style.borderColor = "#E4DFD4"} />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#7A7A95", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Password</label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPw ? "text" : "password"} required value={staffPw} onChange={e => setStaffPw(e.target.value)} placeholder="Enter password"
+                      style={{ width: "100%", padding: "11px 44px 11px 14px", border: "1.5px solid #E4DFD4", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff" }}
+                      onFocus={e => e.target.style.borderColor = "#D4A843"} onBlur={e => e.target.style.borderColor = "#E4DFD4"} />
+                    <button type="button" onClick={() => setShowPw(p => !p)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 17, color: "#9ca3af", lineHeight: 1 }}>{showPw ? "🙈" : "👁"}</button>
+                  </div>
+                </div>
+              </>) : step === "creds" ? (<>
                 <div>
                   <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#7A7A95", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Email Address</label>
                   <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
@@ -145,7 +183,7 @@ export default function AgentLoginPage() {
 
               <button type="submit" disabled={loading}
                 style={{ background: loading ? "#c9a85c" : "#071120", color: "#fff", fontWeight: 800, padding: "13px", borderRadius: 10, border: "none", cursor: loading ? "not-allowed" : "pointer", fontSize: 15, opacity: loading ? 0.75 : 1 }}>
-                {loading ? (step === "totp" ? "Verifying…" : "Signing in…") : step === "totp" ? "Verify Code" : "Sign In →"}
+                {loading ? (tab === "staff" ? "Signing in…" : step === "totp" ? "Verifying…" : "Signing in…") : tab === "staff" ? "Sign In as Staff →" : step === "totp" ? "Verify Code" : "Sign In →"}
               </button>
             </form>
 

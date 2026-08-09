@@ -21,6 +21,7 @@ const QUICK_LINKS = [
   { href: "/agent/topup",        icon: "💳", label: "Submit Topup",    desc: "Add funds to your account" },
   { href: "/agent/bank-accounts",icon: "🏦", label: "Bank Accounts",   desc: "East & West payment details" },
   { href: "/agent/saved-clients",icon: "👥", label: "Saved Clients",   desc: "Your client address book" },
+  { href: "/agent/staff",        icon: "🧑‍💼", label: "My Staff",        desc: "Manage team members & access" },
   { href: "/agent/profile",      icon: "👤", label: "My Profile",      desc: "Account & security settings" },
 ];
 
