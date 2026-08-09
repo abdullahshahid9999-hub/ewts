@@ -20,14 +20,20 @@ const SKIP = new Set(["and","of","&","the","a","an"]);
 
 // Standard IATA city codes for Pakistan + common destinations
 export const CITY_CODES: Record<string, string> = {
-  // Pakistan
+  // Pakistan — multiple spellings handled
   karachi: "KHI", lahore: "LHE", islamabad: "ISB", rawalpindi: "RWP",
-  peshawar: "PEW", quetta: "UET", faisalabad: "LYP", multan: "MUX",
-  sialkot: "SKT", hyderabad: "HDD", gujranwala: "GUJ", abbottabad: "AAW",
-  bahawalpur: "BHV", sargodha: "SGI", sukkur: "SKZ", larkana: "LRK",
-  // Common abbreviations people use
-  lhr: "LHE", khi: "KHI", isb: "ISB", pew: "PEW", uet: "UET",
-  lyp: "LYP", mux: "MUX", skt: "SKT",
+  peshawar: "PEW", quetta: "UET", faisalabad: "LYP", faislabad: "LYP",
+  multan: "MUX", sialkot: "SKT", hyderabad: "HDD", gujranwala: "GUJ",
+  abbottabad: "AAW", bahawalpur: "BHV", sargodha: "SGI", sukkur: "SKZ",
+  larkana: "LRK", dera: "DEA", "dera ghazi khan": "DEA", "d.g khan": "DEA",
+  mardan: "MDD", mingora: "MGQ", swat: "MGQ", turbat: "TUK",
+  "rahim yar khan": "RYK", "rahimyar khan": "RYK", zhob: "PZH",
+  nawabshah: "WNS", "nawab shah": "WNS", chitral: "CJL",
+  gilgit: "GIL", skardu: "KDU", "azad kashmir": "MFG", mirpur: "MFG",
+  // Common abbreviations / IATA codes typed directly
+  lhr: "LHE", lhe: "LHE", khi: "KHI", isb: "ISB", rwp: "RWP",
+  pew: "PEW", uet: "UET", lyp: "LYP", mux: "MUX", skt: "SKT",
+  hdd: "HDD", guj: "GUJ", bhv: "BHV", sgi: "SGI", skz: "SKZ",
 };
 
 export function getBrandInitials(brandName: string): string {
@@ -38,8 +44,13 @@ export function getBrandInitials(brandName: string): string {
 }
 
 export function getCityCode(city: string): string {
-  const key = city.trim().toLowerCase();
-  return CITY_CODES[key] ?? city.trim().toUpperCase().slice(0, 3);
+  const key = city.trim().toLowerCase().replace(/[.\-]/g, "").replace(/\s+/g, " ");
+  if (CITY_CODES[key]) return CITY_CODES[key];
+  // Try first word only (e.g. "Faisalabad Punjab" → "faisalabad")
+  const firstWord = key.split(" ")[0];
+  if (CITY_CODES[firstWord]) return CITY_CODES[firstWord];
+  // Fallback: first 3 letters uppercase
+  return city.trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
 }
 
 export const TIER_DIGIT: Record<string, number> = {
