@@ -10,6 +10,14 @@ import { paxQueryString } from "@/lib/searchState";
 import { getUmrahFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
 
+export const metadata = {
+  title: "Umrah & Hajj Packages | East & West Travel Services",
+  description: "Affordable Umrah & Hajj packages from Faisalabad. IATA certified, 500+ pilgrims served. Book your sacred journey with comfort and complete peace of mind.",
+  alternates: { canonical: "https://eastwestpk.com/umrah" },
+  openGraph: { title: "Umrah & Hajj Packages | East & West Travel Services", description: "Affordable Umrah & Hajj packages from Faisalabad. IATA certified, 500+ pilgrims served. Book your sacred journey with comfort and complete peace of mind.", url: "https://eastwestpk.com/umrah", type: "website" },
+};
+
+
 export const revalidate = 120;
 
 async function getPackages(q?: string, tier?: string, airline?: string, duration?: string, featured?: string) {

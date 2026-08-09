@@ -6,6 +6,14 @@ import Link from "next/link";
 import HeroSlideshow from "@/components/HeroSlideshow";
 import Reveal, { RevealStagger, RevealItem } from "@/components/Reveal";
 
+export const metadata = {
+  title: "About Us | IATA Certified Travel Agency Since 2003",
+  description: "East & West Travel Services — IATA & DTS certified since 2003. Based in Faisalabad, serving 5,000+ travelers across Umrah, Hajj, tours, and visa services.",
+  alternates: { canonical: "https://eastwestpk.com/about" },
+  openGraph: { title: "About Us | IATA Certified Travel Agency Since 2003", description: "East & West Travel Services — IATA & DTS certified since 2003. Based in Faisalabad, serving 5,000+ travelers across Umrah, Hajj, tours, and visa services.", url: "https://eastwestpk.com/about", type: "website" },
+};
+
+
 const HERO_IMAGES = [
   { src: "/assets/office-photo-1.jpeg", alt: "East & West Travel Services office" },
   { src: "/assets/office-photo-2.jpeg", alt: "East & West Travel Services" },

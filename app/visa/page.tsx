@@ -10,6 +10,14 @@ import { paxQueryString } from "@/lib/searchState";
 import { getVisaFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
 
+export const metadata = {
+  title: "Visa Services | East & West Travel Services Faisalabad",
+  description: "Fast & reliable visa consultancy for UAE, Thailand, Malaysia, UK, Schengen and more. IATA certified agents, Faisalabad.",
+  alternates: { canonical: "https://eastwestpk.com/visa" },
+  openGraph: { title: "Visa Services | East & West Travel Services Faisalabad", description: "Fast & reliable visa consultancy for UAE, Thailand, Malaysia, UK, Schengen and more. IATA certified agents, Faisalabad.", url: "https://eastwestpk.com/visa", type: "website" },
+};
+
+
 export const revalidate = 120;
 
 async function getVisas(q?: string, type?: string, processingTime?: string) {

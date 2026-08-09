@@ -10,6 +10,14 @@ import { paxQueryString } from "@/lib/searchState";
 import { getToursFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
 
+export const metadata = {
+  title: "International Tour Packages | Dubai, Thailand, Bali & More",
+  description: "Explore world-class tour packages from Faisalabad. Dubai, Thailand, Bali, Malaysia and more — halal-certified hotels, group & family packages.",
+  alternates: { canonical: "https://eastwestpk.com/tours" },
+  openGraph: { title: "International Tour Packages | Dubai, Thailand, Bali & More", description: "Explore world-class tour packages from Faisalabad. Dubai, Thailand, Bali, Malaysia and more — halal-certified hotels, group & family packages.", url: "https://eastwestpk.com/tours", type: "website" },
+};
+
+
 export const revalidate = 120;
 
 async function getPackages(q?: string, tier?: string, airline?: string, duration?: string, featured?: string) {
