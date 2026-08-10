@@ -4,6 +4,7 @@ import { requireAgent, stripAgentWriteOnlyFields } from "@/lib/apiAuth";
 import { calculateCommission } from "@/lib/commission";
 import { releaseExpiredSeatHolds } from "@/lib/groupFlightSeats";
 import { releaseExpiredSlotHolds } from "@/lib/packageSlots";
+import { getIdempotencyResult, setIdempotencyResult } from "@/lib/rateLimit";
 
 // Route Handlers are cached by Next.js by default — without this, admin
 // panel list pages can keep showing stale data after a create/update
