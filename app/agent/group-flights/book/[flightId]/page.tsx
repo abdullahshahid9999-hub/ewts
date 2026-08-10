@@ -187,7 +187,7 @@ function BookFlightInner() {
 
     const res = await agentFetch("/api/agent/bookings", accessToken, refresh, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         serviceType: "group_ticket",
         groupFlightId: flight.id,

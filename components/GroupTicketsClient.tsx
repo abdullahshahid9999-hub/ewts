@@ -70,7 +70,7 @@ function BookingModal({ flight, onClose }: { flight: Flight; onClose: () => void
     try {
       const res = await fetch("/api/group-flights/book", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-idempotency-key": crypto.randomUUID() },
         body: JSON.stringify({
           groupFlightId: flight.id,
           firstName,

@@ -55,7 +55,7 @@ export default function BookingFormClient({
 
     const res = await fetch("/api/bookings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         packageId: pkg.id,
         roomType: roomType.roomType,

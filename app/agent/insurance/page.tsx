@@ -83,7 +83,7 @@ function InsuranceInner() {
     setSubmitting(true);
     const res = await agentFetch("/api/agent/bookings", accessToken, refresh, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         serviceType: "insurance",
         sellPrice: price,
