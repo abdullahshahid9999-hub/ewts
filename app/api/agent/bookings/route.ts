@@ -43,6 +43,12 @@ function generateBookingRef() {
 }
 
 export async function GET(req: NextRequest) {
+  // Idempotency — prevents duplicate bookings from double-clicks
+  const idempKey = req.headers.get("x-idempotency-key");
+  if (idempKey) {
+    const cached = getIdempotencyResult(idempKey);
+    if (cached) return new NextResponse(cached.body, { status: cached.status, headers: { "Content-Type": "application/json" } });
+  }
   const agent = await requireAgent(req);
   if (!agent) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
@@ -121,6 +127,12 @@ export async function GET(req: NextRequest) {
 
 
 export async function POST(req: NextRequest) {
+  // Idempotency — prevents duplicate bookings from double-clicks
+  const idempKey = req.headers.get("x-idempotency-key");
+  if (idempKey) {
+    const cached = getIdempotencyResult(idempKey);
+    if (cached) return new NextResponse(cached.body, { status: cached.status, headers: { "Content-Type": "application/json" } });
+  }
   const agent = await requireAgent(req);
   if (!agent) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 

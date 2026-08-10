@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { checkRateLimit, getIdempotencyResult, setIdempotencyResult } from "@/lib/rateLimit";
 import { sendEmail } from "@/lib/email";
 import { releaseExpiredSlotHolds } from "@/lib/packageSlots";
 

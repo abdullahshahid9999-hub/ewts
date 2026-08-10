@@ -40,3 +40,27 @@ setInterval(() => {
     if (now > entry.resetAt) store.delete(key);
   }
 }, 5 * 60 * 1000);
+
+// Alias used throughout the codebase
+export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
+  return rateLimit(key, limit, windowMs).allowed;
+}
+
+// ── Idempotency key store ─────────────────────────────────────────────────────
+// Prevents duplicate bookings from double-clicks / network retries.
+// Key = idempotencyKey string, Value = serialised response + expiry
+type IdempotencyEntry = { body: string; status: number; expiresAt: number };
+const idempotencyStore = new Map<string, IdempotencyEntry>();
+
+const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export function getIdempotencyResult(key: string): IdempotencyEntry | null {
+  const entry = idempotencyStore.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { idempotencyStore.delete(key); return null; }
+  return entry;
+}
+
+export function setIdempotencyResult(key: string, body: string, status: number): void {
+  idempotencyStore.set(key, { body, status, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS });
+}
