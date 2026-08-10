@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, signAccessToken, signRefreshToken, isAllowedAdminEmail } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { rateLimit } from "@/lib/rateLimit";
 import { verifyTotp } from "@/lib/totp";
 
 export async function POST(req: NextRequest) {
@@ -14,8 +14,9 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
 
-  if (!checkRateLimit(`admin-login:ip:${ip}`, 30, 15 * 60 * 1000) ||
-      !checkRateLimit(`admin-login:email:${email}`, 20, 15 * 60 * 1000))
+  const ipLimit = rateLimit(`admin-login:ip:${ip}`, 30, 15 * 60 * 1000);
+  const emailLimit = rateLimit(`admin-login:email:${email}`, 20, 15 * 60 * 1000);
+  if (!ipLimit.allowed || !emailLimit.allowed)
     return NextResponse.json({ error: "Too many attempts. Try again in 15 minutes." }, { status: 429 });
 
   const genericError = () => NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
@@ -47,12 +48,12 @@ export async function POST(req: NextRequest) {
     admin: { id: admin.id, email: admin.email, fullName: admin.fullName },
   });
 
-  const host = req.headers.get("host") ?? "";
-  const isSubdomain = host.includes("admin.eastwestpk.com");
   res.cookies.set("admin_refresh_token", refreshToken, {
-    httpOnly: true, secure: true,
-    sameSite: isSubdomain ? "none" : "lax",
-    path: "/api/admin", maxAge: 30 * 24 * 60 * 60,
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+    maxAge: 30 * 24 * 60 * 60,
   });
 
   return res;

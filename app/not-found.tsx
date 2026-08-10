@@ -1,85 +1,135 @@
-"use client";
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "#FAFAF8",
-      padding: "40px 24px",
-      fontFamily: "system-ui, sans-serif",
-      textAlign: "center",
-    }}>
-      {/* Logo */}
-      <img src="/assets/logo.png" alt="East & West Travel" width={56} height={56}
-        style={{ borderRadius: 12, marginBottom: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.1)" }}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-      />
+    <html lang="en">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Page Not Found — East &amp; West Travel Services</title>
+        <style>{`
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          html, body { height: 100%; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #fafaf9;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+          }
+          .wrap {
+            text-align: center;
+            max-width: 480px;
+            width: 100%;
+          }
+          .code {
+            font-size: clamp(80px, 20vw, 140px);
+            font-weight: 900;
+            line-height: 1;
+            color: #f0ede8;
+            letter-spacing: -4px;
+            margin-bottom: 8px;
+            user-select: none;
+          }
+          .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            text-decoration: none;
+          }
+          .brand-icon {
+            width: 36px; height: 36px;
+            background: #1a2e1a;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 800; color: #c9a84c;
+          }
+          .brand-name {
+            font-size: 15px; font-weight: 700; color: #1a1a1a;
+          }
+          h1 {
+            font-size: clamp(22px, 5vw, 30px);
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+          }
+          p {
+            font-size: 15px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 36px;
+          }
+          .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+          }
+          .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 13px 28px;
+            background: #1a2e1a;
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            transition: opacity 0.15s;
+          }
+          .btn-primary:hover { opacity: 0.85; }
+          .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 13px 28px;
+            background: #fff;
+            color: #374151;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: border-color 0.15s;
+          }
+          .btn-ghost:hover { border-color: #9ca3af; }
+          .divider {
+            width: 48px; height: 3px;
+            background: #c9a84c;
+            border-radius: 99px;
+            margin: 20px auto 28px;
+          }
+        `}</style>
+      </head>
+      <body>
+        <div className="wrap">
+          <div className="code">404</div>
 
-      {/* 404 */}
-      <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8862E", margin: "0 0 8px" }}>
-        404 — Page Not Found
-      </p>
-      <h1 style={{ fontSize: "clamp(24px, 5vw, 36px)", fontWeight: 800, color: "#0E2A26", margin: "0 0 12px", lineHeight: 1.2 }}>
-        This page doesn't exist.
-      </h1>
-      <p style={{ fontSize: 15, color: "#64748b", maxWidth: 380, margin: "0 0 36px", lineHeight: 1.6 }}>
-        The link may be broken or the page may have moved. Let's get you back on track.
-      </p>
+          <a href="/" className="brand">
+            <div className="brand-icon">EW</div>
+            <span className="brand-name">East &amp; West Travel</span>
+          </a>
 
-      {/* Primary CTA */}
-      <Link href="/" style={{
-        display: "inline-block",
-        background: "#0E2A26",
-        color: "#fff",
-        fontWeight: 700,
-        fontSize: 14,
-        padding: "12px 28px",
-        borderRadius: 10,
-        textDecoration: "none",
-        marginBottom: 32,
-        letterSpacing: 0.3,
-      }}>
-        ← Back to Home
-      </Link>
+          <div className="divider" />
 
-      {/* Quick links */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 40 }}>
-        {[
-          { href: "/umrah", label: "Umrah & Hajj" },
-          { href: "/tours", label: "Tours" },
-          { href: "/visa", label: "Visa Services" },
-          { href: "/group-tickets", label: "Group Tickets" },
-          { href: "/about", label: "About Us" },
-        ].map(l => (
-          <Link key={l.href} href={l.href} style={{
-            padding: "7px 16px",
-            fontSize: 13,
-            fontWeight: 600,
-            color: "#475569",
-            background: "#fff",
-            border: "1px solid #e2e8f0",
-            borderRadius: 20,
-            textDecoration: "none",
-          }}>
-            {l.label}
-          </Link>
-        ))}
-      </div>
+          <h1>This page doesn&apos;t exist</h1>
+          <p>
+            The link you followed may be broken, or the page may have been moved.
+            Let&apos;s get you back on track.
+          </p>
 
-      {/* WhatsApp */}
-      <a href="https://wa.me/923336515349" target="_blank" rel="noopener noreferrer"
-        style={{ fontSize: 13, color: "#25D366", fontWeight: 700, textDecoration: "none" }}>
-        💬 Need help? WhatsApp us
-      </a>
-
-      <p style={{ fontSize: 12, color: "#cbd5e1", marginTop: 40 }}>
-        East &amp; West Travel Services · eastwestpk.com
-      </p>
-    </div>
+          <div className="actions">
+            <a href="/" className="btn-primary">← Go Home</a>
+            <a href="/contact" className="btn-ghost">Contact Us</a>
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
