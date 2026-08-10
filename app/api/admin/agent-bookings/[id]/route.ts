@@ -13,6 +13,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json().catch(() => null);
   const status = body?.status;
   const ticketNumber = typeof body?.ticketNumber === "string" ? body.ticketNumber.trim() : undefined;
+  const issueSupplierId = typeof body?.issueSupplierId === "string" ? body.issueSupplierId : undefined;
+  const issueSupplierNote = typeof body?.issueSupplierNote === "string" ? body.issueSupplierNote.trim() : undefined;
   if (!VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
@@ -81,7 +83,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       return tx.agentBooking.update({
         where: { id },
-        data: { status, ticketNumber: ticketNumber || undefined, issuedAt: isBeingIssued ? new Date() : undefined },
+        data: { status, ticketNumber: ticketNumber || undefined, issuedAt: isBeingIssued ? new Date() : undefined, issueSupplierId: issueSupplierId || undefined, issueSupplierNote: issueSupplierNote || undefined },
       });
     });
 

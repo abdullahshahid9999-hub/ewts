@@ -142,8 +142,9 @@ model Supplier {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  groupFlights GroupFlight[]
-  ledger       SupplierTransaction[]
+  groupFlights  GroupFlight[]
+  ledger        SupplierTransaction[]
+  agentBookings AgentBooking[] @relation("AgentBookingSupplier")
 
   @@map("suppliers")
 }
@@ -664,12 +665,17 @@ model AgentBooking {
   issueRequestedBy  String?   @map("issue_requested_by")
   createdByStaffId  String?   @map("created_by_staff_id")
   createdByStaffName String?  @map("created_by_staff_name")
+  // Supplier selected at issuance — admin picks which supplier fulfilled
+  // this booking. Applies to all service types (not just group flights).
+  issueSupplierId   String?   @map("issue_supplier_id")
+  issueSupplierNote String?   @map("issue_supplier_note")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  agent       Agent        @relation(fields: [agentId], references: [id])
-  groupFlight GroupFlight? @relation(fields: [groupFlightId], references: [id])
-  package     Package?     @relation(fields: [packageId], references: [id])
+  agent         Agent        @relation(fields: [agentId], references: [id])
+  groupFlight   GroupFlight? @relation(fields: [groupFlightId], references: [id])
+  package       Package?     @relation(fields: [packageId], references: [id])
+  issueSupplier Supplier?    @relation("AgentBookingSupplier", fields: [issueSupplierId], references: [id])
 
   @@map("agent_bookings")
 }

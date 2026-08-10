@@ -5,6 +5,8 @@ import { compressImage } from "@/lib/imageCompression";
 import { APPLICANT_CATEGORIES, filterDocsForApplicant, passportExpiryWarning } from "@/lib/visaApplicantCategory";
 import { checkImageQuality } from "@/lib/imageQualityCheck";
 import { scanPassport } from "@/lib/passportScan";
+import { useClientAutoSave } from "@/lib/useClientAutoSave";
+import ClientConflictModal from "@/components/ClientConflictModal";
 
 type RequiredDoc = { id: string; name: string; description: string | null; isRequired: boolean };
 type VisaInfo = {
@@ -61,6 +63,7 @@ function Counter({ label, sub, value, min, onChange }: { label: string; sub?: st
 
 export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
   const { accessToken, refresh } = useAgentAuth();
+  const { autoSave, conflict, saveAsNew, dismiss } = useClientAutoSave();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [counts, setCounts] = useState({ adults: 1, children: 0, infants: 0 });
   const [travellers, setTravellers] = useState<Traveller[]>([]);
@@ -129,6 +132,7 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
       const res = await agentFetch("/api/agent/visa-applications", accessToken, refresh, { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Submission failed."); setSubmitting(false); return; }
+      if (lead?.fullName) autoSave({ fullName: lead.fullName, passportNumber: lead.passportNumber }, accessToken, refresh);
       setResult({ batchRef: data.batchRef, total }); setStep(4);
     } catch { setError("Network error. Please try again."); }
     setSubmitting(false);
@@ -153,7 +157,9 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
   }
 
   return (
-    <div className="ap-card" style={{ padding: "28px 28px 24px" }}>
+    <>
+      {conflict && <ClientConflictModal matches={conflict} onSaveNew={() => saveAsNew(accessToken, refresh)} onDismiss={dismiss} />}
+      <div className="ap-card" style={{ padding: "28px 28px 24px" }}>
       <StepBar current={step} />
 
       {/* STEP 1: TRAVELLER COUNT */}
@@ -299,5 +305,6 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
         </div>
       </>)}
     </div>
+    </>
   );
 }

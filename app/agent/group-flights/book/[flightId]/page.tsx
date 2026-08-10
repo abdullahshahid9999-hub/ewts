@@ -5,6 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
+import ClientAutoSuggest from "@/components/ClientAutoSuggest";
+import ClientConflictModal from "@/components/ClientConflictModal";
+import { useClientAutoSave } from "@/lib/useClientAutoSave";
 
 type Flight = {
   id: string;
@@ -137,6 +140,7 @@ function BookFlightInner() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [travellers, setTravellers] = useState<Traveller[]>([{ fullName: "", passportNo: "", cnic: "" }]);
+  const { autoSave, conflict, saveAsNew, dismiss } = useClientAutoSave();
 
   useEffect(() => {
     agentFetch("/api/agent/group-flights", accessToken, refresh).then(async (res) => {
@@ -204,6 +208,7 @@ function BookFlightInner() {
       return;
     }
     router.push(`/agent/bookings/${data.booking.id}`);
+    autoSave({ fullName: customerName, phone: customerPhone, email: customerEmail }, accessToken, refresh);
   }
 
   if (loading) return <p className="etd">Loading flight…</p>;
@@ -212,6 +217,7 @@ function BookFlightInner() {
 
   return (
     <>
+      {conflict && <ClientConflictModal matches={conflict} onSaveNew={() => saveAsNew(accessToken, refresh)} onDismiss={dismiss} />}
       <div className="ap-ph">
         <div>
           <h2>Book <span>{flight.airline} — {flight.route}</span></h2>
@@ -239,7 +245,7 @@ function BookFlightInner() {
           <div className="ap-card" style={{ padding: "18px", marginBottom: "14px" }}>
             <h3 style={{ marginBottom: "10px" }}>Customer Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px" }}>
-              <input required placeholder="Customer Name *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="ap-field" />
+              <ClientAutoSuggest value={customerName} onChange={setCustomerName} onSelect={c => { setCustomerName(c.fullName); if (c.phone) setCustomerPhone(c.phone); if (c.email) setCustomerEmail(c.email ?? ""); }} placeholder="Customer Name *" required />
               <input required placeholder="Phone *" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className="ap-field" />
               <input type="email" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="ap-field" style={{ gridColumn: "1 / -1" }} />
             </div>

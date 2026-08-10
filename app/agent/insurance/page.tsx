@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
+import ClientAutoSuggest from "@/components/ClientAutoSuggest";
+import ClientConflictModal from "@/components/ClientConflictModal";
+import { useClientAutoSave } from "@/lib/useClientAutoSave";
 
 const DESTINATIONS = [
   { group: "Middle East", items: ["Gulf States (UAE, Kuwait, Bahrain, Oman)", "Saudi Arabia — Umrah / Hajj", "Qatar"] },
@@ -29,6 +32,7 @@ type QuoteRate = {
 function InsuranceInner() {
   const { accessToken, refresh } = useAgentAuth();
   const router = useRouter();
+  const { autoSave, conflict, saveAsNew, dismiss } = useClientAutoSave();
 
   const [destination, setDestination] = useState("");
   const [duration, setDuration] = useState("");
@@ -96,11 +100,13 @@ function InsuranceInner() {
       setError(data.error ?? "Could not create booking.");
       return;
     }
+    autoSave({ fullName: customerName, phone: customerPhone, email: customerEmail }, accessToken, refresh);
     router.push("/agent/bookings");
   }
 
   return (
     <>
+      {conflict && <ClientConflictModal matches={conflict} onSaveNew={() => saveAsNew(accessToken, refresh)} onDismiss={dismiss} />}
       <div className="ap-ph">
         <div><h2>Insurance <span>Plans</span></h2><p>Search plans the same way your customer would</p></div>
       </div>
@@ -180,7 +186,7 @@ function InsuranceInner() {
             </div>
             <div className="ap-field">
               <label>Customer Full Name</label>
-              <input required value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+              <ClientAutoSuggest value={customerName} onChange={setCustomerName} onSelect={c => { setCustomerName(c.fullName); if (c.phone) setCustomerPhone(c.phone); if (c.email) setCustomerEmail(c.email ?? ""); }} required />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
               <div className="ap-field">

@@ -39,11 +39,17 @@ const STATUSES = [
 function AgentBookingsInner() {
   const { accessToken, refresh } = useAdminAuth();
   const searchParams = useSearchParams();
-  const packageId = searchParams.get("packageId"); // when set (linked from a specific package's admin page), scopes the list to ONLY that package's bookings — not just its broad category
+  const packageId = searchParams.get("packageId");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [bookings, setBookings] = useState<AgentBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
+  const [issueModal, setIssueModal] = useState<{ id: string; serviceType: string } | null>(null);
+  const [issueTicket, setIssueTicket] = useState("");
+  const [issueSupplierId, setIssueSupplierId] = useState("");
+  const [issueNote, setIssueNote] = useState("");
+  const [issuing, setIssuing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,29 +65,37 @@ function AgentBookingsInner() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    adminFetch("/api/admin/suppliers", accessToken, refresh)
+      .then(r => r.json()).then(d => setSuppliers(d.suppliers ?? [])).catch(() => {});
+  }, [accessToken, refresh]);
+
   async function downloadReport() {
     const res = await adminFetch("/api/admin/agent-bookings/export", accessToken, refresh);
     if (!res.ok) return;
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+    const a = document.createElement("a"); a.href = url;
     a.download = `agent-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  async function confirmIssue() {
+    if (!issueModal) return;
+    if (issueModal.serviceType === "group_ticket" && !issueTicket.trim()) { alert("Ticket number required."); return; }
+    setIssuing(true);
+    await adminFetch(`/api/admin/agent-bookings/${issueModal.id}`, accessToken, refresh, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "issued", ticketNumber: issueTicket.trim() || undefined, issueSupplierId: issueSupplierId || undefined, issueSupplierNote: issueNote.trim() || undefined }),
+    });
+    setIssuing(false); setIssueModal(null); setIssueTicket(""); setIssueSupplierId(""); setIssueNote("");
+    load();
   }
 
   async function updateStatus(id: string, newStatus: string, serviceType?: string) {
-    let ticketNumber: string | undefined;
-    if (newStatus === "issued" && serviceType === "group_ticket") {
-      const entered = window.prompt("Enter the ticket number for this booking (e.g. 214-2121045-786):");
-      if (!entered || !entered.trim()) return; // don't allow issuing without one
-      ticketNumber = entered.trim();
-    }
+    if (newStatus === "issued") { setIssueModal({ id, serviceType: serviceType ?? "" }); setIssueTicket(""); setIssueSupplierId(""); setIssueNote(""); return; }
     await adminFetch(`/api/admin/agent-bookings/${id}`, accessToken, refresh, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus, ticketNumber }),
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }),
     });
     load();
   }
@@ -155,6 +169,35 @@ function AgentBookingsInner() {
           )}
         </div>
       </div>
+      {issueModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "var(--a-surface)", borderRadius: 16, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
+            <h3 style={{ margin: "0 0 6px", fontWeight: 700 }}>Issue Booking</h3>
+            <p style={{ fontSize: 12, opacity: 0.6, marginBottom: 20 }}>Select supplier and add reference notes before confirming.</p>
+            {issueModal.serviceType === "group_ticket" && (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, opacity: 0.7, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ticket Number *</label>
+                <input value={issueTicket} onChange={e => setIssueTicket(e.target.value)} placeholder="e.g. 214-2121045-786" style={{ width: "100%", boxSizing: "border-box" }} />
+              </div>
+            )}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, opacity: 0.7, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Supplier (optional)</label>
+              <select value={issueSupplierId} onChange={e => setIssueSupplierId(e.target.value)} style={{ width: "100%", boxSizing: "border-box" }}>
+                <option value="">— No Supplier / In-house —</option>
+                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, opacity: 0.7, display: "block", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>Reference / Note (optional)</label>
+              <textarea value={issueNote} onChange={e => setIssueNote(e.target.value)} placeholder="e.g. PNR: ABC123, Supplier ref: SG-001..." rows={3} style={{ width: "100%", boxSizing: "border-box", resize: "vertical" }} />
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={confirmIssue} disabled={issuing} className="adp-btn adp-btn-g" style={{ flex: 1 }}>{issuing ? "Issuing…" : "Confirm Issue ✓"}</button>
+              <button onClick={() => setIssueModal(null)} className="adp-btn adp-btn-t">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
