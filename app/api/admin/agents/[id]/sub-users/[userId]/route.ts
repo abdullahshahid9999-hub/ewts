@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body?.designation !== undefined) data.designation = body.designation?.trim() || null;
   if (body?.status) data.status = body.status;
   if (body?.password?.length >= 8) data.passwordHash = await hashPassword(body.password);
-  if (body?.permissions) data.permissions = { ...body.permissions, canIssueTickets: false };
+  if (body?.permissions) data.permissions = { ...body.permissions };
 
   const updated = await prisma.agentUser.update({ where: { id: userId }, data, select: { id: true, fullName: true, email: true, phone: true, designation: true, status: true, permissions: true } });
   return NextResponse.json({ subUser: updated });

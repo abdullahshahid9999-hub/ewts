@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED_PERMISSIONS = [
   "canCreateBookings", "canViewBookings", "canSubmitPaymentSlip",
-  "canViewLedger", "canManageSavedClients", "canViewNotifications",
+  "canViewLedger", "canManageSavedClients", "canViewNotifications", "canIssueTickets",
 ];
 
 async function getStaff(id: string, agentId: string) {

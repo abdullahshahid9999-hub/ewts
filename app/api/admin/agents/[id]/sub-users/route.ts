@@ -5,7 +5,7 @@ import { hashPassword } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_PERMS = { canCreateBookings: true, canViewBookings: true, canSubmitPaymentSlip: true, canViewLedger: true, canManageSavedClients: true, canViewNotifications: true, canIssueTickets: false };
+const DEFAULT_PERMS = { canCreateBookings: true, canViewBookings: true, canSubmitPaymentSlip: true, canViewLedger: true, canManageSavedClients: true, canViewNotifications: true };
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!fullName || !email || password.length < 8)
     return NextResponse.json({ error: "fullName, email, and password (min 8) required." }, { status: 400 });
 
-  const permissions = { ...DEFAULT_PERMS, ...(body?.permissions ?? {}), canIssueTickets: false };
+  const permissions = { ...DEFAULT_PERMS, ...(body?.permissions ?? {}) };
   const passwordHash = await hashPassword(password);
 
   try {

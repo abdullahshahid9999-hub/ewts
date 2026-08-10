@@ -33,7 +33,7 @@ type Booking = {
 };
 
 function IssueRequestModal({ bookingId, onClose, onDone }: { bookingId: string; onClose: () => void; onDone: () => void }) {
-  const { accessToken, refresh } = useAgentAuth();
+  const { accessToken, refresh, can } = useAgentAuth();
   const [step, setStep] = useState<"request" | "verify">("request");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +135,7 @@ function ExpiryCountdown({ expiresAt }: { expiresAt: string }) {
 }
 
 function BookingDetailInner() {
-  const { accessToken, refresh } = useAgentAuth();
+  const { accessToken, refresh, can } = useAgentAuth();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -180,7 +180,7 @@ function BookingDetailInner() {
   if (error || !booking) return <p className="etd" style={{ color: "var(--red)" }}>{error ?? "Not found."}</p>;
 
   const canCancel = booking.status !== "issued" && booking.status !== "cancelled";
-  const canIssue = booking.status === "pending" || booking.status === "confirmed";
+  const canIssue = (booking.status === "pending" || booking.status === "confirmed") && can("canIssueTickets");
   const showFare = printMode !== "nofare";
 
   return (

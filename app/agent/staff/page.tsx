@@ -12,6 +12,7 @@ type Permission = {
   canViewLedger: boolean;
   canManageSavedClients: boolean;
   canViewNotifications: boolean;
+  canIssueTickets: boolean;
 };
 
 type Staff = {
@@ -32,12 +33,14 @@ const PERM_LABELS: { key: keyof Permission; label: string; desc: string }[] = [
   { key: "canViewLedger",        label: "View Ledger",        desc: "Can see credit/balance" },
   { key: "canManageSavedClients",label: "Saved Clients",      desc: "Can add/edit saved clients" },
   { key: "canViewNotifications", label: "Notifications",      desc: "Can view notifications" },
+  { key: "canIssueTickets",      label: "Issue Tickets",      desc: "Can issue bookings (deducts from agency balance)" },
 ];
 
 const emptyPerms = (): Permission => ({
   canCreateBookings: false, canViewBookings: true,
   canSubmitPaymentSlip: false, canViewLedger: false,
   canManageSavedClients: false, canViewNotifications: true,
+  canIssueTickets: false,
 });
 
 const emptyForm = () => ({
@@ -183,7 +186,7 @@ function StaffInner() {
               ))}
             </div>
             <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
-              ⚠️ Staff can never issue tickets or view agency financials beyond their permissions. Ticket issuance is owner-only.
+              ⚠️ Issue Tickets permission allows staff to issue bookings, which deducts from the agency balance. Grant carefully.
             </p>
           </div>
 

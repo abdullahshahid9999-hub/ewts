@@ -16,6 +16,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
 
+  // Staff permission check
+  if (agent.subUser && !agent.subUser.permissions.canIssueTickets) {
+    return NextResponse.json({ error: "You don't have permission to issue tickets." }, { status: 403 });
+  }
+
   const booking = await prisma.agentBooking.findUnique({ where: { id } });
   if (!booking || booking.agentId !== agent.id) {
     return NextResponse.json({ error: "Booking not found." }, { status: 404 });
