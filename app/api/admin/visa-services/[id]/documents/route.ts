@@ -29,6 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: {
       visaId,
       name,
+      icon: typeof body?.icon === "string" && body.icon.trim() ? body.icon.trim() : null,
       description: typeof body?.description === "string" && body.description.trim() ? body.description.trim() : null,
       isRequired: body?.isRequired !== false, // default true
       sortOrder: Number(body?.sortOrder) || 0,

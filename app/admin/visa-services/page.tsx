@@ -12,6 +12,7 @@ import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 type RequiredDoc = {
   id?: string; // no id = pending (not yet saved)
   name: string;
+  icon?: string | null;
   description: string | null;
   isRequired: boolean;
   applicantCategory: string | null;
@@ -33,7 +34,7 @@ const emptyForm = {
   termsAndConditions: "", refundPolicy: "",
 };
 
-const emptyDoc = { name: "", description: "", isRequired: true, applicantCategory: "", nationality: "" };
+const emptyDoc = { name: "", icon: "", description: "", isRequired: true, applicantCategory: "", nationality: "" };
 
 const iStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box" };
 
@@ -130,7 +131,7 @@ function VisaServicesInner() {
   function addPendingDoc() {
     if (!newDoc.name.trim()) return;
     setPendingDocs(prev => [...prev, {
-      name: newDoc.name.trim(), description: newDoc.description.trim() || null,
+      name: newDoc.name.trim(), icon: newDoc.icon.trim() || null, description: newDoc.description.trim() || null,
       isRequired: newDoc.isRequired,
       applicantCategory: newDoc.applicantCategory || null,
       nationality: newDoc.nationality.trim() || null,
@@ -144,7 +145,7 @@ function VisaServicesInner() {
     setSavingDoc(true);
     await adminFetch(`/api/admin/visa-services/${editingId}/documents`, accessToken, refresh, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newDoc.name.trim(), description: newDoc.description.trim() || null, isRequired: newDoc.isRequired, applicantCategory: newDoc.applicantCategory || null, nationality: newDoc.nationality.trim() || null }),
+      body: JSON.stringify({ name: newDoc.name.trim(), icon: newDoc.icon.trim() || null, description: newDoc.description.trim() || null, isRequired: newDoc.isRequired, applicantCategory: newDoc.applicantCategory || null, nationality: newDoc.nationality.trim() || null }),
     });
     setSavingDoc(false);
     setNewDoc(emptyDoc);
@@ -207,6 +208,10 @@ function VisaServicesInner() {
   // ── Doc input row (shared between create/edit) ──
   const docInputRow = (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-end", marginTop: 10 }}>
+      <div style={{ flex: "0 0 72px" }}>
+        <input style={{ ...iStyle, textAlign: "center", fontSize: 20 }} placeholder="📄" value={newDoc.icon}
+          onChange={e => setNewDoc(f => ({ ...f, icon: e.target.value }))} maxLength={4} title="Emoji icon (e.g. 🛂 📄 📸)" />
+      </div>
       <div style={{ flex: "2 1 160px" }}><input style={iStyle} placeholder="Document name*" value={newDoc.name} onChange={e => setNewDoc(f => ({ ...f, name: e.target.value }))} /></div>
       <div style={{ flex: "2 1 160px" }}><input style={iStyle} placeholder="Description (optional)" value={newDoc.description} onChange={e => setNewDoc(f => ({ ...f, description: e.target.value }))} /></div>
       <div style={{ flex: "1 1 130px" }}>
@@ -229,7 +234,7 @@ function VisaServicesInner() {
     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
       {docs.map((d, i) => (
         <div key={d.id ?? i} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid var(--a-border)", borderRadius: 8, padding: "8px 12px" }}>
-          <span style={{ fontSize: 13, flex: 1 }}>{d.name}{d.description ? <span style={{ opacity: 0.5, fontSize: 11, marginLeft: 6 }}>— {d.description}</span> : null}</span>
+          <span style={{ fontSize: 13, flex: 1 }}><span style={{ marginRight: 6 }}>{d.icon || "📄"}</span>{d.name}{d.description ? <span style={{ opacity: 0.5, fontSize: 11, marginLeft: 6 }}>— {d.description}</span> : null}</span>
           {d.applicantCategory && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.applicantCategory}</span>}
           {d.nationality && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.nationality}</span>}
           <span style={{ fontSize: 11, fontWeight: 600, color: d.isRequired ? "var(--a-red)" : "var(--a-muted)", cursor: onToggle ? "pointer" : "default" }}

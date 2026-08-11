@@ -96,7 +96,7 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
               <div className="space-y-3">
                 {visa.requiredDocuments.map((doc) => (
                   <div key={doc.id} className="flex gap-3 p-3 rounded-xl border border-border bg-surface">
-                    <span className="text-lg mt-0.5">{doc.isRequired ? "📄" : "📎"}</span>
+                    <span className="text-lg mt-0.5">{(doc as {icon?:string|null}).icon || (doc.isRequired ? "📄" : "📎")}</span>
                     <div>
                       <div className="font-semibold text-sm">
                         {doc.name}

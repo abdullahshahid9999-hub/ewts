@@ -207,6 +207,7 @@ model VisaRequiredDocument {
   id          String  @id @default(uuid())
   visaId      String  @map("visa_id")
   name        String                      // e.g. "Passport Scan"
+  icon        String? @map("icon")          // emoji or short symbol e.g. "🛂" "📄"
   description String?                     // instruction shown to user
   isRequired  Boolean @default(true) @map("is_required")
   sortOrder   Int     @default(0)  @map("sort_order")

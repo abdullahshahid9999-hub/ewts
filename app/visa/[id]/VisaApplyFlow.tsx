@@ -357,7 +357,7 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                 <div key={doc.id} className="border border-border rounded-xl p-3">
                   <div className="flex items-start justify-between mb-1.5">
                     <div>
-                      <span className="text-sm font-semibold">{doc.name}</span>
+                      <span className="text-sm font-semibold"><span className="mr-1">{(doc as {icon?:string|null}).icon || "📄"}</span>{doc.name}</span>
                       {doc.isRequired ? (
                         <span className="ml-1.5 text-xs text-red-500 font-bold">*required</span>
                       ) : (
