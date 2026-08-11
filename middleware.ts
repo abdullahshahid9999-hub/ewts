@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const host = req.headers.get("host") ?? "";
+  // Worker sets x-forwarded-host to the original subdomain
+  // while host is set to the Render domain for routing
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
   const { pathname } = req.nextUrl;
 
   const isStatic = pathname.startsWith("/_next") || pathname.startsWith("/assets") || pathname.startsWith("/images") || pathname === "/favicon.ico" || pathname === "/sitemap.xml" || pathname === "/robots.txt";
@@ -31,6 +33,10 @@ export function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

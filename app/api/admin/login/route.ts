@@ -14,9 +14,11 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
 
-  const ipLimit = rateLimit(`admin-login:ip:${ip}`, 30, 15 * 60 * 1000);
-  const emailLimit = rateLimit(`admin-login:email:${email}`, 20, 15 * 60 * 1000);
-  if (!ipLimit.allowed || !emailLimit.allowed)
+  // Note: IP-based rate limiting removed — Cloudflare Worker proxies all requests
+  // from the same IP, so IP limiting would block legitimate admin logins.
+  // Email-based limiting is sufficient.
+  const emailLimit = rateLimit(`admin-login:email:${email}`, 50, 15 * 60 * 1000);
+  if (!emailLimit.allowed)
     return NextResponse.json({ error: "Too many attempts. Try again in 15 minutes." }, { status: 429 });
 
   const genericError = () => NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
