@@ -17,11 +17,8 @@ export function middleware(req: NextRequest) {
   // admin.eastwestpk.com → /admin/*
   if (host === "admin.eastwestpk.com") {
     let newPath = pathname;
-    if (pathname === "/") {
-      newPath = "/admin/login";
-    } else if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/")) {
-      newPath = `/admin${pathname}`;
-    }
+    if (pathname === "/") newPath = "/admin/login";
+    else if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/")) newPath = `/admin${pathname}`;
     if (newPath !== pathname) {
       const url = req.nextUrl.clone();
       url.pathname = newPath;
@@ -33,11 +30,8 @@ export function middleware(req: NextRequest) {
   // b2b.eastwestpk.com → /agent/*
   if (host === "b2b.eastwestpk.com") {
     let newPath = pathname;
-    if (pathname === "/") {
-      newPath = "/agent/login";
-    } else if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/")) {
-      newPath = `/agent${pathname}`;
-    }
+    if (pathname === "/") newPath = "/agent/login";
+    else if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/")) newPath = `/agent${pathname}`;
     if (newPath !== pathname) {
       const url = req.nextUrl.clone();
       url.pathname = newPath;
@@ -48,14 +42,6 @@ export function middleware(req: NextRequest) {
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
