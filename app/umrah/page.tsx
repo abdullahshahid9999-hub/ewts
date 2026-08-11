@@ -113,21 +113,38 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                     key={pkg.id}
                     className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 flex flex-col"
                   >
-                    {/* Card image */}
-                    <div className="relative h-44 bg-surface">
-                      {pkg.imageUrl && (
-                        <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
-                      )}
-                      {!pkg.imageUrl && (
-                        <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-30">🕌</div>
-                      )}
-                      <div className="absolute top-3 left-3 flex gap-1.5">
-                        <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
-                        {pkg.featured && (
-                          <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>
+                    {/* Card image — clickable to detail */}
+                    {pkg.slug ? (
+                      <Link href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`} className="relative h-44 bg-surface block">
+                        {pkg.imageUrl && (
+                          <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
                         )}
+                        {!pkg.imageUrl && (
+                          <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-30">🕌</div>
+                        )}
+                        <div className="absolute top-3 left-3 flex gap-1.5">
+                          <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
+                          {pkg.featured && (
+                            <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>
+                          )}
+                        </div>
+                      </Link>
+                    ) : (
+                      <div className="relative h-44 bg-surface">
+                        {pkg.imageUrl && (
+                          <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
+                        )}
+                        {!pkg.imageUrl && (
+                          <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-30">🕌</div>
+                        )}
+                        <div className="absolute top-3 left-3 flex gap-1.5">
+                          <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
+                          {pkg.featured && (
+                            <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Card body */}
                     <div className="p-4 flex flex-col flex-1">
@@ -168,22 +185,23 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                           <span className="text-muted text-xs font-sans font-normal ml-1">/ person</span>
                         </div>
                         <div className="flex gap-2 shrink-0">
-                          {pkg.slug && (
+                          {pkg.slug ? (
                             <Link
                               href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`}
-                              className="text-xs font-bold text-white bg-[var(--lp-ink)] hover:bg-[var(--lp-ink-light)] px-3 py-2 rounded-lg transition-colors"
+                              className="text-xs font-bold text-white bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] px-4 py-2 rounded-lg transition-colors"
                             >
-                              View Details
+                              View &amp; Book
                             </Link>
+                          ) : (
+                            <a
+                              href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package. Please share details.`)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors"
+                            >
+                              📲 Book
+                            </a>
                           )}
-                          <a
-                            href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package. Please share details.`)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors"
-                          >
-                            📲 Book
-                          </a>
                         </div>
                       </div>
                     </div>

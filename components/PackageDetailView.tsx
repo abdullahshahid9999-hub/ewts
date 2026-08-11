@@ -8,10 +8,17 @@ type PackageWithRoomTypes = {
   id: string;
   category: string;
   name: string;
+  slug: string | null;
   duration: string | null;
+  price: string | null;
+  priceNote: string | null;
   destination: string | null;
   departureCity: string | null;
+  depDate: string | null;
+  retDate: string | null;
   tier: string | null;
+  airline: string | null;
+  route: string | null;
   hotels: string | null;
   includes: string | null;
   excludes: string | null;
