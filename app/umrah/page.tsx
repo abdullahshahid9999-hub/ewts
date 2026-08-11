@@ -167,23 +167,24 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                           </span>
                           <span className="text-muted text-xs font-sans font-normal ml-1">/ person</span>
                         </div>
-                        {pkg.slug ? (
-                          <Link
-                            href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`}
-                            className="text-xs font-bold text-white bg-[var(--lp-ink)] hover:bg-[var(--lp-ink-light)] px-3 py-2 rounded-lg transition-colors shrink-0"
-                          >
-                            View Details →
-                          </Link>
-                        ) : (
+                        <div className="flex gap-2 shrink-0">
+                          {pkg.slug && (
+                            <Link
+                              href={`/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}`}
+                              className="text-xs font-bold text-white bg-[var(--lp-ink)] hover:bg-[var(--lp-ink-light)] px-3 py-2 rounded-lg transition-colors"
+                            >
+                              View Details
+                            </Link>
+                          )}
                           <a
-                            href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package.`)}
+                            href={waLink(`Assalam o Alaikum! I'm interested in the "${pkg.name}" package. Please share details.`)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors shrink-0"
+                            className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors"
                           >
-                            Book Now →
+                            📲 Book
                           </a>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
