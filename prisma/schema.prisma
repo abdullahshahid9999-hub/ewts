@@ -65,7 +65,9 @@ model PackageRoomType {
   // % of adult price). Nullable/0 = free, so existing room types without
   // this set don't suddenly start charging for infants unexpectedly.
   pricePerInfantPkr Int     @default(0) @map("price_per_infant_pkr")
-  pricePerChildPkr  Int     @default(0) @map("price_per_child_pkr")
+  pricePerChildWithBedPkr    Int @default(0) @map("price_per_child_with_bed_pkr")
+  pricePerChildWithoutBedPkr Int @default(0) @map("price_per_child_without_bed_pkr")
+  pricePerChildPkr  Int     @default(0) @map("price_per_child_pkr") // legacy — use above two
   maxAdults         Int     @map("max_adults")
   maxInfants        Int     @default(0) @map("max_infants")
   minAdultsRequired Int?    @map("min_adults_required") // e.g. Triple Room needs >=3 adults booked together
@@ -451,9 +453,11 @@ model Booking {
   groupFlightId   String? @map("group_flight_id")
   travelClass     String? @map("travel_class") // "Economy" | "Business" | "First Class" — group flight bookings only
   seatsRequested  Int?    @map("seats_requested") // group flight bookings only; package bookings use adults/children/infants instead
-  adults          Int?    @default(1)
-  children        Int?    @default(0)
-  infants         Int?    @default(0)
+  adults             Int?    @default(1)
+  childrenWithBed    Int?    @default(0) @map("children_with_bed")
+  childrenWithoutBed Int?    @default(0) @map("children_without_bed")
+  children           Int?    @default(0) // legacy total
+  infants            Int?    @default(0)
   passport        String? // CNIC/Passport, optional, useful for travel docs
   specialRequests String? @map("special_requests")
   totalPricePkr   Int?    @map("total_price_pkr") // snapshot of the computed total at booking time, same immutability reasoning as agent commission — price display can change later, this booking's price shouldn't retroactively
@@ -470,11 +474,24 @@ model Booking {
 }
 
 model Traveller {
-  id         String  @id @default(uuid())
-  bookingId  String  @map("booking_id")
-  fullName   String  @map("full_name")
-  passportNo String? @map("passport_no")
-  cnic       String?
+  id               String   @id @default(uuid())
+  bookingId        String   @map("booking_id")
+  // Traveller type
+  travellerType    String   @default("adult") @map("traveller_type") // "adult" | "child_with_bed" | "child_without_bed" | "infant"
+  sortOrder        Int      @default(0) @map("sort_order")
+  // Passport / document fields (OCR-populated)
+  givenName        String?  @map("given_name")
+  surname          String?
+  passportNo       String?  @map("passport_no")
+  dateOfIssue      DateTime? @map("date_of_issue")
+  dateOfExpiry     DateTime? @map("date_of_expiry")
+  dateOfBirth      DateTime? @map("date_of_birth")
+  gender           String?  // "M" | "F"
+  nationality      String?
+  issuingCountry   String?  @map("issuing_country")
+  passportImageUrl String?  @map("passport_image_url") // R2 URL
+  // Legacy field kept for backward compat
+  cnic             String?
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getIdempotencyResult, setIdempotencyResult } from "@/lib/rateLimit";
 import { sendEmail } from "@/lib/email";
+import { sendBookingEmails } from "@/lib/bookingEmail";
 import { releaseExpiredSlotHolds } from "@/lib/packageSlots";
 
 // Public, unauthenticated — customers book without logging in (matches
@@ -25,8 +26,10 @@ export async function POST(req: NextRequest) {
   const packageId = typeof body?.packageId === "string" ? body.packageId : "";
   const roomType = typeof body?.roomType === "string" ? body.roomType : "";
   const adults = Number(body?.adults) || 1;
-  const children = Number(body?.children) || 0;
-  const infants = Number(body?.infants) || 0;
+  const childrenWithBed = Number(body?.childrenWithBed) || 0;
+  const childrenWithoutBed = Number(body?.childrenWithoutBed) || 0;
+  const children = childrenWithBed + childrenWithoutBed;
+  const infants = Math.min(Number(body?.infants) || 0, 2);
   const customerName = typeof body?.customerName === "string" ? body.customerName.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
   const email = typeof body?.email === "string" ? body.email.trim() : "";
@@ -43,9 +46,9 @@ export async function POST(req: NextRequest) {
         .filter((t) => t.fullName)
     : [];
 
-  if (!packageId || !roomType || !customerName || !phone || !email) {
+  if (!packageId || !roomType || !customerName || !phone) {
     return NextResponse.json(
-      { error: "Package, room type, name, phone, and email are required." },
+      { error: "Package, room type, name, and phone are required." },
       { status: 400 }
     );
   }
@@ -62,8 +65,9 @@ export async function POST(req: NextRequest) {
   const rt = pkg.roomTypes.find((r) => r.roomType === roomType);
   if (!rt) return NextResponse.json({ error: "Selected room type is not available for this package." }, { status: 400 });
 
-  if (adults > rt.maxAdults) {
-    return NextResponse.json({ error: `Maximum ${rt.maxAdults} adults for ${rt.roomType}.` }, { status: 400 });
+  const bedOccupants = adults + childrenWithBed;
+  if (bedOccupants > rt.maxAdults) {
+    return NextResponse.json({ error: `Maximum ${rt.maxAdults} bed occupants for ${rt.roomType}. You have ${bedOccupants} (adults + children with bed).` }, { status: 400 });
   }
   if (infants > rt.maxInfants) {
     return NextResponse.json({ error: `Maximum ${rt.maxInfants} infants for ${rt.roomType}.` }, { status: 400 });
