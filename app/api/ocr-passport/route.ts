@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Upload to R2
     const ext = file.name.split(".").pop() ?? "jpg";
     const key = `passports/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const imageUrl = await uploadToR2(buffer, key, mimeType);
+    const imageUrl = await uploadToR2({ buffer, contentType: mimeType, folder: "visas" });
 
     // OCR with Claude Vision
     const base64 = buffer.toString("base64");
