@@ -61,13 +61,19 @@ export async function getVisaFacets() {
       where: { status: "active" },
       select: { country: true, type: true, processingTime: true },
     });
+    const countryTypeMap: Record<string, string[]> = {};
+    rows.forEach(r => {
+      if (!countryTypeMap[r.country]) countryTypeMap[r.country] = [];
+      if (!countryTypeMap[r.country].includes(r.type)) countryTypeMap[r.country].push(r.type);
+    });
     return {
       countries: uniq(rows.map((r) => r.country)),
       types: uniq(rows.map((r) => r.type)),
       processingTimes: uniq(rows.map((r) => r.processingTime)),
+      countryTypeMap,
     };
   } catch {
-    return { countries: [], types: [], processingTimes: [] };
+    return { countries: [], types: [], processingTimes: [], countryTypeMap: {} };
   }
 }
 

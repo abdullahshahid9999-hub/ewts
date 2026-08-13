@@ -159,14 +159,13 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
         {filteredDocs.length === 0 ? (
           <div className="border border-dashed border-border rounded-xl p-4 bg-surface">
             <p className="text-xs text-muted mb-2">Upload passport scan to auto-fill details, plus any supporting documents.</p>
-            <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="text-xs w-full"
-              onChange={e => handlePassportUpload(passportDocId, e.target.files?.[0] ?? null)} />
+            <UploadBtn onChange={f => handlePassportUpload(passportDocId, f)} />
           </div>
         ) : (
           <div className="space-y-3">
             {filteredDocs.map(doc => (
               <div key={doc.id} className={`rounded-xl border p-4 ${t.files[doc.id] ? "border-green-200 bg-green-50" : doc.isRequired ? "border-border bg-white" : "border-dashed border-border bg-surface"}`}>
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-3">
                   <div>
                     <span className="text-sm font-semibold">{(doc as { icon?: string | null }).icon || "📄"} {doc.name}</span>
                     {doc.isRequired ? <span className="ml-2 text-xs text-red-500 font-bold">*required</span> : <span className="ml-2 text-xs text-muted">(optional)</span>}
@@ -174,11 +173,9 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
                   </div>
                   {t.files[doc.id] && <span className="text-green-600 text-xs font-bold shrink-0 mt-0.5">✓ Added</span>}
                 </div>
-                <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="text-xs w-full"
-                  onChange={e => handlePassportUpload(doc.id, e.target.files?.[0] ?? null)} />
-                {t.files[doc.id] && <p className="text-xs text-muted mt-1">📎 {t.files[doc.id].name}</p>}
+                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={t.files[doc.id]} />
                 {t.docWarnings[doc.id] && (
-                  <p className={`text-xs mt-1 ${t.docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : t.docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
+                  <p className={`text-xs mt-2 ${t.docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : t.docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
                     {t.docWarnings[doc.id]}
                   </p>
                 )}
@@ -187,6 +184,20 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/webp,application/pdf" }: { onChange: (f: File) => void; uploaded?: File; accept?: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); }} />
+      <button type="button" onClick={() => ref.current?.click()}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${uploaded ? "border-green-300 bg-green-50 text-green-700" : "border-border bg-surface text-[var(--lp-ink)] hover:border-[var(--lp-brass)]"}`}>
+        <span>{uploaded ? "✅" : "📎"}</span>
+        {uploaded ? uploaded.name.length > 28 ? uploaded.name.slice(0, 25) + "…" : uploaded.name : "Choose Document"}
+      </button>
     </div>
   );
 }
@@ -212,7 +223,7 @@ function DateField({ label, value, onChange }: { label: string; value: string; o
 }
 
 /* ─────────────────── Main wizard ─────────────────── */
-export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildren = 0, initialInfants = 0 }: { visa: VisaInfo; initialAdults?: number; initialChildren?: number; initialInfants?: number }) {
+export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildren = 0, initialInfants = 0, initialOccupation = "" }: { visa: VisaInfo; initialAdults?: number; initialChildren?: number; initialInfants?: number; initialOccupation?: string }) {
   const [adults, setAdults] = useState(Math.max(1, initialAdults));
   const [children, setChildren] = useState(Math.max(0, initialChildren));
   const [infants, setInfants] = useState(Math.max(0, initialInfants));
@@ -228,7 +239,7 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
   const [step, setStep] = useState(0);
   const [contact, setContact] = useState<ContactInfo>({ name: "", email: "", phone: "" });
   const [travellers, setTravellers] = useState<Traveller[]>([
-    ...Array.from({ length: initialAdults }, () => emptyTraveller("adult")),
+    ...Array.from({ length: initialAdults }, (_, i) => ({ ...emptyTraveller("adult"), applicantCategory: i === 0 ? initialOccupation : "" })),
     ...Array.from({ length: initialChildren }, () => emptyTraveller("child")),
     ...Array.from({ length: initialInfants }, () => emptyTraveller("infant")),
   ]);

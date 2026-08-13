@@ -23,7 +23,7 @@ export default async function VisaApplyPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ adults?: string; children?: string; infants?: string }>;
+  searchParams: Promise<{ adults?: string; children?: string; infants?: string; occupation?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -33,6 +33,7 @@ export default async function VisaApplyPage({
   const initialAdults = sp.adults ? Math.max(1, parseInt(sp.adults, 10) || 1) : 1;
   const initialChildren = sp.children ? Math.max(0, parseInt(sp.children, 10) || 0) : 0;
   const initialInfants = sp.infants ? Math.max(0, parseInt(sp.infants, 10) || 0) : 0;
+  const initialOccupation = sp.occupation ?? "";
 
   return (
     <>
@@ -70,6 +71,7 @@ export default async function VisaApplyPage({
         initialAdults={initialAdults}
         initialChildren={initialChildren}
         initialInfants={initialInfants}
+        initialOccupation={initialOccupation}
       />
       <Footer />
     </>

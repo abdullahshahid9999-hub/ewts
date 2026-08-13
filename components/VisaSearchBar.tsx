@@ -4,21 +4,6 @@ import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 
-const POPULAR_COUNTRIES = [
-  "UAE", "Saudi Arabia", "Thailand", "Malaysia", "UK", "Schengen",
-  "Turkey", "China", "Canada", "Australia", "USA", "Qatar",
-  "Kuwait", "Bahrain", "Oman", "Egypt", "Malaysia",
-];
-
-const VISA_CATEGORIES = [
-  { value: "", label: "All Types" },
-  { value: "tourist", label: "Tourist" },
-  { value: "umrah", label: "Umrah" },
-  { value: "business", label: "Business" },
-  { value: "work", label: "Work" },
-  { value: "e-visa", label: "E-Visa" },
-];
-
 export default function VisaSearchBar({
   defaultCountry = "",
   defaultCategory = "",
@@ -26,6 +11,8 @@ export default function VisaSearchBar({
   defaultAdults = 1,
   defaultChildren = 0,
   defaultInfants = 0,
+  dbCountries = [],
+  countryTypeMap = {},
 }: {
   defaultCountry?: string;
   defaultCategory?: string;
@@ -33,6 +20,8 @@ export default function VisaSearchBar({
   defaultAdults?: number;
   defaultChildren?: number;
   defaultInfants?: number;
+  dbCountries?: string[];
+  countryTypeMap?: Record<string, string[]>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -46,6 +35,10 @@ export default function VisaSearchBar({
   const paxRef = useRef<HTMLDivElement>(null);
 
   const totalPax = adults + children + infants;
+  // Types available for the currently selected country (or all if no country selected)
+  const availableTypes: string[] = country && countryTypeMap[country]
+    ? countryTypeMap[country]
+    : Object.values(countryTypeMap).flat().filter((v, i, a) => a.indexOf(v) === i);
 
   // Close pax dropdown on outside click
   useEffect(() => {
@@ -82,21 +75,17 @@ export default function VisaSearchBar({
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
             Select Country / State
           </p>
-          <input
-            type="text"
+          <select
             value={country}
-            onChange={e => setCountry(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSearch()}
-            placeholder="Where are you going?"
-            list="vc-countries"
-            className="text-base font-bold text-gray-800 outline-none bg-transparent placeholder-gray-400 w-full"
-          />
-          <datalist id="vc-countries">
-            {POPULAR_COUNTRIES.map(c => <option key={c} value={c} />)}
-          </datalist>
+            onChange={e => { setCountry(e.target.value); setCategory(""); }}
+            className="text-base font-bold text-gray-800 outline-none bg-transparent appearance-none w-full cursor-pointer"
+          >
+            <option value="">Where are you going?</option>
+            {dbCountries.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
-        {/* Visa Category */}
+        {/* Visa Category — filtered by selected country */}
         <div className="flex-[1.5] min-w-0 flex flex-col justify-center px-5 py-3 border-r border-gray-200">
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
             Visa Category
@@ -106,8 +95,9 @@ export default function VisaSearchBar({
             onChange={e => setCategory(e.target.value)}
             className="text-base font-bold text-gray-800 outline-none bg-transparent appearance-none w-full cursor-pointer"
           >
-            {VISA_CATEGORIES.map(c => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+            <option value="">All Types</option>
+            {availableTypes.map(t => (
+              <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
             ))}
           </select>
         </div>
@@ -186,7 +176,7 @@ export default function VisaSearchBar({
           <button
             key={c}
             type="button"
-            onClick={() => { setCountry(c); }}
+            onClick={() => { setCountry(c); setCategory(""); }}
             className="text-xs px-4 py-1.5 rounded-full font-semibold transition-all border"
             style={{
               background: country === c ? "var(--lp-brass)" : "rgba(255,255,255,0.15)",

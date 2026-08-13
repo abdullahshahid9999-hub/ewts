@@ -21,12 +21,13 @@ export default async function VisaDetailPage({
   params, searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ adults?: string; children?: string; infants?: string }>;
+  searchParams: Promise<{ adults?: string; children?: string; infants?: string; occupation?: string }>;
 }) {
   const sp = await searchParams;
   const adults = sp.adults ? Math.max(1, parseInt(sp.adults, 10) || 1) : 1;
   const children = sp.children ? Math.max(0, parseInt(sp.children, 10) || 0) : 0;
   const infants = sp.infants ? Math.max(0, parseInt(sp.infants, 10) || 0) : 0;
+  const occupation = sp.occupation ?? "";
   const { id } = await params;
   const visa = await getVisa(id);
   if (!visa) notFound();
@@ -37,7 +38,7 @@ export default async function VisaDetailPage({
   const priceInfant = visa.priceInfant ?? 0;
   const totalPrice = priceAdult * adults + priceChild * children + priceInfant * infants;
   const waMsg = `Assalam o Alaikum! I'd like to apply for the ${visa.country} ${visa.type} visa (${visa.title}).`;
-  const applyHref = `/visa/${visa.id}/apply?adults=${adults}&children=${children}&infants=${infants}`;
+  const applyHref = `/visa/${visa.id}/apply?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`;
 
   return (
     <>
