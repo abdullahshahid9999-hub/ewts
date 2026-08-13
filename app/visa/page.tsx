@@ -9,6 +9,7 @@ import SearchResultsNotice from "@/components/SearchResultsNotice";
 import { paxQueryString } from "@/lib/searchState";
 import { getVisaFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
+import VisaSearchBar from "@/components/VisaSearchBar";
 
 export const metadata = {
   title: "Visa Services | East & West Travel Services Faisalabad",
@@ -43,7 +44,7 @@ async function getVisas(q?: string, type?: string, processingTime?: string) {
       },
     });
   } catch {
-    return [];
+    return [] as { id: string; title: string; country: string; type: string; price: string | null; priceAdult: number | null; priceChild?: number | null; priceInfant?: number | null; validity: string | null; maxStay: string | null; processingTime: string | null; requirements: string | null; countryFlag: string | null; countryImage: string | null }[];
   }
 }
 
@@ -61,34 +62,38 @@ const STEPS = [
   { step: "4", title: "Visa Ready!", desc: "Collect your visa or receive it digitally" },
 ];
 
-export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; processingTime?: string; adults?: string; children?: string; infants?: string }> }) {
+export default async function VisaPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string; processingTime?: string; adults?: string; children?: string; infants?: string; occupation?: string }> }) {
   const sp = await searchParams;
-  const { q, type, processingTime } = sp;
+  const { q, type, processingTime, occupation } = sp;
   const [visas, facets] = await Promise.all([getVisas(q, type, processingTime), getVisaFacets()]);
   const paxQS = paxQueryString(sp);
+  const adults = sp.adults ? Math.max(1, parseInt(sp.adults, 10) || 1) : 1;
+  const children = sp.children ? Math.max(0, parseInt(sp.children, 10) || 0) : 0;
+  const infants = sp.infants ? Math.max(0, parseInt(sp.infants, 10) || 0) : 0;
 
   return (
     <>
       <Navbar />
 
       {/* HERO */}
-      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-10">
+      <section className="bg-[var(--lp-ink)] text-white text-center px-6 pt-16 pb-14">
         <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-4">
           Visa Services
         </p>
         <h1 className="font-display text-4xl md:text-5xl font-semibold mb-4">
           Visa Assistance <span className="italic text-[var(--lp-brass)]">Made Easy</span>
         </h1>
-        <p className="text-white/70 max-w-xl mx-auto mb-4">
+        <p className="text-white/70 max-w-xl mx-auto mb-8">
           95% approval rate — we handle all paperwork for you
         </p>
-        <div className="flex items-center justify-center gap-4 text-sm">
-          <p className="text-white/50">
-            <Link href="/" className="hover:text-[var(--lp-brass)]">Home</Link>
-            <span className="mx-2">/</span>
-            <span>Visa Services</span>
-          </p>
-        </div>
+        {/* Search bar */}
+        <VisaSearchBar
+          defaultCountry={q ?? ""}
+          defaultOccupation={occupation ?? ""}
+          defaultAdults={adults}
+          defaultChildren={children}
+          defaultInfants={infants}
+        />
       </section>
 
       {/* STATS BAR */}
@@ -139,7 +144,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {visas.map((v) => (
+            {visas.map((v: { id: string; title: string; country: string; type: string; price: string | null; priceAdult: number | null; validity: string | null; maxStay: string | null; processingTime: string | null; requirements: string | null; countryFlag: string | null; countryImage: string | null }) => (
               <div
                 key={v.id}
                 className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col"
@@ -171,7 +176,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
                       {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
                     </span>
                     <Link
-                      href={`/visa/${v.id}${paxQS ? `?${paxQS}` : ""}`}
+                      href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}`}
                       className="text-sm font-bold bg-[var(--lp-brass)] text-black px-4 py-1.5 rounded-lg hover:bg-[var(--lp-brass-light)] transition-colors"
                     >
                       View &amp; Apply
