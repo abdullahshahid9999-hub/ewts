@@ -38,7 +38,8 @@ const emptyDoc = { name: "", icon: "", description: "", isRequired: true, applic
 
 const iStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box" };
 
-const TYPE_LABELS: Record<string, string> = { tourist: "Tourist", umrah: "Umrah", business: "Business", work: "Work" };
+const TYPE_LABELS: Record<string, string> = { tourist: "Tourist", umrah: "Umrah", business: "Business", work: "Work", "e-visa": "E-Visa", student: "Student", transit: "Transit" };
+const BUILT_IN_TYPES = Object.keys(TYPE_LABELS);
 const ENTRY_LABELS: Record<string, string> = { single: "Single Entry", multiple: "Multiple Entry", transit: "Transit" };
 
 // ─── Section header inside form ───────────────────────────────────────────────
@@ -272,12 +273,19 @@ function VisaServicesInner() {
             <div><label>Country *</label><input required style={iStyle} value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="e.g. UAE" /></div>
             <div>
               <label>Visa Type</label>
-              <select style={iStyle} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              <select style={iStyle} value={BUILT_IN_TYPES.includes(form.type) ? form.type : "__custom__"} onChange={e => setForm(f => ({ ...f, type: e.target.value === "__custom__" ? "" : e.target.value }))}>
                 <option value="tourist">Tourist</option>
                 <option value="umrah">Umrah</option>
                 <option value="business">Business</option>
                 <option value="work">Work</option>
+                <option value="e-visa">E-Visa</option>
+                <option value="student">Student</option>
+                <option value="transit">Transit</option>
+                <option value="__custom__">Custom…</option>
               </select>
+              {!BUILT_IN_TYPES.includes(form.type) && (
+                <input style={{ ...iStyle, marginTop: 6 }} placeholder="Enter custom type (e.g. family, medical)" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value.toLowerCase().replace(/\s+/g, "-") }))} />
+              )}
             </div>
             <div>
               <label>Status</label>

@@ -99,7 +99,10 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
     }
   }
 
-  const filteredDocs = filterDocsForApplicant(docs, t.applicantCategory, t.nationality);
+  // Check if any docs are occupation-scoped — if so, occupation is required before showing docs
+  const hasOccupationScopedDocs = docs.some(d => d.applicantCategory);
+  const needsOccupation = hasOccupationScopedDocs && t.ageGroup === "adult" && !t.applicantCategory;
+  const filteredDocs = needsOccupation ? [] : filterDocsForApplicant(docs, t.applicantCategory, t.nationality);
   const expiryWarn = passportExpiryWarning(t.passportExpiry);
 
   return (
@@ -155,8 +158,18 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
           {ocrBusy && <span className="text-xs text-blue-600 animate-pulse">Reading passport…</span>}
         </div>
 
+        {needsOccupation && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
+            <span className="text-lg">⚠️</span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">Select your occupation first</p>
+              <p className="text-xs text-amber-700 mt-0.5">Required documents vary by occupation. Please select your occupation above to see the exact documents needed.</p>
+            </div>
+          </div>
+        )}
+
         {/* Passport upload first — always shown, enables OCR */}
-        {filteredDocs.length === 0 ? (
+        {filteredDocs.length === 0 && !needsOccupation ? (
           <div className="border border-dashed border-border rounded-xl p-4 bg-surface">
             <p className="text-xs text-muted mb-2">Upload passport scan to auto-fill details, plus any supporting documents.</p>
             <UploadBtn onChange={f => handlePassportUpload(passportDocId, f)} />

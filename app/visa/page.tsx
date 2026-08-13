@@ -152,7 +152,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
                 key={v.id}
                 className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col"
               >
-                <div className="relative h-36 bg-surface">
+                <div className="relative h-48 bg-surface">
                   {v.countryImage && (
                     <Image src={v.countryImage} alt={v.country} fill className="object-cover" />
                   )}
