@@ -31,7 +31,9 @@ export default function PackageBookingWidget({
   initialChildren?: number;
   initialInfants?: number;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(roomTypes[0]?.id ?? null);
+  // Auto-select best matching room: find first room where maxAdults >= initialAdults
+  const autoRoom = roomTypes.find((r) => r.maxAdults >= (initialAdults ?? 1)) ?? roomTypes[0] ?? null;
+  const [selectedId, setSelectedId] = useState<string | null>(autoRoom?.id ?? null);
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
   const [infants, setInfants] = useState(initialInfants);

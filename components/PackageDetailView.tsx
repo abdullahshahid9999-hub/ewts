@@ -1,6 +1,8 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import PackageBookingWidget from "@/components/PackageBookingWidget";
+import ImageGallery from "@/components/ImageGallery";
 
 type ItineraryStep = { title: string; details: string[]; images?: string[] };
 
@@ -25,6 +27,10 @@ type PackageWithRoomTypes = {
   itinerary: unknown;
   flightSectors: unknown;
   imageUrl: string | null;
+  galleryUrls: unknown;
+  copyEnabled: boolean;
+  groupTicketEnabled: boolean;
+  visaEnabled: boolean;
   roomTypes: {
     id: string;
     roomType: string;
@@ -103,14 +109,48 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
       </section>
 
       <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* IMAGE */}
-        <div className="relative h-64 md:h-96 rounded-2xl overflow-hidden bg-surface mb-12">
-          {pkg.imageUrl ? (
-            <Image src={pkg.imageUrl} alt={pkg.name} fill className="object-cover" />
+        {/* GALLERY */}
+        {(() => {
+          const allImgs: string[] = [];
+          if (pkg.imageUrl) allImgs.push(pkg.imageUrl);
+          if (Array.isArray(pkg.galleryUrls)) allImgs.push(...(pkg.galleryUrls as string[]));
+          return allImgs.length > 0 ? (
+            <ImageGallery images={allImgs} alt={pkg.name} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[var(--lp-ink)] to-[#1a2b45] text-white/50 text-sm">
+            <div className="relative h-64 md:h-96 rounded-2xl overflow-hidden bg-surface mb-8 flex items-center justify-center bg-gradient-to-br from-[var(--lp-ink)] to-[#1a2b45] text-white/50 text-sm">
               {pkg.name}
             </div>
+          );
+        })()}
+
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-2 flex-wrap mb-10">
+          {pkg.copyEnabled ? (
+            <button
+              type="button"
+              onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }}
+              className="flex items-center gap-1.5 text-xs font-semibold border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+            >
+              📋 Copy Package Link
+            </button>
+          ) : null}
+          {pkg.groupTicketEnabled ? (
+            <a href="/group-flights" className="flex items-center gap-1.5 text-xs font-semibold border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+              ✈️ Group Ticket
+            </a>
+          ) : (
+            <button type="button" disabled className="flex items-center gap-1.5 text-xs font-semibold border border-gray-200 text-gray-300 px-4 py-2 rounded-lg cursor-not-allowed">
+              ✈️ Group Ticket <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">Coming Soon</span>
+            </button>
+          )}
+          {pkg.visaEnabled ? (
+            <a href="/visa" className="flex items-center gap-1.5 text-xs font-semibold border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+              🛂 Visa
+            </a>
+          ) : (
+            <button type="button" disabled className="flex items-center gap-1.5 text-xs font-semibold border border-gray-200 text-gray-300 px-4 py-2 rounded-lg cursor-not-allowed">
+              🛂 Visa <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">Coming Soon</span>
+            </button>
           )}
         </div>
 

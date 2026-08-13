@@ -70,6 +70,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Gallery: multiple additional images uploaded as gallery_0, gallery_1, ...
+  const galleryUrls: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const gf = form.get(`gallery_${i}`);
+    if (!(gf instanceof File)) break;
+    try {
+      const buf = Buffer.from(await gf.arrayBuffer());
+      const url = await uploadToR2({ buffer: buf, contentType: gf.type, folder: "packages/gallery" });
+      galleryUrls.push(url);
+    } catch (e) {
+      console.error(`Gallery image ${i} upload failed:`, e);
+    }
+  }
+
   const str = (key: string) => {
     const v = form.get(key);
     return typeof v === "string" && v.length > 0 ? v : undefined;
@@ -183,6 +197,10 @@ export async function POST(req: NextRequest) {
         itinerary: itinerary as never,
         flightSectors: flightSectors as never,
         imageUrl,
+        galleryUrls: galleryUrls.length > 0 ? galleryUrls : undefined,
+        copyEnabled: form.get("copyEnabled") === "true",
+        groupTicketEnabled: form.get("groupTicketEnabled") === "true",
+        visaEnabled: form.get("visaEnabled") === "true",
         featured: form.get("featured") === "true",
         status: str("status") ?? "active",
       },

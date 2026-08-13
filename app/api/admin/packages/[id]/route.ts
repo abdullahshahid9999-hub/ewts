@@ -32,6 +32,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  // Gallery images: gallery_0, gallery_1, ... — appended to existing gallery
+  const newGalleryUrls: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const gf = form.get(`gallery_${i}`);
+    if (!(gf instanceof File)) break;
+    try {
+      const buf = Buffer.from(await gf.arrayBuffer());
+      const url = await uploadToR2({ buffer: buf, contentType: gf.type, folder: "packages/gallery" });
+      newGalleryUrls.push(url);
+    } catch (e) {
+      console.error(`Gallery image ${i} upload failed:`, e);
+    }
+  }
+  // removeGalleryUrls: JSON array of URLs to remove
+  let removeGallerySet = new Set<string>();
+  const removeRaw = form.get("removeGalleryUrls");
+  if (typeof removeRaw === "string" && removeRaw.length > 0) {
+    try { removeGallerySet = new Set(JSON.parse(removeRaw)); } catch { /* ignore */ }
+  }
+  const existingGallery: string[] = Array.isArray(existing.galleryUrls) ? (existing.galleryUrls as string[]) : [];
+  const mergedGallery = [...existingGallery.filter((u) => !removeGallerySet.has(u)), ...newGalleryUrls];
+
   let itinerary: unknown;
   const itineraryRaw = form.get("itinerary");
   if (typeof itineraryRaw === "string" && itineraryRaw.length > 0) {
@@ -80,6 +102,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       itinerary: itineraryRaw !== null ? (itinerary as never) : undefined,
       flightSectors: sectorsRaw !== null ? (flightSectors as never) : undefined,
       imageUrl,
+      galleryUrls: mergedGallery as never,
+      copyEnabled: form.has("copyEnabled") ? form.get("copyEnabled") === "true" : undefined,
+      groupTicketEnabled: form.has("groupTicketEnabled") ? form.get("groupTicketEnabled") === "true" : undefined,
+      visaEnabled: form.has("visaEnabled") ? form.get("visaEnabled") === "true" : undefined,
       featured: form.has("featured") ? form.get("featured") === "true" : undefined,
       status: str("status"),
     },

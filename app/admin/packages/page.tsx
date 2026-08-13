@@ -71,6 +71,10 @@ type Package = {
   itinerary: unknown;
   flightSectors: unknown;
   imageUrl: string | null;
+  galleryUrls: string[] | null;
+  copyEnabled: boolean;
+  groupTicketEnabled: boolean;
+  visaEnabled: boolean;
   featured: boolean;
   status: string;
   roomTypes: RoomType[];
@@ -79,6 +83,7 @@ type Package = {
 const emptyForm = {
   category: "umrah", name: "", slug: "", duration: "", price: "", destination: "",
   departureCity: "", tier: "", includes: "", excludes: "", featured: false, status: "active",
+  copyEnabled: false, groupTicketEnabled: false, visaEnabled: false,
 };
 
 function slugify(text: string) {
@@ -111,6 +116,8 @@ function PackagesInner() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState<File | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [removeGalleryUrls, setRemoveGalleryUrls] = useState<string[]>([]);
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
   const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
   const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([{ ...emptyDraftRoomType }]);
@@ -140,11 +147,14 @@ function PackagesInner() {
       price: pkg.price ?? "", destination: pkg.destination ?? "", departureCity: pkg.departureCity ?? "",
       tier: pkg.tier ?? "", includes: pkg.includes ?? "", excludes: pkg.excludes ?? "",
       featured: pkg.featured, status: pkg.status,
+      copyEnabled: pkg.copyEnabled, groupTicketEnabled: pkg.groupTicketEnabled, visaEnabled: pkg.visaEnabled,
     });
     setItinerary(itineraryFromPackage(pkg));
     setFlightSectors(sectorsFromPackage(pkg));
     setDraftRoomTypes([{ ...emptyDraftRoomType }]);
     setFile(null);
+    setGalleryFiles([]);
+    setRemoveGalleryUrls([]);
   }
 
   function resetForm() {
@@ -154,6 +164,8 @@ function PackagesInner() {
     setFlightSectors(defaultSectors);
     setDraftRoomTypes([{ ...emptyDraftRoomType }]);
     setFile(null);
+    setGalleryFiles([]);
+    setRemoveGalleryUrls([]);
     setError(null);
   }
 
@@ -220,7 +232,14 @@ function PackagesInner() {
     body.set("excludes", form.excludes);
     body.set("featured", String(form.featured));
     body.set("status", form.status);
+    body.set("copyEnabled", String(form.copyEnabled));
+    body.set("groupTicketEnabled", String(form.groupTicketEnabled));
+    body.set("visaEnabled", String(form.visaEnabled));
     if (file) body.set("image", await compressImage(file));
+    for (let i = 0; i < galleryFiles.length; i++) {
+      body.set(`gallery_${i}`, await compressImage(galleryFiles[i]));
+    }
+    if (removeGalleryUrls.length > 0) body.set("removeGalleryUrls", JSON.stringify(removeGalleryUrls));
 
     const itineraryPayload = itinerary
       .filter((s) => s.title.trim())
@@ -375,8 +394,42 @@ function PackagesInner() {
             Featured on homepage
           </div>
           <div>
-            <label>Image</label>
+            <label>Cover Image</label>
             <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Gallery Images (multiple, shown as carousel on detail page)</label>
+            {/* Existing gallery for edit mode */}
+            {editingId && packages.find(p => p.id === editingId)?.galleryUrls && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                {(packages.find(p => p.id === editingId)?.galleryUrls ?? []).map((url) => (
+                  <div key={url} style={{ position: "relative", width: "72px", height: "72px" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: "72px", height: "72px", objectFit: "cover", borderRadius: "6px", opacity: removeGalleryUrls.includes(url) ? 0.3 : 1 }} />
+                    <button type="button" onClick={() => setRemoveGalleryUrls(r => r.includes(url) ? r.filter(u => u !== url) : [...r, url])}
+                      style={{ position: "absolute", top: "2px", right: "2px", background: removeGalleryUrls.includes(url) ? "#16a34a" : "#ef4444", color: "white", border: "none", borderRadius: "50%", width: "18px", height: "18px", fontSize: "10px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {removeGalleryUrls.includes(url) ? "↩" : "×"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input type="file" accept="image/*" multiple onChange={(e) => setGalleryFiles(Array.from(e.target.files ?? []))} />
+            {galleryFiles.length > 0 && <p style={{ fontSize: "11px", color: "#666", marginTop: "4px" }}>{galleryFiles.length} file(s) selected</p>}
+          </div>
+          <div style={{ gridColumn: "1 / -1", display: "flex", gap: "20px", fontSize: "12px", flexWrap: "wrap" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input type="checkbox" checked={form.copyEnabled} onChange={(e) => setForm((f) => ({ ...f, copyEnabled: e.target.checked }))} style={{ width: "auto" }} />
+              Copy button active
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input type="checkbox" checked={form.groupTicketEnabled} onChange={(e) => setForm((f) => ({ ...f, groupTicketEnabled: e.target.checked }))} style={{ width: "auto" }} />
+              Group Ticket button active
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input type="checkbox" checked={form.visaEnabled} onChange={(e) => setForm((f) => ({ ...f, visaEnabled: e.target.checked }))} style={{ width: "auto" }} />
+              Visa button active
+            </label>
           </div>
 
           {/* FLIGHT SECTORS — minimum 1 Departure + 1 Arrival, "-" disabled on those two.

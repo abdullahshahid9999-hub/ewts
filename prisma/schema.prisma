@@ -39,6 +39,10 @@ model Package {
   itinerary     Json?
   flightSectors Json?   @map("flight_sectors") // [{type:"departure"|"arrival", city, date, time}]
   imageUrl      String?  @map("image_url")
+  galleryUrls   Json?    @map("gallery_urls")    // array of additional image URLs (R2), shown in carousel on detail/listing
+  copyEnabled         Boolean @default(false) @map("copy_enabled")          // Copy button active on listing card
+  groupTicketEnabled  Boolean @default(false) @map("group_ticket_enabled")  // Group Ticket button active on listing card
+  visaEnabled         Boolean @default(false) @map("visa_enabled")          // Visa button active on listing card
   featured      Boolean  @default(false)
   status        String   @default("active") // active | inactive
   createdAt     DateTime @default(now()) @map("created_at")
