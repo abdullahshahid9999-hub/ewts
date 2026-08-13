@@ -8,7 +8,7 @@ import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 type ServiceKey = "umrah" | "group-tickets" | "tours" | "visa" | "insurance";
 
 export type SearchFacets = {
-  umrah: { destinations: string[] };
+  umrah: { destinations: string[]; durations: string[]; departureCities: string[] };
   tours: { destinations: string[] };
   groupTickets: { routes: string[] };
   visa: { countries: string[] };
@@ -47,6 +47,8 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
   const router = useRouter();
   const [active, setActive] = useState<ServiceKey>("umrah");
   const [destination, setDestination] = useState("");
+  const [umrahDuration, setUmrahDuration] = useState("");
+  const [umrahDepartureCity, setUmrahDepartureCity] = useState("");
   const [visaCategory, setVisaCategory] = useState("");
   const [occupation, setOccupation] = useState("");
   const [adults, setAdults] = useState(1);
@@ -68,7 +70,13 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (destination) params.set("q", destination);
-    if (active === "visa") {
+    if (active === "umrah") {
+      if (umrahDuration) params.set("duration", umrahDuration);
+      if (umrahDepartureCity) params.set("departureCity", umrahDepartureCity);
+      if (adults !== 1) params.set("adults", String(adults));
+      if (children) params.set("children", String(children));
+      if (infants) params.set("infants", String(infants));
+    } else if (active === "visa") {
       if (visaCategory) params.set("type", visaCategory);
       if (occupation) params.set("occupation", occupation);
       if (adults !== 1) params.set("adults", String(adults));
@@ -98,8 +106,46 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
       </div>
 
       <form onSubmit={handleSearch} className="flex flex-col gap-3">
-        {/* Visa tab — Mosafir-style 4-column row */}
-        {active === "visa" ? (
+        {/* Umrah tab — Duration / Travellers / Departure City */}
+        {active === "umrah" ? (
+          <div className="flex flex-col sm:flex-row rounded-xl overflow-visible border" style={{ borderColor: "var(--lp-border)" }}>
+            {/* Duration */}
+            <div className="flex-1 flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Duration</p>
+              <select value={umrahDuration} onChange={e => setUmrahDuration(e.target.value)} className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer" style={{ color: umrahDuration ? "var(--lp-text)" : "var(--lp-muted)" }}>
+                <option value="">Any Duration</option>
+                {facets.umrah.durations.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            {/* Travellers */}
+            <div className="flex-1 relative flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Travellers</p>
+              <button type="button" onClick={() => setPaxOpen(v => !v)} className="text-sm font-bold outline-none bg-transparent text-left" style={{ color: "var(--lp-text)" }}>
+                👤 {adults + children + infants} Person{adults + children + infants !== 1 ? "s" : ""} ▾
+              </button>
+              {paxOpen && (
+                <div className="absolute z-30 top-full left-0 mt-1 w-64 rounded-xl p-4" style={{ background: "var(--lp-ivory)", border: "1.5px solid var(--lp-border)", boxShadow: "0 16px 40px -12px rgba(14,42,38,0.3)" }}>
+                  <PaxCounter label="Adults" value={adults} min={1} onChange={setAdults} />
+                  <PaxCounter label="Children" value={children} min={0} onChange={setChildren} />
+                  <PaxCounter label="Infants" value={infants} min={0} onChange={setInfants} />
+                  <button type="button" onClick={() => setPaxOpen(false)} className="lp-search-btn w-full mt-3 py-2 text-sm">Done</button>
+                </div>
+              )}
+            </div>
+            {/* Departure City */}
+            <div className="flex-1 flex flex-col justify-center px-4 py-3" style={{ borderColor: "var(--lp-border)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Departure City</p>
+              {facets.umrah.departureCities.length > 0 ? (
+                <select value={umrahDepartureCity} onChange={e => setUmrahDepartureCity(e.target.value)} className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer" style={{ color: umrahDepartureCity ? "var(--lp-text)" : "var(--lp-muted)" }}>
+                  <option value="">Any City</option>
+                  {facets.umrah.departureCities.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : (
+                <input value={umrahDepartureCity} onChange={e => setUmrahDepartureCity(e.target.value)} placeholder="e.g. Faisalabad" className="text-sm font-bold outline-none bg-transparent w-full" style={{ color: "var(--lp-text)" }} />
+              )}
+            </div>
+          </div>
+        ) : active === "visa" ? (
           <div className="flex flex-col sm:flex-row rounded-xl overflow-visible border" style={{ borderColor: "var(--lp-border)" }}>
             {/* Country */}
             <div className="flex-[2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>

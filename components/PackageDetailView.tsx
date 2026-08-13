@@ -36,7 +36,9 @@ type PackageWithRoomTypes = {
     roomType: string;
     pricePerPersonPkr: number;
     pricePerInfantPkr: number;
-  pricePerChildPkr: number;
+    pricePerChildPkr: number;
+    pricePerChildWithBedPkr: number;
+    pricePerChildWithoutBedPkr: number;
     maxAdults: number;
     maxInfants: number;
     minAdultsRequired: number | null;

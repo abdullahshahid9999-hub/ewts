@@ -40,6 +40,7 @@ async function getPackages(q?: string, tier?: string, airline?: string, duration
           { destination: { contains: q, mode: "insensitive" } },
         ] } : {}),
       },
+      include: { roomTypes: { orderBy: { sortOrder: "asc" } } },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     });
   } catch { return []; }
@@ -127,80 +128,109 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   const detailHref = pkg.slug ? `/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}` : null;
 
                   return (
-                    <div key={pkg.id} className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 flex flex-col">
-                      {/* IMAGE with gallery strip */}
+                    <div key={pkg.id} className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col">
+                      {/* IMAGE */}
                       {detailHref ? (
-                        <Link href={detailHref} className="relative h-44 bg-surface block overflow-hidden">
-                          {allImgs[0] ? (
-                            <Image src={allImgs[0]} alt={pkg.name} fill className="object-cover transition duration-300 hover:scale-105" />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-20">🕌</div>
-                          )}
-                          <div className="absolute top-3 left-3 flex gap-1.5">
-                            <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
-                            {pkg.featured && <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>}
+                        <Link href={detailHref} className="relative h-48 bg-surface block overflow-hidden">
+                          {allImgs[0] ? <Image src={allImgs[0]} alt={pkg.name} fill className="object-cover transition duration-300 hover:scale-105" /> : <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-10">🕌</div>}
+                          {/* Top badges */}
+                          <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">
+                            {pkg.duration && <span className="bg-[var(--lp-ink)] text-white text-[11px] font-bold px-2.5 py-1 rounded-full">{pkg.duration.toUpperCase()}</span>}
+                            {pkg.tier && <span className="bg-[var(--lp-brass)] text-black text-[11px] font-bold px-2.5 py-1 rounded-full">{pkg.tier.toUpperCase()}</span>}
                           </div>
-                          {allImgs.length > 1 && (
-                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{allImgs.length - 1} photos</div>
-                          )}
+                          {/* Available seats */}
+                          {(() => {
+                            const totalSlots = pkg.roomTypes.reduce((s, r) => s + (r.availableSlots ?? 0), 0);
+                            const hasSlots = pkg.roomTypes.some(r => r.availableSlots != null);
+                            if (!hasSlots) return null;
+                            return (
+                              <div className="absolute bottom-3 left-3 bg-green-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                                🟢 {totalSlots} / {totalSlots} Seats Available
+                              </div>
+                            );
+                          })()}
+                          {allImgs.length > 1 && <div className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full">+{allImgs.length - 1} photos</div>}
                         </Link>
                       ) : (
-                        <div className="relative h-44 bg-surface overflow-hidden">
-                          {allImgs[0] ? (
-                            <Image src={allImgs[0]} alt={pkg.name} fill className="object-cover" />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-20">🕌</div>
-                          )}
+                        <div className="relative h-48 bg-surface overflow-hidden">
+                          {allImgs[0] ? <Image src={allImgs[0]} alt={pkg.name} fill className="object-cover" /> : <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-10">🕌</div>}
                           <div className="absolute top-3 left-3 flex gap-1.5">
-                            <span className="bg-[var(--lp-ink)]/90 text-white text-xs font-semibold px-2 py-1 rounded-full">Umrah</span>
-                            {pkg.featured && <span className="bg-[var(--lp-brass)] text-black text-xs font-semibold px-2 py-1 rounded-full">⭐ Featured</span>}
+                            {pkg.duration && <span className="bg-[var(--lp-ink)] text-white text-[11px] font-bold px-2.5 py-1 rounded-full">{pkg.duration.toUpperCase()}</span>}
+                            {pkg.tier && <span className="bg-[var(--lp-brass)] text-black text-[11px] font-bold px-2.5 py-1 rounded-full">{pkg.tier.toUpperCase()}</span>}
                           </div>
-                          {allImgs.length > 1 && (
-                            <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">+{allImgs.length - 1} photos</div>
-                          )}
                         </div>
                       )}
 
                       {/* Body */}
                       <div className="p-4 flex flex-col flex-1">
-                        <h3 className="font-semibold text-base leading-snug mb-1">{pkg.name}</h3>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted mb-3">
-                          {pkg.duration && <span>🗓️ {pkg.duration}</span>}
-                          {pkg.destination && <span>📍 {pkg.destination}</span>}
-                          {pkg.airline && <span>✈️ {pkg.airline}</span>}
-                          {pkg.departureCity && <span>🏙️ {pkg.departureCity}</span>}
-                        </div>
-                        {pkg.hotels && <p className="text-xs text-muted mb-2 flex items-start gap-1"><span>🏨</span><span>{pkg.hotels}</span></p>}
-                        {pkg.includes && <p className="text-xs mb-3 line-clamp-2 text-text2"><span className="font-semibold">Includes: </span>{pkg.includes}</p>}
+                        {/* Package name + includes subtitle */}
+                        <h3 className="font-bold text-base uppercase tracking-tight mb-0.5">{pkg.name}</h3>
+                        {pkg.includes && <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-3 line-clamp-1">{pkg.includes.split("\n").join(", ")}</p>}
 
-                        {/* Action buttons row */}
+                        {/* Key details grid */}
+                        <div className="bg-gray-50 rounded-xl p-3 mb-3 space-y-1.5 text-xs">
+                          {pkg.airline && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted w-4">✈️</span>
+                              <span className="font-semibold">{pkg.airline}</span>
+                            </div>
+                          )}
+                          {pkg.duration && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted w-4">🕐</span>
+                              <span>{pkg.duration}</span>
+                              {pkg.depDate && pkg.retDate && (
+                                <span className="text-[var(--lp-brass)] font-semibold ml-auto">{pkg.depDate} – {pkg.retDate}</span>
+                              )}
+                            </div>
+                          )}
+                          {pkg.route && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-muted w-4">🗺️</span>
+                              <span>{pkg.route}</span>
+                              {pkg.flightSectors && Array.isArray(pkg.flightSectors) && (pkg.flightSectors as {type:string;city:string}[]).length > 0 && (
+                                <span className="text-[10px] text-muted ml-auto">Direct Flight (Round Trip)</span>
+                              )}
+                            </div>
+                          )}
+                          {/* Sector badges */}
+                          {pkg.flightSectors && Array.isArray(pkg.flightSectors) && (pkg.flightSectors as {type:string;city:string}[]).length > 0 && (
+                            <div className="flex gap-1.5 flex-wrap pt-0.5">
+                              {(pkg.flightSectors as {type:string;city:string}[]).slice(0,4).map((s, i) => (
+                                <span key={i} className="bg-gray-200 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">{s.city}</span>
+                              ))}
+                            </div>
+                          )}
+                          {pkg.hotels && (
+                            <div className="flex items-start gap-2 pt-0.5">
+                              <span className="text-muted w-4 mt-0.5">🏨</span>
+                              <span className="text-gray-700 leading-snug line-clamp-2">{pkg.hotels}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
                         <div className="flex gap-1.5 flex-wrap mb-3">
-                          {pkg.copyEnabled ? (
-                            <CopyBtn href={detailHref ? `https://eastwestpk.com${detailHref}` : ""} />
-                          ) : null}
-                          <span className={`text-[10px] font-semibold px-2 py-1 rounded border ${pkg.groupTicketEnabled ? "border-gray-300 text-gray-600" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>
-                            ✈️ Group Ticket{!pkg.groupTicketEnabled && " 🔒"}
-                          </span>
-                          <span className={`text-[10px] font-semibold px-2 py-1 rounded border ${pkg.visaEnabled ? "border-gray-300 text-gray-600" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>
-                            🛂 Visa{!pkg.visaEnabled && " 🔒"}
-                          </span>
+                          {pkg.copyEnabled && <CopyBtn href={detailHref ? `https://eastwestpk.com${detailHref}` : ""} />}
+                          <span className={`text-[10px] font-semibold px-2 py-1 rounded border ${pkg.groupTicketEnabled ? "border-gray-300 text-gray-600 hover:bg-gray-50" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>✈️ Group Ticket{!pkg.groupTicketEnabled && " 🔒"}</span>
+                          <span className={`text-[10px] font-semibold px-2 py-1 rounded border ${pkg.visaEnabled ? "border-gray-300 text-gray-600 hover:bg-gray-50" : "border-gray-100 text-gray-300 cursor-not-allowed"}`}>🛂 Visa{!pkg.visaEnabled && " 🔒"}</span>
                         </div>
 
                         {/* Price + CTA */}
-                        <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between gap-2">
-                          <div>
-                            <span className="font-display text-xl font-semibold text-[var(--lp-brass)]">{pkg.price}</span>
-                            <span className="text-muted text-xs ml-1">/ person</span>
-                          </div>
-                          <div className="flex gap-2 shrink-0">
+                        <div className="mt-auto pt-3 border-t border-border/50">
+                          <p className="text-[10px] uppercase tracking-widest text-muted font-semibold mb-0.5">Starting From</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <span className="font-display text-xl font-bold text-[var(--lp-brass)]">{pkg.price}</span>
+                              {!pkg.price?.includes("PKR") && !pkg.price?.includes("Rs") && <span className="text-muted text-xs ml-1">PKR</span>}
+                            </div>
                             {detailHref ? (
-                              <Link href={detailHref} className="text-xs font-bold text-white bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] px-4 py-2 rounded-lg transition-colors">
-                                View &amp; Book
+                              <Link href={detailHref} className="shrink-0 text-xs font-bold text-white bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] px-4 py-2.5 rounded-xl transition-colors">
+                                View Details &amp; Reserve →
                               </Link>
                             ) : (
-                              <a href={waLink(`Assalam o Alaikum! I'm interested in "${pkg.name}". Please share details.`)} target="_blank" rel="noopener noreferrer"
-                                className="text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-3 py-2 rounded-lg transition-colors">
-                                📲 Book
+                              <a href={waLink(`Assalam o Alaikum! I'm interested in "${pkg.name}". Please share details.`)} target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-4 py-2.5 rounded-xl transition-colors">
+                                📲 Book Now
                               </a>
                             )}
                           </div>

@@ -8,16 +8,17 @@ export async function getUmrahFacets() {
   try {
     const rows = await prisma.package.findMany({
       where: { category: "umrah", status: "active" },
-      select: { destination: true, tier: true, airline: true, duration: true },
+      select: { destination: true, tier: true, airline: true, duration: true, departureCity: true },
     });
     return {
       destinations: uniq(rows.map((r) => r.destination)),
       tiers: uniq(rows.map((r) => r.tier)),
       airlines: uniq(rows.map((r) => r.airline)),
       durations: uniq(rows.map((r) => r.duration)),
+      departureCities: uniq(rows.map((r) => r.departureCity)),
     };
   } catch {
-    return { destinations: [], tiers: [], airlines: [], durations: [] };
+    return { destinations: [], tiers: [], airlines: [], durations: [], departureCities: [] };
   }
 }
 

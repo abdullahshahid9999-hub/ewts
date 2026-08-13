@@ -87,13 +87,13 @@ function BookingFormInner() {
   const sp = useSearchParams();
   const router = useRouter();
   const packageId = sp.get("packageId") ?? "";
-  const roomTypeId = sp.get("roomType") ?? "";
+  const roomTypeId = sp.get("roomTypeId") ?? sp.get("roomType") ?? ""; // support both old and new param
 
   const [pkg, setPkg] = useState<Pkg | null>(null);
   const [roomType, setRoomType] = useState<RoomType | null>(null);
   const [adults, setAdults] = useState(Number(sp.get("adults") ?? 1));
-  const [cwb, setCwb] = useState(0);   // children with bed
-  const [cwob, setCwob] = useState(0); // children without bed
+  const [cwb, setCwb] = useState(Number(sp.get("childrenWithBed") ?? sp.get("children") ?? 0));   // children with bed
+  const [cwob, setCwob] = useState(Number(sp.get("childrenWithoutBed") ?? 0)); // children without bed
   const [infants, setInfants] = useState(0);
   const [travellers, setTravellers] = useState<Traveller[]>([]);
   const [lead, setLead] = useState({ name: "", email: "", phone: "" });
@@ -106,7 +106,9 @@ function BookingFormInner() {
     if (!packageId) return;
     fetch(`/api/public/packages/${packageId}`).then(r => r.json()).then(d => {
       setPkg(d.pkg);
-      const rt = d.pkg?.roomTypes?.find((r: RoomType) => r.id === roomTypeId) ?? d.pkg?.roomTypes?.[0] ?? null;
+      const rt = d.pkg?.roomTypes?.find((r: RoomType) => r.id === roomTypeId)
+        ?? d.pkg?.roomTypes?.find((r: RoomType) => r.roomType === roomTypeId)
+        ?? d.pkg?.roomTypes?.[0] ?? null;
       setRoomType(rt);
     }).catch(() => {});
   }, [packageId, roomTypeId]);
