@@ -230,6 +230,34 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAUL
 
 ---
 
+## Session — 2026-08-13
+
+### Visa Module Enhancements (commit 7eba462)
+
+**Visa Listing page (`/visa`)**
+- Added `VisaSearchBar` component: `Destination | Occupation | Travellers | 🔍` pill bar with pax dropdown (adults/children/infants counters), popular country chips (UAE, Thailand, Malaysia, Turkey, UK), keyboard search (Enter key), and route push with URL params.
+- Search bar embedded in hero section; pax counts passed through to visa detail links.
+
+**Visa Detail page (`/visa/[id]`)**
+- Complete redesign of right sidebar: **Mosafir-style fare card** with dark header (Fare Details / Service charges included), per-row breakdown (Adult Price × N, Child, Infant, Service Charges = Included), dark total bar with PKR total + person count + Apply Now button, WhatsApp button below total, per-person pricing tiers (Adult/Child/Infant mini cards).
+- Pricing section removed from left panel (it was duplicating the right card) — left panel now has: Quick Facts, Services Included checklist, Documents Required, Terms, Refund Policy.
+- Apply Now → links to new `/visa/[id]/apply` page (passes pax counts in query).
+
+**Apply Page (`/visa/[id]/apply`)**
+- Full-page multi-step wizard at `/visa/[id]/apply?adults=N&children=N&infants=N`.
+- Step 0: Contact info (name, phone, email) + traveller count selector (Adults/Children/Infants with +/− counters, age labels, estimated total preview).
+- Steps 1..N: Per-traveller form — **adult order first, then children, then infants**. Each traveller collects: Surname, Given Name(s), Date of Birth, Nationality, Passport Number, Date of Issue, Date of Expiry (with 6-month warning), Passport Issuing Country, Occupation (adults only).
+- Per-traveller document uploads with **passport OCR auto-fill** (Tesseract.js MRZ scan) — auto-fills name, passport number, expiry, nationality. All fields remain editable after OCR.
+- Documents scoped to applicant category + nationality via `filterDocsForApplicant()` — same logic as agent portal.
+- Step bar shows all steps; completed steps shown with ✓.
+- Review step: contact summary + per-traveller detail cards (name, passport, nationality, DOB, expiry, issuing country) + charges breakdown (per age group × count) + grand total + "Payment collected in-person" notice.
+- Submit → `POST /api/visa-applications` with per-traveller data (trav_0_N_* fields, travdoc_0_N_docId files).
+- Success screen with batch reference + WhatsApp follow-up link.
+
+**No schema changes required** — all existing `visa_applications`, `visa_applicants`, `visa_application_documents` tables support this flow.
+
+---
+
 ## Rules (apply every session)
 
 - `npx tsc --noEmit` clean before every commit (one pre-existing TS7031 in `app/api/admin/agents/route.ts` is known — ignore)
