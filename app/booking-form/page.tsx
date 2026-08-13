@@ -113,6 +113,13 @@ function BookingFormInner() {
     }).catch(() => {});
   }, [packageId, roomTypeId]);
 
+  // Auto-clamp cwb when adults or roomType changes — can't exceed remaining bed slots
+  useEffect(() => {
+    if (!roomType) return;
+    const maxCwb = Math.max(0, roomType.maxAdults - adults);
+    setCwb(prev => Math.min(prev, maxCwb));
+  }, [adults, roomType]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Rebuild travellers list when counts change
   useEffect(() => {
     const list: Traveller[] = [
@@ -181,7 +188,7 @@ function BookingFormInner() {
             <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: "#0f172a" }}>2. Traveller Count</h3>
             {[
               { label: "Adults", val: adults, set: setAdults, min: 1, max: roomType?.maxAdults ?? 10 },
-              { label: "Children (With Bed)", val: cwb, set: setCwb, min: 0, max: 4 },
+              { label: "Children (With Bed)", val: cwb, set: setCwb, min: 0, max: Math.max(0, (roomType?.maxAdults ?? 0) - adults) },
               { label: "Children (Without Bed, max 2)", val: cwob, set: setCwob, min: 0, max: 2 },
               { label: "Infants (max 2)", val: infants, set: setInfants, min: 0, max: Math.min(2, roomType?.maxInfants ?? 2) },
             ].map(r => (
@@ -196,11 +203,15 @@ function BookingFormInner() {
                 </div>
               </div>
             ))}
-            {roomType && (
-              <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>
-                Room occupancy: {adults + cwb} beds used of {roomType.maxAdults} max
-              </p>
-            )}
+            {roomType && (() => {
+              const used = adults + cwb;
+              const over = used > roomType.maxAdults;
+              return (
+                <p style={{ fontSize: 11, color: over ? "#dc2626" : "#94a3b8", marginTop: 8, fontWeight: over ? 700 : 400 }}>
+                  {over ? `⚠️ Over capacity! ${used} beds used of ${roomType.maxAdults} max — reduce adults or children with bed.` : `Room occupancy: ${used} of ${roomType.maxAdults} beds used`}
+                </p>
+              );
+            })()}
           </div>
 
           {/* Step 3: Traveller Details */}
