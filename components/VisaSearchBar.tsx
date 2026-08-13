@@ -1,16 +1,34 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 
 const POPULAR_COUNTRIES = [
-  "UAE", "Saudi Arabia", "Thailand", "Malaysia", "UK", "Schengen", "Turkey",
-  "China", "Canada", "Australia", "USA", "Qatar", "Kuwait", "Bahrain", "Oman",
+  "UAE", "Saudi Arabia", "Thailand", "Malaysia", "UK", "Schengen",
+  "Turkey", "China", "Canada", "Australia", "USA", "Qatar",
+  "Kuwait", "Bahrain", "Oman", "Egypt", "Malaysia",
 ];
 
-export default function VisaSearchBar({ defaultCountry = "", defaultOccupation = "", defaultAdults = 1, defaultChildren = 0, defaultInfants = 0 }: {
+const VISA_CATEGORIES = [
+  { value: "", label: "All Types" },
+  { value: "tourist", label: "Tourist" },
+  { value: "umrah", label: "Umrah" },
+  { value: "business", label: "Business" },
+  { value: "work", label: "Work" },
+  { value: "e-visa", label: "E-Visa" },
+];
+
+export default function VisaSearchBar({
+  defaultCountry = "",
+  defaultCategory = "",
+  defaultOccupation = "",
+  defaultAdults = 1,
+  defaultChildren = 0,
+  defaultInfants = 0,
+}: {
   defaultCountry?: string;
+  defaultCategory?: string;
   defaultOccupation?: string;
   defaultAdults?: number;
   defaultChildren?: number;
@@ -19,17 +37,31 @@ export default function VisaSearchBar({ defaultCountry = "", defaultOccupation =
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [country, setCountry] = useState(defaultCountry);
+  const [category, setCategory] = useState(defaultCategory);
   const [occupation, setOccupation] = useState(defaultOccupation);
   const [adults, setAdults] = useState(defaultAdults);
   const [children, setChildren] = useState(defaultChildren);
   const [infants, setInfants] = useState(defaultInfants);
-  const [showPax, setShowPax] = useState(false);
+  const [paxOpen, setPaxOpen] = useState(false);
+  const paxRef = useRef<HTMLDivElement>(null);
 
   const totalPax = adults + children + infants;
+
+  // Close pax dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (paxRef.current && !paxRef.current.contains(e.target as Node)) {
+        setPaxOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   function handleSearch() {
     const params = new URLSearchParams();
     if (country.trim()) params.set("q", country.trim());
+    if (category) params.set("type", category);
     if (occupation) params.set("occupation", occupation);
     if (adults !== 1) params.set("adults", String(adults));
     if (children > 0) params.set("children", String(children));
@@ -37,73 +69,92 @@ export default function VisaSearchBar({ defaultCountry = "", defaultOccupation =
     startTransition(() => {
       router.push(`/visa?${params.toString()}`);
     });
-    setShowPax(false);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") handleSearch();
+    setPaxOpen(false);
   }
 
   return (
-    <div className="relative w-full max-w-3xl mx-auto">
-      {/* Main bar */}
-      <div className="flex items-stretch bg-white rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto">
+      {/* Main search bar — Mosafir style: segments separated by faint dividers */}
+      <div className="flex items-stretch bg-white rounded-2xl shadow-2xl overflow-visible relative" style={{ minHeight: 72 }}>
 
-        {/* Country */}
-        <div className="flex-1 min-w-0 border-r border-border">
-          <div className="px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Destination</p>
-            <input
-              type="text"
-              value={country}
-              onChange={e => setCountry(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Select country…"
-              list="visa-countries"
-              className="w-full text-sm font-semibold text-[var(--lp-ink)] outline-none bg-transparent placeholder-muted"
-            />
-            <datalist id="visa-countries">
-              {POPULAR_COUNTRIES.map(c => <option key={c} value={c} />)}
-            </datalist>
-          </div>
+        {/* Country/State */}
+        <div className="flex-[2] min-w-0 flex flex-col justify-center px-5 py-3 border-r border-gray-200">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
+            Select Country / State
+          </p>
+          <input
+            type="text"
+            value={country}
+            onChange={e => setCountry(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleSearch()}
+            placeholder="Where are you going?"
+            list="vc-countries"
+            className="text-base font-bold text-gray-800 outline-none bg-transparent placeholder-gray-400 w-full"
+          />
+          <datalist id="vc-countries">
+            {POPULAR_COUNTRIES.map(c => <option key={c} value={c} />)}
+          </datalist>
+        </div>
+
+        {/* Visa Category */}
+        <div className="flex-[1.5] min-w-0 flex flex-col justify-center px-5 py-3 border-r border-gray-200">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
+            Visa Category
+          </p>
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="text-base font-bold text-gray-800 outline-none bg-transparent appearance-none w-full cursor-pointer"
+          >
+            {VISA_CATEGORIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Occupation */}
-        <div className="flex-1 min-w-0 border-r border-border">
-          <div className="px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Occupation</p>
-            <select
-              value={occupation}
-              onChange={e => setOccupation(e.target.value)}
-              className="w-full text-sm font-semibold text-[var(--lp-ink)] outline-none bg-transparent appearance-none cursor-pointer"
-            >
-              <option value="">Any occupation</option>
-              {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
+        <div className="flex-[1.5] min-w-0 flex flex-col justify-center px-5 py-3 border-r border-gray-200">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
+            Occupation
+          </p>
+          <select
+            value={occupation}
+            onChange={e => setOccupation(e.target.value)}
+            className="text-base font-bold text-gray-800 outline-none bg-transparent appearance-none w-full cursor-pointer"
+          >
+            <option value="">Any</option>
+            {APPLICANT_CATEGORIES.map(c => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Travellers trigger */}
-        <div className="flex-shrink-0 border-r border-border relative">
+        {/* Travellers */}
+        <div className="flex-1 min-w-0 relative" ref={paxRef}>
           <button
             type="button"
-            onClick={() => setShowPax(p => !p)}
-            className="px-4 py-3 h-full text-left hover:bg-surface transition-colors"
+            onClick={() => setPaxOpen(v => !v)}
+            className="w-full h-full flex flex-col justify-center px-5 py-3 text-left hover:bg-gray-50 transition-colors border-r border-gray-200"
           >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-1">Travellers</p>
-            <p className="text-sm font-semibold text-[var(--lp-ink)] whitespace-nowrap">
-              {totalPax} {totalPax === 1 ? "Person" : "Persons"}
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-1">
+              Traveller
+            </p>
+            <p className="text-base font-bold text-gray-800">
+              {totalPax} Traveller{totalPax !== 1 ? "s" : ""}
             </p>
           </button>
 
-          {/* PAX dropdown */}
-          {showPax && (
-            <div className="absolute top-full right-0 mt-2 bg-white border border-border rounded-2xl shadow-xl p-5 z-50 w-72">
+          {/* Pax dropdown */}
+          {paxOpen && (
+            <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-2xl shadow-2xl p-5 z-50">
               <PaxRow label="Adults" sub="12+ years" value={adults} min={1} onChange={setAdults} />
               <PaxRow label="Children" sub="2–11 years" value={children} min={0} onChange={setChildren} />
               <PaxRow label="Infants" sub="Under 2" value={infants} min={0} onChange={setInfants} />
-              <button onClick={() => setShowPax(false)}
-                className="mt-3 w-full bg-[var(--lp-ink)] text-white font-semibold py-2 rounded-xl text-sm hover:bg-[var(--lp-ink-light)] transition">
+              <button
+                onClick={() => setPaxOpen(false)}
+                className="mt-4 w-full py-2.5 rounded-xl font-bold text-sm text-white transition-colors"
+                style={{ background: "var(--lp-ink)" }}
+              >
                 Done
               </button>
             </div>
@@ -115,25 +166,33 @@ export default function VisaSearchBar({ defaultCountry = "", defaultOccupation =
           type="button"
           onClick={handleSearch}
           disabled={isPending}
-          className="bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-6 flex items-center gap-2 text-sm transition-colors disabled:opacity-60 flex-shrink-0"
+          className="flex items-center gap-2.5 px-8 font-bold text-base text-white transition-all disabled:opacity-60 rounded-r-2xl flex-shrink-0"
+          style={{ background: "var(--lp-brass)", minWidth: 130 }}
         >
           {isPending ? (
-            <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            <span className="text-lg">🔍</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
           )}
-          <span className="hidden sm:inline">Search</span>
+          Search
         </button>
       </div>
 
-      {/* Popular chips */}
-      <div className="flex flex-wrap gap-2 mt-3 justify-center">
-        {["UAE", "Thailand", "Malaysia", "Turkey", "UK"].map(c => (
+      {/* Quick country chips */}
+      <div className="flex flex-wrap gap-2 mt-4 justify-center">
+        {["UAE", "Thailand", "Malaysia", "Turkey", "UK", "Saudi Arabia"].map(c => (
           <button
             key={c}
             type="button"
             onClick={() => { setCountry(c); }}
-            className="text-xs px-3 py-1 rounded-full bg-white/20 text-white/90 hover:bg-white/30 border border-white/20 transition-colors font-medium"
+            className="text-xs px-4 py-1.5 rounded-full font-semibold transition-all border"
+            style={{
+              background: country === c ? "var(--lp-brass)" : "rgba(255,255,255,0.15)",
+              borderColor: country === c ? "var(--lp-brass)" : "rgba(255,255,255,0.3)",
+              color: country === c ? "#000" : "rgba(255,255,255,0.9)",
+            }}
           >
             {c}
           </button>
@@ -143,20 +202,28 @@ export default function VisaSearchBar({ defaultCountry = "", defaultOccupation =
   );
 }
 
-function PaxRow({ label, sub, value, min, onChange }: { label: string; sub: string; value: number; min: number; onChange: (v: number) => void }) {
+function PaxRow({ label, sub, value, min, onChange }: {
+  label: string; sub: string; value: number; min: number; onChange: (v: number) => void;
+}) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-border last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
       <div>
-        <p className="font-semibold text-sm">{label}</p>
-        <p className="text-xs text-muted">{sub}</p>
+        <p className="font-bold text-sm text-gray-800">{label}</p>
+        <p className="text-xs text-gray-400">{sub}</p>
       </div>
       <div className="flex items-center gap-3">
-        <button type="button" onClick={() => onChange(Math.max(min, value - 1))}
-          className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-sm font-bold hover:border-[var(--lp-brass)] transition disabled:opacity-30"
-          disabled={value <= min}>−</button>
-        <span className="w-6 text-center font-bold text-sm">{value}</span>
-        <button type="button" onClick={() => onChange(value + 1)}
-          className="w-7 h-7 rounded-full border border-border flex items-center justify-center text-sm font-bold hover:border-[var(--lp-brass)] transition">+</button>
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center justify-center font-bold text-gray-600 hover:border-gray-400 transition disabled:opacity-30"
+        >−</button>
+        <span className="w-6 text-center font-bold text-base text-gray-800">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(value + 1)}
+          className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center justify-center font-bold text-gray-600 hover:border-gray-400 transition"
+        >+</button>
       </div>
     </div>
   );

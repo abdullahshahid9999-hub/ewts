@@ -89,6 +89,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         {/* Search bar */}
         <VisaSearchBar
           defaultCountry={q ?? ""}
+          defaultCategory={type ?? ""}
           defaultOccupation={occupation ?? ""}
           defaultAdults={adults}
           defaultChildren={children}

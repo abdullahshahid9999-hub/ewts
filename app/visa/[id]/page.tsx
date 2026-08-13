@@ -12,16 +12,17 @@ async function getVisa(id: string) {
   try {
     return await prisma.visaService.findUnique({
       where: { id, status: "active" },
-      include: {
-        requiredDocuments: { orderBy: [{ sortOrder: "asc" }] },
-      },
+      include: { requiredDocuments: { orderBy: [{ sortOrder: "asc" }] } },
     });
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-export default async function VisaDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ adults?: string; children?: string; infants?: string }> }) {
+export default async function VisaDetailPage({
+  params, searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ adults?: string; children?: string; infants?: string }>;
+}) {
   const sp = await searchParams;
   const adults = sp.adults ? Math.max(1, parseInt(sp.adults, 10) || 1) : 1;
   const children = sp.children ? Math.max(0, parseInt(sp.children, 10) || 0) : 0;
@@ -36,28 +37,27 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
   const priceInfant = visa.priceInfant ?? 0;
   const totalPrice = priceAdult * adults + priceChild * children + priceInfant * infants;
   const waMsg = `Assalam o Alaikum! I'd like to apply for the ${visa.country} ${visa.type} visa (${visa.title}).`;
-
   const applyHref = `/visa/${visa.id}/apply?adults=${adults}&children=${children}&infants=${infants}`;
 
   return (
     <>
       <Navbar />
 
-      {/* HERO */}
-      <section className="relative bg-[var(--lp-ink)] text-white overflow-hidden">
+      {/* HERO — full-width with country image */}
+      <section className="relative h-56 md:h-72 bg-[var(--lp-ink)] overflow-hidden">
         {visa.countryImage && (
-          <Image src={visa.countryImage} alt={visa.country} fill className="object-cover opacity-20" />
+          <Image src={visa.countryImage} alt={visa.country} fill className="object-cover opacity-30" />
         )}
-        <div className="relative z-10 text-center px-6 pt-14 pb-10">
-          <p className="text-[var(--lp-brass)] font-semibold tracking-widest text-xs uppercase mb-3">
-            <Link href="/visa" className="hover:underline">Visa Services</Link> / {visa.country}
+        <div className="relative z-10 h-full flex flex-col items-center justify-end pb-8 px-6 text-white text-center">
+          <p className="text-[var(--lp-brass)] text-xs font-bold uppercase tracking-widest mb-2">
+            <Link href="/visa" className="hover:underline">Visa Services</Link>
+            <span className="mx-1.5">/</span>{visa.country.toUpperCase()}
           </p>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold mb-3">
-            {visa.countryFlag && <span className="mr-3">{visa.countryFlag}</span>}
-            {visa.title}
+          <h1 className="font-display text-3xl md:text-4xl font-semibold">
+            {visa.countryFlag && <span className="mr-2">{visa.countryFlag}</span>}{visa.title}
           </h1>
           {visa.entryType && visa.processingTime && (
-            <p className="text-white/60 text-sm">
+            <p className="text-white/60 text-sm mt-2">
               {visa.entryType.charAt(0).toUpperCase() + visa.entryType.slice(1)} Entry
               <span className="mx-2">·</span>
               Processing <span className="text-[var(--lp-brass)] font-semibold">{visa.processingTime}</span>
@@ -66,31 +66,31 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
 
-        {/* LEFT — Details */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* ── LEFT ── */}
+        <div className="space-y-5">
 
-          {/* Quick Facts */}
-          <div className="bg-white border border-border rounded-2xl p-6">
+          {/* Visa Details grid */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="font-display text-xl font-semibold mb-5">Visa Details</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-5">
+              {visa.validity     && <Fact label="Validity"         value={visa.validity} />}
+              {visa.maxStay      && <Fact label="Max Stay"         value={visa.maxStay} />}
               {visa.processingTime && <Fact label="Processing Time" value={visa.processingTime} />}
-              {visa.validity && <Fact label="Validity" value={visa.validity} />}
-              {visa.maxStay && <Fact label="Max Stay" value={visa.maxStay} />}
-              {visa.days && <Fact label="Duration" value={visa.days} />}
+              {visa.days         && <Fact label="Duration"         value={visa.days} />}
               <Fact label="Visa Type" value={visa.type.charAt(0).toUpperCase() + visa.type.slice(1)} />
-              <Fact label="Country" value={visa.country} />
+              <Fact label="Country"   value={visa.country} />
             </div>
           </div>
 
-          {/* Services provided — show as bullet list */}
-          <div className="bg-white border border-border rounded-2xl p-6">
+          {/* Services */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
             <h2 className="font-display text-xl font-semibold mb-4">Services Included</h2>
-            <ul className="space-y-2">
-              {["Professional Visa Guidance and Consultancy", "Complete File Preparation", "Application Submission & Tracking", "Expert Document Review"].map(s => (
-                <li key={s} className="flex items-center gap-3 text-sm">
-                  <span className="w-5 h-5 rounded-full bg-[var(--gold-bg)] border border-[var(--gold-bd)] text-[var(--lp-brass)] flex items-center justify-center text-xs font-bold flex-shrink-0">✓</span>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {["Professional Visa Guidance & Consultancy", "Complete File Preparation", "Application Submission & Tracking", "Expert Document Review"].map(s => (
+                <li key={s} className="flex items-center gap-2.5 text-sm text-gray-700">
+                  <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "var(--gold-bg)", border: "1px solid var(--gold-bd)", color: "var(--lp-brass)" }}>✓</span>
                   {s}
                 </li>
               ))}
@@ -99,19 +99,21 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
 
           {/* Required Documents */}
           {visa.requiredDocuments.length > 0 && (
-            <div className="bg-white border border-border rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-2">Documents Required</h2>
-              <p className="text-muted text-sm mb-5">Please prepare all required documents before applying.</p>
-              <div className="space-y-3">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-1">Documents Required</h2>
+              <p className="text-sm text-gray-400 mb-4">Prepare all required documents before applying.</p>
+              <div className="space-y-2.5">
                 {visa.requiredDocuments.map((doc: { id: string; name: string; description: string | null; isRequired: boolean; icon?: string | null }) => (
-                  <div key={doc.id} className="flex gap-3 p-3 rounded-xl border border-border bg-surface">
-                    <span className="text-lg mt-0.5">{(doc as { icon?: string | null }).icon || (doc.isRequired ? "📄" : "📎")}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold">
+                  <div key={doc.id} className="flex gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50">
+                    <span className="text-xl mt-0.5 flex-shrink-0">{doc.icon || (doc.isRequired ? "📄" : "📎")}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
                         {doc.name}
-                        {doc.isRequired ? <span className="ml-2 text-xs text-red-500 font-bold">*required</span> : <span className="ml-2 text-xs text-muted">(optional)</span>}
+                        {doc.isRequired
+                          ? <span className="ml-2 text-xs text-red-500 font-bold">*required</span>
+                          : <span className="ml-2 text-xs text-gray-400">(optional)</span>}
                       </p>
-                      {doc.description && <p className="text-xs text-muted mt-0.5">{doc.description}</p>}
+                      {doc.description && <p className="text-xs text-gray-400 mt-0.5">{doc.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -119,125 +121,92 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
             </div>
           )}
 
-          {/* Legacy requirements */}
+          {/* Legacy text requirements */}
           {visa.requirements && visa.requiredDocuments.length === 0 && (
-            <div className="bg-white border border-border rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-4">Requirements</h2>
-              <p className="text-sm text-muted whitespace-pre-wrap">{visa.requirements}</p>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-3">Requirements</h2>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{visa.requirements}</p>
             </div>
           )}
 
-          {/* Terms */}
           {visa.termsAndConditions && (
-            <div className="bg-white border border-border rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-4">Terms &amp; Conditions</h2>
-              <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">{visa.termsAndConditions}</p>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-3">Terms &amp; Conditions</h2>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{visa.termsAndConditions}</p>
             </div>
           )}
 
-          {/* Refund */}
           {visa.refundPolicy && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-4">⚠️ Refund &amp; Cancellation Policy</h2>
+            <div className="border border-amber-200 bg-amber-50 rounded-2xl p-6">
+              <h2 className="font-display text-xl font-semibold mb-3">⚠️ Refund Policy</h2>
               <p className="text-sm text-amber-800 whitespace-pre-wrap leading-relaxed">{visa.refundPolicy}</p>
             </div>
           )}
         </div>
 
-        {/* RIGHT — Mosafir-style Fare Card */}
-        <div className="space-y-4">
-          <div className="bg-white border border-border rounded-2xl overflow-hidden sticky top-6 shadow-md">
+        {/* ── RIGHT — Mosafir Fare Card ── */}
+        <div className="sticky top-6">
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200">
 
-            {/* Header */}
-            <div className="bg-[var(--lp-ink)] text-white px-5 py-4 flex items-center justify-between">
+            {/* Card header */}
+            <div className="px-6 py-4 flex items-center justify-between" style={{ background: "var(--lp-ink)" }}>
               <div>
-                <p className="text-xs text-white/60 uppercase tracking-widest font-semibold mb-0.5">Fare Details</p>
-                <p className="text-xs text-[var(--lp-brass)] font-semibold">Service charges included</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-white/50 mb-0.5">FARE DETAILS</p>
+                <p className="text-xs font-semibold" style={{ color: "var(--lp-brass)" }}>Service charges included</p>
               </div>
-              <span className="text-2xl">{visa.countryFlag ?? "🛂"}</span>
+              <span className="text-3xl">{visa.countryFlag ?? "🛂"}</span>
             </div>
 
-            {/* Pricing breakdown — Mosafir style */}
+            {/* Fare rows */}
             {hasPricing ? (
-              <div className="p-5 space-y-0 divide-y divide-border">
-                {adults > 0 && (
-                  <FareRow
-                    label="Adult Price"
-                    detail={`PKR ${priceAdult.toLocaleString()} × ${adults}`}
-                    amount={priceAdult * adults}
-                  />
-                )}
-                {children > 0 && (
-                  <FareRow
-                    label="Child Price"
-                    detail={`PKR ${priceChild.toLocaleString()} × ${children}`}
-                    amount={priceChild * children}
-                  />
-                )}
-                {infants > 0 && (
-                  <FareRow
-                    label="Infant Price"
-                    detail={`PKR ${priceInfant.toLocaleString()} × ${infants}`}
-                    amount={priceInfant * infants}
-                  />
-                )}
+              <div className="bg-white divide-y divide-gray-100 px-6">
+                {adults > 0 && <FareRow label="Adult Price" detail={`PKR ${priceAdult.toLocaleString()} × ${adults}`} amount={priceAdult * adults} />}
+                {children > 0 && <FareRow label="Child Price" detail={`PKR ${priceChild.toLocaleString()} × ${children}`} amount={priceChild * children} />}
+                {infants > 0 && <FareRow label="Infant Price" detail={`PKR ${priceInfant.toLocaleString()} × ${infants}`} amount={priceInfant * infants} />}
                 <FareRow label="Service Charges" detail="" amount={0} isFree />
               </div>
             ) : visa.price ? (
-              <div className="p-5">
-                <p className="text-xs text-muted uppercase font-semibold mb-1">Price</p>
-                <p className="font-display text-2xl font-semibold text-[var(--lp-brass)]">{visa.price}</p>
+              <div className="bg-white px-6 py-4">
+                <p className="text-xs text-gray-400 uppercase font-semibold mb-1">Starting From</p>
+                <p className="font-display text-2xl font-bold" style={{ color: "var(--lp-brass)" }}>{visa.price}</p>
               </div>
             ) : null}
 
-            {/* Total bar */}
-            {hasPricing && (
-              <div className="bg-[var(--lp-ink)] text-white px-5 py-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-white/60 mb-0.5">Total</p>
-                  <p className="font-display text-2xl font-bold">PKR {totalPrice.toLocaleString()}</p>
-                  <p className="text-xs text-white/50">{adults + children + infants} Person(s)</p>
-                </div>
-                <Link
-                  href={applyHref}
-                  className="bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
-                >
-                  Apply Now →
-                </Link>
+            {/* Total + Apply Now */}
+            <div className="px-6 py-5 flex items-center justify-between" style={{ background: "var(--lp-ink)" }}>
+              <div>
+                <p className="text-white/50 text-xs mb-1">Total</p>
+                <p className="font-display text-3xl font-bold text-white leading-none">
+                  PKR {totalPrice.toLocaleString()}
+                </p>
+                <p className="text-white/40 text-xs mt-1">{adults + children + infants} Person(s)</p>
               </div>
-            )}
-
-            {!hasPricing && (
-              <div className="px-5 pb-5">
-                <Link href={applyHref}
-                  className="block w-full text-center bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] text-black font-bold py-3 rounded-xl text-sm transition-colors">
-                  Apply Now →
-                </Link>
-              </div>
-            )}
+              <Link href={applyHref}
+                className="font-bold text-sm px-5 py-3 rounded-xl transition-colors"
+                style={{ background: "var(--lp-brass)", color: "#000" }}>
+                Apply Now →
+              </Link>
+            </div>
 
             {/* WhatsApp */}
-            <div className="px-5 pb-5">
-              <a
-                href={waLink(waMsg)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-white font-semibold py-2.5 rounded-xl text-sm hover:opacity-90 transition-opacity"
-              >
-                <span>💬</span> Ask on WhatsApp
+            <div className="px-6 pb-5 pt-3 bg-white">
+              <a href={waLink(waMsg)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full font-bold py-3 rounded-xl text-sm text-white transition-opacity hover:opacity-90"
+                style={{ background: "#25D366" }}>
+                <span className="text-base">💬</span> Ask on WhatsApp
               </a>
             </div>
 
-            {/* Pricing tiers */}
+            {/* Per-person pricing breakdown */}
             {hasPricing && (
-              <div className="border-t border-border px-5 py-4">
-                <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-3">Per Person (PKR)</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <MiniPrice label="Adult" amount={priceAdult} />
-                  <MiniPrice label="Child" amount={priceChild} />
-                  <MiniPrice label="Infant" amount={priceInfant} />
+              <div className="bg-gray-50 border-t border-gray-100 px-6 py-4">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3">Per Person (PKR)</p>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <MiniPrice label="ADULT" amount={priceAdult} />
+                  <MiniPrice label="CHILD" amount={priceChild} />
+                  <MiniPrice label="INFANT" amount={priceInfant} />
                 </div>
-                <p className="text-muted text-[10px] mt-3 leading-relaxed">
+                <p className="text-gray-400 text-[10px] mt-3 leading-relaxed">
                   * Per person. Total computed at submission based on traveler counts.
                 </p>
               </div>
@@ -254,20 +223,20 @@ export default async function VisaDetailPage({ params, searchParams }: { params:
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-muted uppercase tracking-wide font-semibold mb-0.5">{label}</p>
-      <p className="font-semibold text-sm">{value}</p>
+      <p className="text-[11px] text-gray-400 uppercase font-bold tracking-widest mb-1">{label}</p>
+      <p className="font-semibold text-sm text-gray-800">{value}</p>
     </div>
   );
 }
 
 function FareRow({ label, detail, amount, isFree }: { label: string; detail: string; amount: number; isFree?: boolean }) {
   return (
-    <div className="flex items-center justify-between py-3">
+    <div className="flex items-center justify-between py-4">
       <div>
-        <p className="text-sm font-semibold">{label}</p>
-        {detail && <p className="text-xs text-muted">{detail}</p>}
+        <p className="font-semibold text-sm text-gray-800">{label}</p>
+        {detail && <p className="text-xs text-gray-400 mt-0.5">{detail}</p>}
       </div>
-      <span className="font-semibold text-sm tabular-nums">
+      <span className="font-bold text-sm tabular-nums">
         {isFree ? <span className="text-green-600 font-bold">Included</span> : `PKR ${amount.toLocaleString()}`}
       </span>
     </div>
@@ -276,10 +245,10 @@ function FareRow({ label, detail, amount, isFree }: { label: string; detail: str
 
 function MiniPrice({ label, amount }: { label: string; amount: number }) {
   return (
-    <div className="bg-surface rounded-lg p-2">
-      <p className="text-[10px] text-muted uppercase font-semibold mb-0.5">{label}</p>
-      <p className="font-semibold text-xs text-[var(--lp-brass)]">
-        {amount > 0 ? `${amount.toLocaleString()}` : "Free"}
+    <div className="bg-white rounded-xl border border-gray-200 p-3">
+      <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">{label}</p>
+      <p className="font-bold text-sm" style={{ color: "var(--lp-brass)" }}>
+        {amount > 0 ? amount.toLocaleString() : "Free"}
       </p>
     </div>
   );
