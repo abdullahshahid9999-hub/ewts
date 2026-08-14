@@ -37,8 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       groupTicketEnabled: src.groupTicketEnabled,
       visaEnabled: src.visaEnabled,
       roomTypes: {
-        create: src.roomTypes.map(({ id: _rid, packageId: _pid, createdAt: _rc, updatedAt: _ru, ...rt }) => {
-          void _rid; void _pid; void _rc; void _ru;
+        create: src.roomTypes.map(({ id: _rid, packageId: _pid, ...rt }) => {
+          void _rid; void _pid;
           return rt;
         }),
       },
