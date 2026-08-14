@@ -800,3 +800,21 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+// Short testimonials shown on the public visa listing page.
+// Admin creates these from the admin panel. No FK to VisaService —
+// they're freeform so admin can mention any country even without a
+// corresponding visa service row.
+model VisaStory {
+  id          String   @id @default(uuid())
+  countryFlag String?  @map("country_flag")   // e.g. "🇹🇭"
+  country     String                          // e.g. "Thailand"
+  headline    String                          // e.g. "Got Thailand visa in 8 days ✅"
+  body        String?                         // optional extra detail
+  customerName String? @map("customer_name")  // e.g. "Ahmed from Lahore"
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0)  @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("visa_stories")
+}

@@ -51,7 +51,95 @@ function Divider({ label }: { label: string }) {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Visa Stories Section ──────────────────────────────────────────────────────
+type VisaStory = { id: string; country: string; countryFlag: string | null; headline: string; body: string | null; customerName: string | null; isActive: boolean; sortOrder: number };
+const emptyStory = { country: "", countryFlag: "", headline: "", body: "", customerName: "", sortOrder: 0 };
+
+function VisaStoriesSection({ accessToken, refresh }: { accessToken: string; refresh: () => Promise<string | null> }) {
+  const [stories, setStories] = useState<VisaStory[]>([]);
+  const [form, setForm] = useState(emptyStory);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    const res = await adminFetch("/api/admin/visa-stories", accessToken, refresh);
+    if (res.ok) { const d = await res.json(); setStories(d.stories ?? []); }
+  }, [accessToken, refresh]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function handleSave() {
+    setSaving(true);
+    const url = editId ? `/api/admin/visa-stories/${editId}` : "/api/admin/visa-stories";
+    const res = await adminFetch(url, accessToken, refresh, { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, isActive: true }) });
+    setSaving(false);
+    if (res.ok) { setShowForm(false); setEditId(null); setForm(emptyStory); load(); }
+  }
+
+  async function handleToggle(s: VisaStory) {
+    await adminFetch(`/api/admin/visa-stories/${s.id}`, accessToken, refresh, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...s, isActive: !s.isActive }) });
+    load();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this story?")) return;
+    await adminFetch(`/api/admin/visa-stories/${id}`, accessToken, refresh, { method: "DELETE" });
+    load();
+  }
+
+  const iS: React.CSSProperties = { width: "100%", boxSizing: "border-box" };
+
+  return (
+    <div className="adp-card" style={{ marginTop: 32 }}>
+      <div className="adp-ch">
+        <div><h3>Visa Success Stories</h3><p>Short testimonials shown on the public visa page</p></div>
+        <button className="adp-btn adp-btn-g" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyStory); }}>+ Add Story</button>
+      </div>
+      {showForm && (
+        <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--a-border)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "60px 1fr", gap: 10, marginBottom: 10 }}>
+            <div><label>Flag</label><input style={iS} placeholder="🇹🇭" value={form.countryFlag} onChange={e => setForm(f => ({ ...f, countryFlag: e.target.value }))} /></div>
+            <div><label>Country *</label><input style={iS} placeholder="Thailand" value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} /></div>
+          </div>
+          <div style={{ marginBottom: 10 }}><label>Headline *</label><input style={iS} placeholder="Got Thailand visa in 8 days ✅" value={form.headline} onChange={e => setForm(f => ({ ...f, headline: e.target.value }))} /></div>
+          <div style={{ marginBottom: 10 }}><label>Extra Detail (optional)</label><input style={iS} placeholder="Smooth process, all documents ready" value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} /></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 80px", gap: 10, marginBottom: 14 }}>
+            <div><label>Customer Name (optional)</label><input style={iS} placeholder="Ahmed from Lahore" value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} /></div>
+            <div><label>Sort Order</label><input style={iS} type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} /></div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="adp-btn adp-btn-g" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : editId ? "Update Story" : "Add Story"}</button>
+            <button className="adp-btn adp-btn-t" onClick={() => { setShowForm(false); setEditId(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      {stories.length === 0 ? (
+        <p style={{ fontSize: 12, opacity: 0.5, padding: "12px 18px" }}>No stories yet. Add one above.</p>
+      ) : (
+        <div style={{ padding: "12px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {stories.map(s => (
+            <div key={s.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 12px", borderRadius: 10, border: "1px solid var(--a-border)", background: s.isActive ? "transparent" : "rgba(0,0,0,0.03)", opacity: s.isActive ? 1 : 0.6 }}>
+              <span style={{ fontSize: 24, lineHeight: 1, marginTop: 2 }}>{s.countryFlag || "🌍"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{s.headline}</p>
+                {s.body && <p style={{ fontSize: 11, opacity: 0.6, marginBottom: 2 }}>{s.body}</p>}
+                {s.customerName && <p style={{ fontSize: 11, opacity: 0.5, fontStyle: "italic" }}>— {s.customerName}</p>}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button className="adp-btn adp-btn-t" style={{ fontSize: 11 }} onClick={() => handleToggle(s)}>{s.isActive ? "Hide" : "Show"}</button>
+                <button className="adp-btn adp-btn-t" style={{ fontSize: 11 }} onClick={() => { setEditId(s.id); setForm({ country: s.country, countryFlag: s.countryFlag ?? "", headline: s.headline, body: s.body ?? "", customerName: s.customerName ?? "", sortOrder: s.sortOrder }); setShowForm(true); }}>Edit</button>
+                <button className="adp-btn adp-btn-r" style={{ fontSize: 11 }} onClick={() => handleDelete(s.id)}>Del</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Fix: pass auth to VisaServicesInner ──────────────────────────────────────
 function VisaServicesInner() {
   const { accessToken, refresh } = useAdminAuth();
   const [items, setItems] = useState<VisaService[]>([]);
@@ -471,6 +559,9 @@ function VisaServicesInner() {
         ))}
       </div>
     )}
+
+    {/* ── VISA STORIES ── */}
+    <VisaStoriesSection accessToken={accessToken ?? ""} refresh={refresh} />
   </>);
 }
 

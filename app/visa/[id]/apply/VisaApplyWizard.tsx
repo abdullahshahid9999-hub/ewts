@@ -8,7 +8,7 @@ import { waLink } from "@/lib/whatsapp";
 
 /* ─────────────────── Types ─────────────────── */
 type RequiredDoc = { id: string; name: string; description: string | null; isRequired: boolean; icon?: string | null; applicantCategory?: string | null; nationality?: string | null };
-type VisaInfo = { id: string; title: string; country: string; type: string; priceAdult: number | null; priceChild: number | null; priceInfant: number | null; requiredDocuments: RequiredDoc[] };
+type VisaInfo = { id: string; title: string; country: string; type: string; processingTime: string | null; priceAdult: number | null; priceChild: number | null; priceInfant: number | null; requiredDocuments: RequiredDoc[] };
 
 type Traveller = {
   ageGroup: "adult" | "child" | "infant";
@@ -38,16 +38,16 @@ function computeTotal(visa: VisaInfo, adults: number, children: number, infants:
 /* ─────────────────── Step indicator ─────────────────── */
 function StepBar({ steps, current }: { steps: string[]; current: number }) {
   return (
-    <div className="flex items-center gap-0 mb-8 overflow-x-auto pb-1">
+    <div className="flex items-center gap-0 mb-8 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
       {steps.map((s, i) => (
-        <div key={i} className="flex items-center min-w-0">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${i === current ? "bg-[var(--lp-brass)] text-black" : i < current ? "bg-[var(--lp-ink)] text-white" : "bg-surface text-muted border border-border"}`}>
-            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${i === current ? "bg-black/20" : i < current ? "bg-white/20" : "bg-border"}`}>
+        <div key={i} className="flex items-center flex-shrink-0">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${i === current ? "bg-[var(--lp-brass)] text-black" : i < current ? "bg-[var(--lp-ink)] text-white" : "bg-surface text-muted border border-border"}`}>
+            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${i === current ? "bg-black/20" : i < current ? "bg-white/20" : "bg-border"}`}>
               {i < current ? "✓" : i + 1}
             </span>
-            {s}
+            <span className="max-w-[80px] truncate">{s}</span>
           </div>
-          {i < steps.length - 1 && <div className={`h-px w-4 flex-shrink-0 ${i < current ? "bg-[var(--lp-ink)]" : "bg-border"}`} />}
+          {i < steps.length - 1 && <div className={`h-px w-3 flex-shrink-0 ${i < current ? "bg-[var(--lp-ink)]" : "bg-border"}`} />}
         </div>
       ))}
     </div>
@@ -267,16 +267,13 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
   // Rebuild travellers when counts change
   function handlePaxChange(a: number, c: number, inf: number) {
     setAdults(a); setChildren(c); setInfants(inf);
+    const prevAdults = travellers.filter(t => t.ageGroup === "adult");
+    const prevChildren = travellers.filter(t => t.ageGroup === "child");
+    const prevInfants = travellers.filter(t => t.ageGroup === "infant");
     const newT: Traveller[] = [
-      ...Array.from({ length: a }, (_, i) => travellers[i] ?? emptyTraveller("adult")),
-      ...Array.from({ length: c }, (_, i) => {
-        const existing = travellers.filter(t => t.ageGroup === "child")[i];
-        return existing ?? emptyTraveller("child");
-      }),
-      ...Array.from({ length: inf }, (_, i) => {
-        const existing = travellers.filter(t => t.ageGroup === "infant")[i];
-        return existing ?? emptyTraveller("infant");
-      }),
+      ...Array.from({ length: a }, (_, i) => prevAdults[i] ?? { ...emptyTraveller("adult"), applicantCategory: i === 0 ? initialOccupation : "" }),
+      ...Array.from({ length: c }, (_, i) => prevChildren[i] ?? emptyTraveller("child")),
+      ...Array.from({ length: inf }, (_, i) => prevInfants[i] ?? emptyTraveller("infant")),
     ];
     setTravellers(newT);
     if (step > a + c + inf) setStep(0);
@@ -369,17 +366,44 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
   const hasPricing = visa.priceAdult !== null;
   const waMsg = `Assalam o Alaikum! I'd like to apply for the ${visa.country} ${visa.type} visa (${visa.title}). Travellers: ${adults} Adult(s), ${children} Child(ren), ${infants} Infant(s).`;
 
+function estimatedReadyDate(processingTime: string | null): string | null {
+  if (!processingTime) return null;
+  // Extract the max number of working days from strings like "6 to 7 Working Days", "10-12 Days", "7 Working Days"
+  const nums = processingTime.match(/\d+/g)?.map(Number) ?? [];
+  if (!nums.length) return null;
+  const workingDays = Math.max(...nums);
+  const date = new Date();
+  let added = 0;
+  while (added < workingDays) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) added++; // skip weekends
+  }
+  return date.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric" });
+}
+
   /* ── Success ── */
   if (submitted) {
+    const estDate = estimatedReadyDate(visa.processingTime);
     return (
-      <div className="min-h-[60vh] flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
+      <div className="min-h-[60vh] flex items-center justify-center px-6 py-12">
+        <div className="text-center max-w-md w-full">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">✅</div>
           <h2 className="font-display text-2xl font-semibold mb-2 text-[var(--lp-ink)]">Application Submitted!</h2>
-          <p className="text-muted mb-1">Reference: <strong className="font-mono text-[var(--lp-ink)]">{batchRef}</strong></p>
-          <p className="text-muted text-sm mb-6">We&apos;ll review your documents and contact you via WhatsApp or email shortly.</p>
+          <p className="text-muted mb-4">Reference: <strong className="font-mono text-[var(--lp-ink)]">{batchRef}</strong></p>
+
+          {/* Processing countdown */}
+          {estDate && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-5 text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-1">⏱ Estimated Ready By</p>
+              <p className="font-display text-2xl font-semibold text-amber-800">{estDate}</p>
+              <p className="text-xs text-amber-600 mt-1">Based on {visa.processingTime} processing time (working days only)</p>
+            </div>
+          )}
+
+          <p className="text-muted text-sm mb-5">We&apos;ll review your documents and contact you via WhatsApp or email with updates.</p>
           <a href={waLink(waMsg)} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-xl text-sm hover:opacity-90 transition mb-4">
+            className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-xl text-sm hover:opacity-90 transition mb-4 w-full justify-center">
             💬 Follow up on WhatsApp
           </a>
           <p className="text-xs text-muted">You can safely close this page.</p>

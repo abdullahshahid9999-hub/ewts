@@ -10,6 +10,7 @@ import { paxQueryString } from "@/lib/searchState";
 import { getVisaFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
 import VisaSearchBar from "@/components/VisaSearchBar";
+import VisaStoriesSection from "@/components/VisaStoriesSection";
 
 export const metadata = {
   title: "Visa Services | East & West Travel Services Faisalabad",
@@ -38,7 +39,7 @@ async function getVisas(q?: string, type?: string, processingTime?: string) {
       orderBy: { createdAt: "desc" },
       select: {
         id: true, title: true, country: true, type: true,
-        price: true, priceAdult: true,
+        price: true, priceAdult: true, priceChild: true, priceInfant: true,
         validity: true, maxStay: true, processingTime: true,
         requirements: true, countryFlag: true, countryImage: true,
       },
@@ -216,6 +217,9 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
           </div>
         </div>
       </section>
+
+      {/* SUCCESS STORIES */}
+      <VisaStoriesSection />
 
       <Footer />
     </>

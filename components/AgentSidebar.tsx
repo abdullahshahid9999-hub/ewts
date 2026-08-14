@@ -14,6 +14,7 @@ const NAV = [
     section: "My Bookings",
     items: [
       { href: "/agent/bookings", icon: "📋", label: "My Bookings" },
+      { href: "/agent/visa-applications", icon: "🛂", label: "Visa Applications" },
     ],
   },
   {

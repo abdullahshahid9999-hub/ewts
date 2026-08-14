@@ -55,6 +55,7 @@ export default async function VisaApplyPage({
           title: visa.title,
           country: visa.country,
           type: visa.type,
+          processingTime: visa.processingTime,
           priceAdult: visa.priceAdult,
           priceChild: visa.priceChild,
           priceInfant: visa.priceInfant,

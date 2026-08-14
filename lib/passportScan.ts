@@ -52,7 +52,7 @@ function mrzDateToISO(yymmdd: string): string | null {
 
 export async function scanPassport(file: File): Promise<PassportScanResult> {
   if (!file.type.startsWith("image/")) {
-    return { ok: false, warning: "Passport must be uploaded as a photo (JPG/PNG), not a PDF, for auto-read to work." };
+    return { ok: true, warning: "Auto-read only works on photos (JPG/PNG). Your PDF was saved — please fill in passport details manually below." };
   }
 
   let text = "";
