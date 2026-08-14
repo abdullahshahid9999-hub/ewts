@@ -16,7 +16,10 @@ export async function GET() {
   try {
     const packages = await prisma.package.findMany({
       orderBy: { createdAt: "desc" },
-      include: { roomTypes: { orderBy: { sortOrder: "asc" } } },
+      include: {
+        roomTypes: { orderBy: { sortOrder: "asc" } },
+        _count: { select: { directBookings: true } },
+      },
     });
     return NextResponse.json({ packages });
   } catch (e) {

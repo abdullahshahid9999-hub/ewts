@@ -13,6 +13,8 @@ type RoomType = {
   pricePerPersonPkr: number;
   pricePerInfantPkr: number;
   pricePerChildPkr: number;
+  pricePerChildWithBedPkr: number;
+  pricePerChildWithoutBedPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
@@ -26,6 +28,8 @@ type DraftRoomType = {
   pricePerPersonPkr: string;
   pricePerInfantPkr: string;
   pricePerChildPkr: string;
+  pricePerChildWithBedPkr: string;
+  pricePerChildWithoutBedPkr: string;
   maxAdults: string;
   maxInfants: string;
   minAdultsRequired: string;
@@ -33,6 +37,7 @@ type DraftRoomType = {
 
 const emptyDraftRoomType: DraftRoomType = {
   roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0",
+  pricePerChildWithBedPkr: "0", pricePerChildWithoutBedPkr: "0",
   maxAdults: "2", maxInfants: "0", minAdultsRequired: "",
 };
 
@@ -62,6 +67,11 @@ type Package = {
   name: string;
   slug: string | null;
   duration: string | null;
+  depDate: string | null;
+  retDate: string | null;
+  airline: string | null;
+  route: string | null;
+  hotels: string | null;
   price: string | null;
   destination: string | null;
   departureCity: string | null;
@@ -78,10 +88,13 @@ type Package = {
   featured: boolean;
   status: string;
   roomTypes: RoomType[];
+  _count?: { directBookings: number };
 };
 
 const emptyForm = {
-  category: "umrah", name: "", slug: "", duration: "", price: "", destination: "",
+  category: "umrah", name: "", slug: "", duration: "", depDate: "", retDate: "",
+  airline: "", route: "", hotels: "",
+  price: "", destination: "",
   departureCity: "", tier: "", includes: "", excludes: "", featured: false, status: "active",
   copyEnabled: false, groupTicketEnabled: false, visaEnabled: false,
 };
@@ -144,6 +157,8 @@ function PackagesInner() {
     setEditingId(pkg.id);
     setForm({
       category: pkg.category, name: pkg.name, slug: pkg.slug ?? "", duration: pkg.duration ?? "",
+      depDate: pkg.depDate ?? "", retDate: pkg.retDate ?? "",
+      airline: pkg.airline ?? "", route: pkg.route ?? "", hotels: pkg.hotels ?? "",
       price: pkg.price ?? "", destination: pkg.destination ?? "", departureCity: pkg.departureCity ?? "",
       tier: pkg.tier ?? "", includes: pkg.includes ?? "", excludes: pkg.excludes ?? "",
       featured: pkg.featured, status: pkg.status,
@@ -220,6 +235,11 @@ function PackagesInner() {
     body.set("name", form.name);
     if (form.slug) body.set("slug", form.slug);
     body.set("duration", form.duration);
+    if (form.depDate) body.set("depDate", form.depDate);
+    if (form.retDate) body.set("retDate", form.retDate);
+    if (form.airline) body.set("airline", form.airline);
+    if (form.route) body.set("route", form.route);
+    if (form.hotels) body.set("hotels", form.hotels);
     // Price is derived from room basis pricing, not typed by hand — see
     // computeDisplayPriceFromDrafts above (create) / lib/packagePrice.ts
     // (server, and what keeps it in sync after every room-type edit).
@@ -265,6 +285,8 @@ function PackagesInner() {
           pricePerPersonPkr: Number(r.pricePerPersonPkr),
           pricePerInfantPkr: Number(r.pricePerInfantPkr || 0),
           pricePerChildPkr: Number(r.pricePerChildPkr || 0),
+          pricePerChildWithBedPkr: Number(r.pricePerChildWithBedPkr || 0),
+          pricePerChildWithoutBedPkr: Number(r.pricePerChildWithoutBedPkr || 0),
           maxAdults: Number(r.maxAdults),
           maxInfants: Number(r.maxInfants || 0),
           minAdultsRequired: r.minAdultsRequired ? Number(r.minAdultsRequired) : null,
@@ -292,6 +314,13 @@ function PackagesInner() {
     await adminFetch(`/api/admin/packages/${id}`, accessToken, refresh, { method: "DELETE" });
     if (editingId === id) resetForm();
     load();
+  }
+
+  async function handleDuplicate(id: string) {
+    if (!confirm("Duplicate this package? A copy will be created as inactive.")) return;
+    const res = await adminFetch(`/api/admin/packages/${id}/duplicate`, accessToken, refresh, { method: "POST" });
+    if (res?.ok) load();
+    else alert("Duplicate failed.");
   }
 
   const editingPackage = packages.find((p) => p.id === editingId) ?? null;
@@ -338,6 +367,26 @@ function PackagesInner() {
           <div>
             <label>Duration</label>
             <input placeholder="e.g. 10 Days" value={form.duration} onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))} />
+          </div>
+          <div>
+            <label>Departure Date</label>
+            <input type="date" value={form.depDate} onChange={(e) => setForm((f) => ({ ...f, depDate: e.target.value }))} />
+          </div>
+          <div>
+            <label>Return Date</label>
+            <input type="date" value={form.retDate} onChange={(e) => setForm((f) => ({ ...f, retDate: e.target.value }))} />
+          </div>
+          <div>
+            <label>Airline</label>
+            <input placeholder="e.g. PIA, Air Arabia" value={form.airline} onChange={(e) => setForm((f) => ({ ...f, airline: e.target.value }))} />
+          </div>
+          <div>
+            <label>Route / Sectors</label>
+            <input placeholder="e.g. LHE–JED–LHE" value={form.route} onChange={(e) => setForm((f) => ({ ...f, route: e.target.value }))} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label>Hotels (Makkah &amp; Madinah details)</label>
+            <textarea rows={2} placeholder="e.g. Makkah: Qila Ajyad (11 Nights, 1400m from Haram)&#10;Madinah: Kinan Madina (8 Nights, 900m from Prophet Mosque)" value={form.hotels} onChange={(e) => setForm((f) => ({ ...f, hotels: e.target.value }))} style={{ resize: "vertical" }} />
           </div>
           <div>
             <label>Price (listing display — auto-calculated)</label>
@@ -562,6 +611,14 @@ function PackagesInner() {
                       <input type="number" value={rt.pricePerChildPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildPkr: e.target.value })} />
                     </div>
                     <div>
+                      <label style={{ fontSize: "9px" }}>Price / Child (With Bed)</label>
+                      <input type="number" value={rt.pricePerChildWithBedPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildWithBedPkr: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "9px" }}>Price / Child (No Bed)</label>
+                      <input type="number" value={rt.pricePerChildWithoutBedPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildWithoutBedPkr: e.target.value })} />
+                    </div>
+                    <div>
                       <label style={{ fontSize: "9px" }}>Max Adults</label>
                       <input type="number" value={rt.maxAdults} onChange={(e) => updateDraftRoomType(i, { maxAdults: e.target.value })} />
                     </div>
@@ -642,7 +699,7 @@ function PackagesInner() {
             <p className="etd">No packages yet.</p>
           ) : (
             <table className="adp-table">
-              <thead><tr><th>Name</th><th>Category</th><th>Slug</th><th>Room Types</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>Name</th><th>Category</th><th>Slug</th><th>Rooms</th><th>Bookings</th><th>Status</th><th></th></tr></thead>
               <tbody>
                 {packages.map((p) => (
                   <tr key={p.id}>
@@ -650,10 +707,12 @@ function PackagesInner() {
                     <td className="capitalize">{p.category}</td>
                     <td>{p.slug ?? <span style={{ color: "var(--a-dim)" }}>none</span>}</td>
                     <td>{p.roomTypes.length}</td>
+                    <td style={{ fontWeight: 700, color: (p._count?.directBookings ?? 0) > 0 ? "var(--a-green)" : "var(--a-dim)" }}>{p._count?.directBookings ?? 0}</td>
                     <td><span className={`adp-pill adp-p-${p.status}`}>{p.status}</span></td>
                     <td style={{ display: "flex", gap: "6px" }}>
                       <button onClick={() => startEdit(p)} className="adp-btn adp-btn-s">Edit</button>
                       <a href={`/admin/agent-bookings?packageId=${p.id}`} className="adp-btn adp-btn-s">Bookings</a>
+                      <button onClick={() => handleDuplicate(p.id)} className="adp-btn" style={{ background: "var(--a-border)" }}>Duplicate</button>
                       <button onClick={() => handleDelete(p.id)} className="adp-btn adp-btn-r">Delete</button>
                     </td>
                   </tr>

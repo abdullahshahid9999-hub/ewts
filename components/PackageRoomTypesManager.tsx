@@ -9,13 +9,15 @@ type RoomType = {
   pricePerPersonPkr: number;
   pricePerInfantPkr: number;
   pricePerChildPkr: number;
+  pricePerChildWithBedPkr: number;
+  pricePerChildWithoutBedPkr: number;
   maxAdults: number;
   maxInfants: number;
   minAdultsRequired: number | null;
   availableSlots: number | null;
 };
 
-const emptyRt = { roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0", maxAdults: "2", maxInfants: "0", minAdultsRequired: "", availableSlots: "" };
+const emptyRt = { roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0", pricePerChildWithBedPkr: "0", pricePerChildWithoutBedPkr: "0", maxAdults: "2", maxInfants: "0", minAdultsRequired: "", availableSlots: "" };
 
 export default function PackageRoomTypesManager({
   packageId,
@@ -42,6 +44,8 @@ export default function PackageRoomTypesManager({
       pricePerPersonPkr: String(rt.pricePerPersonPkr),
       pricePerInfantPkr: String(rt.pricePerInfantPkr),
       pricePerChildPkr: String(rt.pricePerChildPkr),
+      pricePerChildWithBedPkr: String(rt.pricePerChildWithBedPkr ?? 0),
+      pricePerChildWithoutBedPkr: String(rt.pricePerChildWithoutBedPkr ?? 0),
       maxAdults: String(rt.maxAdults),
       maxInfants: String(rt.maxInfants),
       minAdultsRequired: rt.minAdultsRequired != null ? String(rt.minAdultsRequired) : "",
@@ -69,6 +73,8 @@ export default function PackageRoomTypesManager({
       pricePerPersonPkr: Number(form.pricePerPersonPkr),
       pricePerInfantPkr: Number(form.pricePerInfantPkr || 0),
       pricePerChildPkr: Number(form.pricePerChildPkr || 0),
+      pricePerChildWithBedPkr: Number(form.pricePerChildWithBedPkr || 0),
+      pricePerChildWithoutBedPkr: Number(form.pricePerChildWithoutBedPkr || 0),
       maxAdults: Number(form.maxAdults),
       maxInfants: Number(form.maxInfants || 0),
       minAdultsRequired: form.minAdultsRequired ? Number(form.minAdultsRequired) : null,
@@ -102,21 +108,22 @@ export default function PackageRoomTypesManager({
 
       <div className="adp-tw">
         <table className="adp-table">
-          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Price/Infant</th><th>Price/Child</th><th>Max Adults</th><th>Max Infants</th><th>Min Adults</th><th>Slots Left</th><th></th></tr></thead>
+          <thead><tr><th>Room Type</th><th>Price/Person</th><th>Price/Infant</th><th>Child (With Bed)</th><th>Child (No Bed)</th><th>Max Beds</th><th>Max Infants</th><th>Min Adults</th><th>Slots</th><th></th></tr></thead>
           <tbody>
             {roomTypes.length === 0 && (
-              <tr><td colSpan={7} className="etd" style={{ textAlign: "center" }}>No room types yet — add one below.</td></tr>
+              <tr><td colSpan={10} className="etd" style={{ textAlign: "center" }}>No room types yet — add one below.</td></tr>
             )}
             {roomTypes.map((rt) => (
               <tr key={rt.id}>
                 <td><strong>{rt.roomType}</strong></td>
                 <td>Rs. {rt.pricePerPersonPkr.toLocaleString()}</td>
                 <td>Rs. {rt.pricePerInfantPkr.toLocaleString()}</td>
-                <td>Rs. {rt.pricePerChildPkr.toLocaleString()}</td>
+                <td>Rs. {(rt.pricePerChildWithBedPkr ?? 0).toLocaleString()}</td>
+                <td>Rs. {(rt.pricePerChildWithoutBedPkr ?? 0).toLocaleString()}</td>
                 <td>{rt.maxAdults}</td>
                 <td>{rt.maxInfants}</td>
                 <td>{rt.minAdultsRequired ?? "—"}</td>
-                <td>{rt.availableSlots ?? "Unlimited"}</td>
+                <td>{rt.availableSlots ?? "∞"}</td>
                 <td style={{ display: "flex", gap: "6px" }}>
                   <button onClick={() => startEdit(rt)} className="adp-btn adp-btn-s">Edit</button>
                   <button onClick={() => handleDelete(rt.id)} className="adp-btn adp-btn-r">Delete</button>
@@ -131,7 +138,9 @@ export default function PackageRoomTypesManager({
         <div><label>Room Type Name</label><input placeholder="e.g. Triple Room" value={form.roomType} onChange={(e) => setForm((f) => ({ ...f, roomType: e.target.value }))} /></div>
         <div><label>Price / Person (PKR)</label><input type="number" value={form.pricePerPersonPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerPersonPkr: e.target.value }))} /></div>
         <div><label>Price / Infant (PKR, flat)</label><input type="number" value={form.pricePerInfantPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerInfantPkr: e.target.value }))} /></div>
-        <div><label>Price / Child (PKR, flat)</label><input type="number" value={form.pricePerChildPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerChildPkr: e.target.value }))} /></div>
+        <div><label>Price / Child With Bed (PKR)</label><input type="number" value={form.pricePerChildWithBedPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerChildWithBedPkr: e.target.value }))} /></div>
+        <div><label>Price / Child Without Bed (PKR)</label><input type="number" value={form.pricePerChildWithoutBedPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerChildWithoutBedPkr: e.target.value }))} /></div>
+        <div><label style={{ color: "var(--a-dim)", fontSize: 11 }}>Price / Child legacy (ignored)</label><input type="number" value={form.pricePerChildPkr} onChange={(e) => setForm((f) => ({ ...f, pricePerChildPkr: e.target.value }))} /></div>
         <div><label>Max Adults</label><input type="number" value={form.maxAdults} onChange={(e) => setForm((f) => ({ ...f, maxAdults: e.target.value }))} /></div>
         <div><label>Max Infants</label><input type="number" value={form.maxInfants} onChange={(e) => setForm((f) => ({ ...f, maxInfants: e.target.value }))} /></div>
         <div><label>Min Adults Required (optional)</label><input type="number" placeholder="e.g. 3 for shared rooms" value={form.minAdultsRequired} onChange={(e) => setForm((f) => ({ ...f, minAdultsRequired: e.target.value }))} /></div>

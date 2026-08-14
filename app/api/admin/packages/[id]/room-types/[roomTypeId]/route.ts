@@ -34,6 +34,16 @@ export async function PATCH(
     if (!Number.isFinite(n) || n < 0) return NextResponse.json({ error: "pricePerChildPkr must be zero or positive." }, { status: 400 });
     data.pricePerChildPkr = n;
   }
+  if (body?.pricePerChildWithBedPkr !== undefined) {
+    const n = Number(body.pricePerChildWithBedPkr);
+    if (!Number.isFinite(n) || n < 0) return NextResponse.json({ error: "pricePerChildWithBedPkr must be zero or positive." }, { status: 400 });
+    data.pricePerChildWithBedPkr = n;
+  }
+  if (body?.pricePerChildWithoutBedPkr !== undefined) {
+    const n = Number(body.pricePerChildWithoutBedPkr);
+    if (!Number.isFinite(n) || n < 0) return NextResponse.json({ error: "pricePerChildWithoutBedPkr must be zero or positive." }, { status: 400 });
+    data.pricePerChildWithoutBedPkr = n;
+  }
   if (body?.maxAdults !== undefined) {
     const n = Number(body.maxAdults);
     if (!Number.isFinite(n) || n < 1) return NextResponse.json({ error: "maxAdults must be at least 1." }, { status: 400 });

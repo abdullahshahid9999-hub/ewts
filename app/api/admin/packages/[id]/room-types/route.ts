@@ -16,6 +16,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const pricePerPersonPkr = Number(body?.pricePerPersonPkr);
   const pricePerInfantPkr = body?.pricePerInfantPkr !== undefined ? Number(body.pricePerInfantPkr) : 0;
   const pricePerChildPkr = body?.pricePerChildPkr !== undefined ? Number(body.pricePerChildPkr) : 0;
+  const pricePerChildWithBedPkr = body?.pricePerChildWithBedPkr !== undefined ? Number(body.pricePerChildWithBedPkr) : 0;
+  const pricePerChildWithoutBedPkr = body?.pricePerChildWithoutBedPkr !== undefined ? Number(body.pricePerChildWithoutBedPkr) : 0;
   const maxAdults = Number(body?.maxAdults);
   const maxInfants = body?.maxInfants !== undefined ? Number(body.maxInfants) : 0;
   const minAdultsRequired = body?.minAdultsRequired !== undefined && body.minAdultsRequired !== null && body.minAdultsRequired !== ""
@@ -40,6 +42,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       pricePerPersonPkr,
       pricePerInfantPkr: Number.isFinite(pricePerInfantPkr) ? pricePerInfantPkr : 0,
       pricePerChildPkr: Number.isFinite(pricePerChildPkr) ? pricePerChildPkr : 0,
+      pricePerChildWithBedPkr: Number.isFinite(pricePerChildWithBedPkr) ? pricePerChildWithBedPkr : 0,
+      pricePerChildWithoutBedPkr: Number.isFinite(pricePerChildWithoutBedPkr) ? pricePerChildWithoutBedPkr : 0,
       maxAdults,
       maxInfants: Number.isFinite(maxInfants) ? maxInfants : 0,
       minAdultsRequired: minAdultsRequired !== undefined && Number.isFinite(minAdultsRequired) ? minAdultsRequired : undefined,
