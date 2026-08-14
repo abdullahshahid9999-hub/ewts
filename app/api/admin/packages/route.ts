@@ -87,6 +87,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // V2 hotel images
+  let makkahHotelImgUrl: string | undefined;
+  const makkahImgFile = form.get("makkahHotelImg");
+  if (makkahImgFile instanceof File) {
+    try {
+      const buf = Buffer.from(await makkahImgFile.arrayBuffer());
+      makkahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: makkahImgFile.type, folder: "packages/hotels" });
+    } catch (e) { console.error("Makkah hotel image upload failed:", e); }
+  }
+  let madinahHotelImgUrl: string | undefined;
+  const madinahImgFile = form.get("madinahHotelImg");
+  if (madinahImgFile instanceof File) {
+    try {
+      const buf = Buffer.from(await madinahImgFile.arrayBuffer());
+      madinahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: madinahImgFile.type, folder: "packages/hotels" });
+    } catch (e) { console.error("Madinah hotel image upload failed:", e); }
+  }
+
   const str = (key: string) => {
     const v = form.get(key);
     return typeof v === "string" && v.length > 0 ? v : undefined;
@@ -206,6 +224,19 @@ export async function POST(req: NextRequest) {
         visaEnabled: form.get("visaEnabled") === "true",
         featured: form.get("featured") === "true",
         status: str("status") ?? "active",
+        cardVersion: str("cardVersion") ?? "v1",
+        makkahHotel: str("makkahHotel"),
+        makkahHotelDistance: str("makkahHotelDistance"),
+        makkahHotelNights: form.get("makkahHotelNights") ? parseInt(form.get("makkahHotelNights") as string) || undefined : undefined,
+        makkahHotelImg: makkahHotelImgUrl,
+        madinahHotel: str("madinahHotel"),
+        madinahHotelDistance: str("madinahHotelDistance"),
+        madinahHotelNights: form.get("madinahHotelNights") ? parseInt(form.get("madinahHotelNights") as string) || undefined : undefined,
+        madinahHotelImg: madinahHotelImgUrl,
+        flightType: str("flightType"),
+        luggage: str("luggage"),
+        transportType: str("transportType"),
+        totalSeats: form.get("totalSeats") ? parseInt(form.get("totalSeats") as string) || undefined : undefined,
       },
     });
 

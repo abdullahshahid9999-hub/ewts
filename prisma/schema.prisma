@@ -45,6 +45,21 @@ model Package {
   visaEnabled         Boolean @default(false) @map("visa_enabled")          // Visa button active on listing card
   featured      Boolean  @default(false)
   status        String   @default("active") // active | inactive
+  // Card design version — "v1" = classic card, "v2" = Umrah detail card (hotel cards + specs)
+  cardVersion         String?  @default("v1") @map("card_version")
+  makkahHotel         String?  @map("makkah_hotel")
+  makkahHotelDistance String?  @map("makkah_hotel_distance")
+  makkahHotelNights   Int?     @map("makkah_hotel_nights")
+  makkahHotelImg      String?  @map("makkah_hotel_img")
+  madinahHotel        String?  @map("madinah_hotel")
+  madinahHotelDistance String? @map("madinah_hotel_distance")
+  madinahHotelNights  Int?     @map("madinah_hotel_nights")
+  madinahHotelImg     String?  @map("madinah_hotel_img")
+  flightType          String?  @map("flight_type")
+  luggage             String?
+  transportType       String?  @map("transport_type")
+  totalSeats          Int?     @map("total_seats")
+  seatsBooked         Int      @default(0) @map("seats_booked")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

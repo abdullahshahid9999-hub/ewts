@@ -11,6 +11,7 @@ import { getUmrahFacets, parseMulti } from "@/lib/filterFacets";
 import FilterSidebar from "@/components/FilterSidebar";
 import UmrahSearchBar from "@/components/UmrahSearchBar";
 import CopyBtn from "@/components/CopyBtn";
+import UmrahCardV2, { type UmrahCardV2Package } from "@/components/UmrahCardV2";
 
 export const metadata = {
   title: "Umrah & Hajj Packages | East & West Travel Services",
@@ -125,7 +126,19 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   // gallery preview — up to 3 thumbs shown as strip
                   const gallery: string[] = Array.isArray(pkg.galleryUrls) ? (pkg.galleryUrls as string[]) : [];
                   const allImgs = [pkg.imageUrl, ...gallery].filter(Boolean) as string[];
-                  const detailHref = pkg.slug ? `/umrah/${pkg.slug}${paxQS ? `?${paxQS}` : ""}` : null;
+                  const detailHref = pkg.slug ? `/umrah/${pkg.slug}` : null;
+
+                  // V2 card — admin-controlled, user cannot switch
+                  if (pkg.cardVersion === "v2") {
+                    return (
+                      <UmrahCardV2
+                        key={pkg.id}
+                        pkg={pkg as unknown as UmrahCardV2Package}
+                        detailHref={detailHref}
+                        paxQS={paxQS}
+                      />
+                    );
+                  }
 
                   return (
                     <div key={pkg.id} className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 flex flex-col">

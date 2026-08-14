@@ -54,6 +54,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existingGallery: string[] = Array.isArray(existing.galleryUrls) ? (existing.galleryUrls as string[]) : [];
   const mergedGallery = [...existingGallery.filter((u) => !removeGallerySet.has(u)), ...newGalleryUrls];
 
+  // V2 hotel images
+  let makkahHotelImgUrl: string | undefined;
+  const makkahImgFile = form.get("makkahHotelImg");
+  if (makkahImgFile instanceof File) {
+    try {
+      const buf = Buffer.from(await makkahImgFile.arrayBuffer());
+      makkahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: makkahImgFile.type, folder: "packages/hotels" });
+    } catch (e) { console.error("Makkah hotel image upload failed:", e); }
+  }
+  let madinahHotelImgUrl: string | undefined;
+  const madinahImgFile = form.get("madinahHotelImg");
+  if (madinahImgFile instanceof File) {
+    try {
+      const buf = Buffer.from(await madinahImgFile.arrayBuffer());
+      madinahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: madinahImgFile.type, folder: "packages/hotels" });
+    } catch (e) { console.error("Madinah hotel image upload failed:", e); }
+  }
+
   let itinerary: unknown;
   const itineraryRaw = form.get("itinerary");
   if (typeof itineraryRaw === "string" && itineraryRaw.length > 0) {
@@ -108,6 +126,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       visaEnabled: form.has("visaEnabled") ? form.get("visaEnabled") === "true" : undefined,
       featured: form.has("featured") ? form.get("featured") === "true" : undefined,
       status: str("status"),
+      cardVersion: str("cardVersion"),
+      makkahHotel: str("makkahHotel"),
+      makkahHotelDistance: str("makkahHotelDistance"),
+      makkahHotelNights: form.has("makkahHotelNights") && form.get("makkahHotelNights") ? parseInt(form.get("makkahHotelNights") as string) || undefined : undefined,
+      makkahHotelImg: makkahHotelImgUrl ?? undefined,
+      madinahHotel: str("madinahHotel"),
+      madinahHotelDistance: str("madinahHotelDistance"),
+      madinahHotelNights: form.has("madinahHotelNights") && form.get("madinahHotelNights") ? parseInt(form.get("madinahHotelNights") as string) || undefined : undefined,
+      madinahHotelImg: madinahHotelImgUrl ?? undefined,
+      flightType: str("flightType"),
+      luggage: str("luggage"),
+      transportType: str("transportType"),
+      totalSeats: form.has("totalSeats") && form.get("totalSeats") ? parseInt(form.get("totalSeats") as string) || undefined : undefined,
     },
   });
 

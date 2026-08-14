@@ -87,6 +87,20 @@ type Package = {
   visaEnabled: boolean;
   featured: boolean;
   status: string;
+  cardVersion: string | null;
+  makkahHotel: string | null;
+  makkahHotelDistance: string | null;
+  makkahHotelNights: number | null;
+  makkahHotelImg: string | null;
+  madinahHotel: string | null;
+  madinahHotelDistance: string | null;
+  madinahHotelNights: number | null;
+  madinahHotelImg: string | null;
+  flightType: string | null;
+  luggage: string | null;
+  transportType: string | null;
+  totalSeats: number | null;
+  seatsBooked: number;
   roomTypes: RoomType[];
   _count?: { bookings: number };
 };
@@ -97,6 +111,11 @@ const emptyForm = {
   price: "", destination: "",
   departureCity: "", tier: "", includes: "", excludes: "", featured: false, status: "active",
   copyEnabled: false, groupTicketEnabled: false, visaEnabled: false,
+  // V2 fields
+  cardVersion: "v1",
+  makkahHotel: "", makkahHotelDistance: "", makkahHotelNights: "",
+  madinahHotel: "", madinahHotelDistance: "", madinahHotelNights: "",
+  flightType: "", luggage: "", transportType: "", totalSeats: "",
 };
 
 function slugify(text: string) {
@@ -130,6 +149,8 @@ function PackagesInner() {
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [makkahHotelFile, setMakkahHotelFile] = useState<File | null>(null);
+  const [madinahHotelFile, setMadinahHotelFile] = useState<File | null>(null);
   const [removeGalleryUrls, setRemoveGalleryUrls] = useState<string[]>([]);
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
   const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
@@ -163,6 +184,15 @@ function PackagesInner() {
       tier: pkg.tier ?? "", includes: pkg.includes ?? "", excludes: pkg.excludes ?? "",
       featured: pkg.featured, status: pkg.status,
       copyEnabled: pkg.copyEnabled, groupTicketEnabled: pkg.groupTicketEnabled, visaEnabled: pkg.visaEnabled,
+      // V2 fields
+      cardVersion: pkg.cardVersion ?? "v1",
+      makkahHotel: pkg.makkahHotel ?? "", makkahHotelDistance: pkg.makkahHotelDistance ?? "",
+      makkahHotelNights: pkg.makkahHotelNights != null ? String(pkg.makkahHotelNights) : "",
+      madinahHotel: pkg.madinahHotel ?? "", madinahHotelDistance: pkg.madinahHotelDistance ?? "",
+      madinahHotelNights: pkg.madinahHotelNights != null ? String(pkg.madinahHotelNights) : "",
+      flightType: pkg.flightType ?? "", luggage: pkg.luggage ?? "",
+      transportType: pkg.transportType ?? "",
+      totalSeats: pkg.totalSeats != null ? String(pkg.totalSeats) : "",
     });
     setItinerary(itineraryFromPackage(pkg));
     setFlightSectors(sectorsFromPackage(pkg));
@@ -170,6 +200,8 @@ function PackagesInner() {
     setFile(null);
     setGalleryFiles([]);
     setRemoveGalleryUrls([]);
+    setMakkahHotelFile(null);
+    setMadinahHotelFile(null);
   }
 
   function resetForm() {
@@ -181,6 +213,8 @@ function PackagesInner() {
     setFile(null);
     setGalleryFiles([]);
     setRemoveGalleryUrls([]);
+    setMakkahHotelFile(null);
+    setMadinahHotelFile(null);
     setError(null);
   }
 
@@ -255,6 +289,20 @@ function PackagesInner() {
     body.set("copyEnabled", String(form.copyEnabled));
     body.set("groupTicketEnabled", String(form.groupTicketEnabled));
     body.set("visaEnabled", String(form.visaEnabled));
+    // V2 fields
+    body.set("cardVersion", form.cardVersion);
+    if (form.makkahHotel) body.set("makkahHotel", form.makkahHotel);
+    if (form.makkahHotelDistance) body.set("makkahHotelDistance", form.makkahHotelDistance);
+    if (form.makkahHotelNights) body.set("makkahHotelNights", form.makkahHotelNights);
+    if (form.madinahHotel) body.set("madinahHotel", form.madinahHotel);
+    if (form.madinahHotelDistance) body.set("madinahHotelDistance", form.madinahHotelDistance);
+    if (form.madinahHotelNights) body.set("madinahHotelNights", form.madinahHotelNights);
+    if (form.flightType) body.set("flightType", form.flightType);
+    if (form.luggage) body.set("luggage", form.luggage);
+    if (form.transportType) body.set("transportType", form.transportType);
+    if (form.totalSeats) body.set("totalSeats", form.totalSeats);
+    if (makkahHotelFile) body.set("makkahHotelImg", await compressImage(makkahHotelFile));
+    if (madinahHotelFile) body.set("madinahHotelImg", await compressImage(madinahHotelFile));
     if (file) body.set("image", await compressImage(file));
     for (let i = 0; i < galleryFiles.length; i++) {
       body.set(`gallery_${i}`, await compressImage(galleryFiles[i]));
@@ -479,6 +527,80 @@ function PackagesInner() {
               <input type="checkbox" checked={form.visaEnabled} onChange={(e) => setForm((f) => ({ ...f, visaEnabled: e.target.checked }))} style={{ width: "auto" }} />
               Visa button active
             </label>
+          </div>
+
+          {/* ── CARD DESIGN VERSION ── */}
+          <div style={{ gridColumn: "1 / -1", background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 10, padding: "16px 18px" }}>
+            <label style={{ fontWeight: 700, fontSize: 13, color: "#0369a1", marginBottom: 10, display: "block" }}>
+              🎨 Card Design Version (Admin Only — users cannot change this)
+            </label>
+            <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+              {(["v1", "v2"] as const).map((v) => (
+                <label key={v} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+                  background: form.cardVersion === v ? "#0ea5e9" : "#e0f2fe", color: form.cardVersion === v ? "#fff" : "#0369a1",
+                  border: `1.5px solid ${form.cardVersion === v ? "#0284c7" : "#7dd3fc"}`, borderRadius: 8, padding: "6px 16px", fontWeight: 700, fontSize: 12 }}>
+                  <input type="radio" name="cardVersion" value={v} checked={form.cardVersion === v}
+                    onChange={() => setForm((f) => ({ ...f, cardVersion: v }))} style={{ width: "auto" }} />
+                  {v === "v1" ? "V1 — Classic Card" : "V2 — Umrah Detail Card (Hotel Photos + Specs)"}
+                </label>
+              ))}
+            </div>
+
+            {form.cardVersion === "v2" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {/* Makkah Hotel */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Makkah Hotel Name</label>
+                  <input value={form.makkahHotel} onChange={(e) => setForm((f) => ({ ...f, makkahHotel: e.target.value }))} placeholder="e.g. Qila Ajyad" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Makkah Hotel Distance</label>
+                  <input value={form.makkahHotelDistance} onChange={(e) => setForm((f) => ({ ...f, makkahHotelDistance: e.target.value }))} placeholder="e.g. 1400m from Haram" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Makkah Hotel Nights</label>
+                  <input type="number" value={form.makkahHotelNights} onChange={(e) => setForm((f) => ({ ...f, makkahHotelNights: e.target.value }))} placeholder="e.g. 11" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Makkah Hotel Photo</label>
+                  <input type="file" accept="image/*" onChange={(e) => setMakkahHotelFile(e.target.files?.[0] ?? null)} />
+                </div>
+                {/* Madinah Hotel */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Madinah Hotel Name</label>
+                  <input value={form.madinahHotel} onChange={(e) => setForm((f) => ({ ...f, madinahHotel: e.target.value }))} placeholder="e.g. Kinan Madina" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Madinah Hotel Distance</label>
+                  <input value={form.madinahHotelDistance} onChange={(e) => setForm((f) => ({ ...f, madinahHotelDistance: e.target.value }))} placeholder="e.g. 900m from Prophet's Mosque" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Madinah Hotel Nights</label>
+                  <input type="number" value={form.madinahHotelNights} onChange={(e) => setForm((f) => ({ ...f, madinahHotelNights: e.target.value }))} placeholder="e.g. 8" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Madinah Hotel Photo</label>
+                  <input type="file" accept="image/*" onChange={(e) => setMadinahHotelFile(e.target.files?.[0] ?? null)} />
+                </div>
+                {/* Flight / transport specs */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Flight Type</label>
+                  <input value={form.flightType} onChange={(e) => setForm((f) => ({ ...f, flightType: e.target.value }))} placeholder="e.g. Direct Flight" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Luggage</label>
+                  <input value={form.luggage} onChange={(e) => setForm((f) => ({ ...f, luggage: e.target.value }))} placeholder="e.g. 30+7 / 30+7 KG" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Transport Type</label>
+                  <input value={form.transportType} onChange={(e) => setForm((f) => ({ ...f, transportType: e.target.value }))} placeholder="e.g. Sharing" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600 }}>Total Seats</label>
+                  <input type="number" value={form.totalSeats} onChange={(e) => setForm((f) => ({ ...f, totalSeats: e.target.value }))} placeholder="e.g. 40" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* FLIGHT SECTORS — minimum 1 Departure + 1 Arrival, "-" disabled on those two.
