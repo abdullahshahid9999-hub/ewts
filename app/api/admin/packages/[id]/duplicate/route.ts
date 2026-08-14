@@ -10,19 +10,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const src = await prisma.package.findUnique({ where: { id }, include: { roomTypes: { orderBy: { sortOrder: "asc" } } } });
   if (!src) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  const { id: _id, createdAt: _c, updatedAt: _u, slug, name, roomTypes, ...rest } = src;
-  void _id; void _c; void _u;
-
   const copy = await prisma.package.create({
     data: {
-      ...rest,
-      name: `${name} (Copy)`,
-      slug: slug ? `${slug}-copy-${Date.now().toString(36)}` : null,
-      status: "inactive",
+      category: src.category,
+      name: `${src.name} (Copy)`,
+      slug: src.slug ? `${src.slug}-copy-${Date.now().toString(36)}` : null,
+      duration: src.duration,
+      depDate: src.depDate,
+      retDate: src.retDate,
+      airline: src.airline,
+      route: src.route,
+      hotels: src.hotels,
+      price: src.price,
+      destination: src.destination,
+      departureCity: src.departureCity,
+      tier: src.tier,
+      includes: src.includes,
+      excludes: src.excludes,
+      itinerary: src.itinerary as never,
+      flightSectors: src.flightSectors as never,
+      imageUrl: src.imageUrl,
+      galleryUrls: src.galleryUrls as never,
       featured: false,
-      galleryUrls: rest.galleryUrls ?? undefined,
+      status: "inactive",
+      copyEnabled: src.copyEnabled,
+      groupTicketEnabled: src.groupTicketEnabled,
+      visaEnabled: src.visaEnabled,
       roomTypes: {
-        create: roomTypes.map(({ id: _rid, packageId: _pid, createdAt: _rc, updatedAt: _ru, ...rt }) => {
+        create: src.roomTypes.map(({ id: _rid, packageId: _pid, createdAt: _rc, updatedAt: _ru, ...rt }) => {
           void _rid; void _pid; void _rc; void _ru;
           return rt;
         }),
