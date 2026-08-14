@@ -55,7 +55,7 @@ function StepBar({ steps, current }: { steps: string[]; current: number }) {
 }
 
 /* ─────────────────── Traveller form ─────────────────── */
-function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: RequiredDoc[]; onChange: (patch: Partial<Traveller>) => void; label: string }) {
+function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Traveller; docs: RequiredDoc[]; onChange: (patch: Partial<Traveller>) => void; label: string; presetOccupation?: string }) {
   const [ocrBusy, setOcrBusy] = useState(false);
   const passportDocId = docs.find(d => /passport/i.test(d.name))?.id ?? "__passport__";
 
@@ -140,14 +140,26 @@ function TravellerForm({ t, docs, onChange, label }: { t: Traveller; docs: Requi
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Passport Issuing Country *" value={t.issuingCountry} onChange={v => onChange({ issuingCountry: v })} placeholder="e.g. Pakistan" />
         {t.ageGroup === "adult" && (
-          <div>
-            <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Occupation *</label>
-            <select value={t.applicantCategory} onChange={e => onChange({ applicantCategory: e.target.value })}
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--lp-brass)]">
-              <option value="">Select…</option>
-              {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-            </select>
-          </div>
+          presetOccupation && t.applicantCategory ? (
+            <div>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Occupation</label>
+              <div className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 bg-amber-50">
+                <span className="text-sm font-semibold text-amber-800">
+                  {APPLICANT_CATEGORIES.find(c => c.value === t.applicantCategory)?.label ?? t.applicantCategory}
+                </span>
+                <span className="text-xs text-amber-600 ml-auto">from search</span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Occupation *</label>
+              <select value={t.applicantCategory} onChange={e => onChange({ applicantCategory: e.target.value })}
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--lp-brass)]">
+                <option value="">Select…</option>
+                {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+          )
         )}
       </div>
 
@@ -504,7 +516,7 @@ function estimatedReadyDate(processingTime: string | null): string | null {
           const infantIdx = travellers.filter((x, i) => x.ageGroup === "infant" && i <= ti).length;
           return `Infant ${infantIdx}`;
         })();
-        return <TravellerForm key={ti} t={t} docs={visa.requiredDocuments} onChange={patch => updateTraveller(ti, patch)} label={label} />;
+        return <TravellerForm key={ti} t={t} docs={visa.requiredDocuments} onChange={patch => updateTraveller(ti, patch)} label={label} presetOccupation={t.ageGroup === "adult" ? initialOccupation : undefined} />;
       })()}
 
       {/* Review step */}

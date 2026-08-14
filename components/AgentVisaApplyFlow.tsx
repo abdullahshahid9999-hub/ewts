@@ -216,11 +216,17 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
             {passportExpiryWarning(travellers[activeTrav].passportExpiry) && <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ {passportExpiryWarning(travellers[activeTrav].passportExpiry)}</p>}
           </div>
           <div className="ap-field">
-            <label>Applicant Type</label>
+            <label>Occupation <span style={{ color: "var(--red)", fontSize: 10 }}>* Required for documents</span></label>
             <select value={travellers[activeTrav].applicantCategory} onChange={e => updateTrav(activeTrav, { applicantCategory: e.target.value })}>
-              <option value="">Select…</option>
+              <option value="">Select occupation…</option>
               {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
+            {travellers[activeTrav].ageGroup === "adult" && !travellers[activeTrav].applicantCategory && (
+              <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ Select occupation — required documents vary by job type</p>
+            )}
+            {travellers[activeTrav].applicantCategory && (
+              <p style={{ fontSize: 11, color: "#047857", marginTop: 4 }}>✓ Showing documents for: <strong>{APPLICANT_CATEGORIES.find(c => c.value === travellers[activeTrav].applicantCategory)?.label}</strong></p>
+            )}
           </div>
           <div className="ap-field">
             <label>Nationality</label>
@@ -229,7 +235,19 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
         </div>
 
         {visa.requiredDocuments.length > 0 && (<>
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>Documents for Traveller {activeTrav + 1}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontWeight: 700, fontSize: 13, marginBottom: 10, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
+            <span>Documents for Traveller {activeTrav + 1}</span>
+            {travellers[activeTrav].applicantCategory && (
+              <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(212,168,67,0.12)", color: "var(--gold)", border: "1px solid rgba(212,168,67,0.3)" }}>
+                {APPLICANT_CATEGORIES.find(c => c.value === travellers[activeTrav].applicantCategory)?.label} only
+              </span>
+            )}
+          </div>
+          {!travellers[activeTrav].applicantCategory && travellers[activeTrav].ageGroup === "adult" && (
+            <div style={{ padding: "10px 12px", borderRadius: 8, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", marginBottom: 12, fontSize: 12, color: "#92400E" }}>
+              ⚠️ Select occupation above to see the correct required documents for this traveller.
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 10, marginBottom: 16 }}>
             {filterDocsForApplicant(visa.requiredDocuments, travellers[activeTrav].applicantCategory, travellers[activeTrav].nationality).map(doc => {
               const f = travellers[activeTrav].files[doc.id];

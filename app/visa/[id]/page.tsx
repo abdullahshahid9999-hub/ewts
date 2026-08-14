@@ -1,10 +1,11 @@
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { waLink } from "@/lib/whatsapp";
+import { filterDocsForApplicant, APPLICANT_CATEGORIES } from "@/lib/visaApplicantCategory";
 
 export const revalidate = 60;
 
@@ -98,15 +99,30 @@ export default async function VisaDetailPage({
             </ul>
           </div>
 
-          {/* Required Documents */}
-          {visa.requiredDocuments.length > 0 && (
+          {/* Required Documents — filtered by occupation if known */}
+          {visa.requiredDocuments.length > 0 && (() => {
+            const filtered = occupation
+              ? filterDocsForApplicant(visa.requiredDocuments, occupation, "")
+              : visa.requiredDocuments.filter((d: { applicantCategory: string | null }) => !d.applicantCategory);
+            const hasOccupationDocs = visa.requiredDocuments.some((d: { applicantCategory: string | null }) => d.applicantCategory);
+            const occLabel = APPLICANT_CATEGORIES.find(c => c.value === occupation)?.label;
+            return (
             <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-1">Documents Required</h2>
+              <div className="flex items-start justify-between mb-1">
+                <h2 className="font-display text-xl font-semibold">Documents Required</h2>
+                {occupation && <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">{occLabel ?? occupation.replace(/_/g, " ")}</span>}
+              </div>
+              {!occupation && hasOccupationDocs && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
+                  <span>⚠️</span>
+                  <p className="text-xs text-amber-800">Documents vary by occupation. <strong>Select your occupation</strong> in the search bar above to see your exact requirements.</p>
+                </div>
+              )}
               <p className="text-sm text-gray-400 mb-4">Prepare all required documents before applying.</p>
-              <div className="space-y-2.5">
-                {visa.requiredDocuments.map((doc: { id: string; name: string; description: string | null; isRequired: boolean; icon?: string | null }) => (
-                  <div key={doc.id} className="flex gap-3 p-3.5 rounded-xl border border-gray-100 bg-gray-50">
-                    <span className="text-xl mt-0.5 flex-shrink-0">{doc.icon || (doc.isRequired ? "📄" : "📎")}</span>
+              <div className="divide-y divide-gray-100">
+                {filtered.map((doc: { id: string; name: string; description: string | null; isRequired: boolean; icon?: string | null; applicantCategory?: string | null }) => (
+                  <div key={doc.id} className="flex gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <span className="text-base mt-0.5 flex-shrink-0">{doc.icon || (doc.isRequired ? "📄" : "📎")}</span>
                     <div>
                       <p className="text-sm font-semibold text-gray-800">
                         {doc.name}
@@ -114,13 +130,17 @@ export default async function VisaDetailPage({
                           ? <span className="ml-2 text-xs text-red-500 font-bold">*required</span>
                           : <span className="ml-2 text-xs text-gray-400">(optional)</span>}
                       </p>
-                      {doc.description && <p className="text-xs text-gray-400 mt-0.5">{doc.description}</p>}
+                      {doc.description && <p className="text-xs text-gray-400 mt-0.5 leading-snug">{doc.description}</p>}
                     </div>
                   </div>
                 ))}
               </div>
+              {!occupation && hasOccupationDocs && (
+                <p className="text-xs text-gray-400 mt-3">* Additional occupation-specific documents will be shown after you select your occupation.</p>
+              )}
             </div>
-          )}
+            );
+          })()}
 
           {/* Legacy text requirements */}
           {visa.requirements && visa.requiredDocuments.length === 0 && (
