@@ -18,7 +18,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       include: {
         roomTypes: { orderBy: { sortOrder: "asc" } },
-        _count: { select: { directBookings: true } },
+        _count: { select: { bookings: true } },
       },
     });
     return NextResponse.json({ packages });

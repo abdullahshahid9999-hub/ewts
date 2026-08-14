@@ -88,7 +88,7 @@ type Package = {
   featured: boolean;
   status: string;
   roomTypes: RoomType[];
-  _count?: { directBookings: number };
+  _count?: { bookings: number };
 };
 
 const emptyForm = {
@@ -707,7 +707,7 @@ function PackagesInner() {
                     <td className="capitalize">{p.category}</td>
                     <td>{p.slug ?? <span style={{ color: "var(--a-dim)" }}>none</span>}</td>
                     <td>{p.roomTypes.length}</td>
-                    <td style={{ fontWeight: 700, color: (p._count?.directBookings ?? 0) > 0 ? "var(--a-green)" : "var(--a-dim)" }}>{p._count?.directBookings ?? 0}</td>
+                    <td style={{ fontWeight: 700, color: (p._count?.bookings ?? 0) > 0 ? "var(--a-green)" : "var(--a-dim)" }}>{p._count?.bookings ?? 0}</td>
                     <td><span className={`adp-pill adp-p-${p.status}`}>{p.status}</span></td>
                     <td style={{ display: "flex", gap: "6px" }}>
                       <button onClick={() => startEdit(p)} className="adp-btn adp-btn-s">Edit</button>
