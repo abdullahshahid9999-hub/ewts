@@ -276,3 +276,33 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAUL
 
 *East & West Travel Services — Faisalabad, Pakistan*
 *Developer: Abdullah Shahid*
+
+---
+
+## Session — 2026-08-14
+
+### Umrah Package Card V2 Design (commit ac94fd7)
+
+**Schema** — 15 new columns on `packages` table (see Migration SQL below):
+- `card_version` TEXT DEFAULT 'v1'
+- `makkah_hotel`, `makkah_hotel_distance`, `makkah_hotel_nights` INT, `makkah_hotel_img`
+- `madinah_hotel`, `madinah_hotel_distance`, `madinah_hotel_nights` INT, `madinah_hotel_img`
+- `flight_type`, `luggage`, `transport_type`, `total_seats` INT, `seats_booked` INT DEFAULT 0
+
+**New component** — `components/UmrahCardV2.tsx`:
+- Seats remaining badge (totalSeats − seatsBooked)
+- "UMRAH PACKAGE" badge + tier badge
+- Package name + includes subtitle
+- 4-pill info row: Duration / Makkah Hotel (+ distance) / Madinah Hotel (+ distance) / Airline + route
+- Hotel photo cards side-by-side (R2 images, distance badges, short description)
+- Specs block: Airline, Flight Type (pill), Route, Luggage, Transport, Hotel nights + distance, Visa note
+- Price + CTA (View Details or WhatsApp)
+
+**Admin form** (`/admin/packages`):
+- Card Design Version radio: V1 (classic) / V2 (detail card)
+- V2 section (conditionally shown): Makkah Hotel name/distance/nights/photo, Madinah Hotel name/distance/nights/photo, Flight Type, Luggage, Transport Type, Total Seats
+- Hotel images uploaded to R2 `packages/hotels/` folder
+
+**Routing logic** (admin-controlled, user cannot override):
+- `pkg.cardVersion === "v2"` → renders `UmrahCardV2` on both `/umrah` (public) and `/agent/umrah`
+- All other packages → existing V1 card unchanged
