@@ -131,6 +131,7 @@ export default function Navbar() {
         style={{
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? "auto" : "none",
+          visibility: mobileOpen ? "visible" : "hidden",
         }}
         onClick={() => setMobileOpen(false)}
       />
@@ -138,7 +139,10 @@ export default function Navbar() {
       {/* Sidebar panel */}
       <div
         className="fixed top-0 right-0 z-50 h-full w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out"
-        style={{ transform: mobileOpen ? "translateX(0)" : "translateX(100%)" }}
+        style={{
+          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
+          visibility: mobileOpen ? "visible" : "hidden",
+        }}
       >
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-border bg-[var(--lp-ink)]">
