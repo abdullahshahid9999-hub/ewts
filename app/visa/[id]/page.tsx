@@ -68,35 +68,33 @@ export default async function VisaDetailPage({
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
 
         {/* ── LEFT ── */}
-        <div className="space-y-5">
+        <div className="space-y-4">
 
-          {/* Visa Details grid */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h2 className="font-display text-xl font-semibold mb-5">Visa Details</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-5">
+          {/* Visa Details + Services — merged compact card */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <h2 className="font-display text-lg font-semibold mb-4 pb-3 border-b border-gray-100">Visa Details</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-4 mb-4">
               {visa.validity     && <Fact label="Validity"         value={visa.validity} />}
               {visa.maxStay      && <Fact label="Max Stay"         value={visa.maxStay} />}
-              {visa.processingTime && <Fact label="Processing Time" value={visa.processingTime} />}
+              {visa.processingTime && <Fact label="Processing"     value={visa.processingTime} />}
               {visa.days         && <Fact label="Duration"         value={visa.days} />}
-              <Fact label="Visa Type" value={visa.type.charAt(0).toUpperCase() + visa.type.slice(1)} />
-              <Fact label="Country"   value={visa.country} />
+              <Fact label="Type" value={visa.type.charAt(0).toUpperCase() + visa.type.slice(1)} />
+              <Fact label="Country" value={visa.country} />
             </div>
-          </div>
-
-          {/* Services */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h2 className="font-display text-xl font-semibold mb-4">Services Included</h2>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {["Professional Visa Guidance & Consultancy", "Complete File Preparation", "Application Submission & Tracking", "Expert Document Review"].map(s => (
-                <li key={s} className="flex items-center gap-2.5 text-sm text-gray-700">
-                  <span className="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "var(--gold-bg)", border: "1px solid var(--gold-bd)", color: "var(--lp-brass)" }}>✓</span>
-                  {s}
-                </li>
-              ))}
-            </ul>
+            <div className="border-t border-gray-100 pt-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Services Included</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {["Professional Visa Guidance & Consultancy","Complete File Preparation","Application Submission & Tracking","Expert Document Review"].map(s => (
+                  <li key={s} className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="w-4 h-4 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-[9px]" style={{ background: "var(--gold-bg)", border: "1px solid var(--gold-bd)", color: "var(--lp-brass)" }}>✓</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Required Documents — filtered by occupation if known */}
@@ -151,16 +149,16 @@ export default async function VisaDetailPage({
           )}
 
           {visa.termsAndConditions && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-3">Terms &amp; Conditions</h2>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{visa.termsAndConditions}</p>
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <h2 className="font-display text-lg font-semibold mb-3">Terms &amp; Conditions</h2>
+              <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">{visa.termsAndConditions}</p>
             </div>
           )}
 
           {visa.refundPolicy && (
-            <div className="border border-amber-200 bg-amber-50 rounded-2xl p-6">
-              <h2 className="font-display text-xl font-semibold mb-3">⚠️ Refund Policy</h2>
-              <p className="text-sm text-amber-800 whitespace-pre-wrap leading-relaxed">{visa.refundPolicy}</p>
+            <div className="border border-amber-200 bg-amber-50 rounded-2xl p-5">
+              <h2 className="font-display text-lg font-semibold mb-3">⚠️ Refund Policy</h2>
+              <p className="text-xs text-amber-800 whitespace-pre-wrap leading-relaxed">{visa.refundPolicy}</p>
             </div>
           )}
         </div>
