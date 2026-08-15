@@ -207,22 +207,20 @@ export default async function VisaDetailPage({
               </Link>
             </div>
 
-            {/* Processing countdown */}
+            {/* Processing countdown — always visible */}
             {visa.processingTime && (() => {
-              const nums = visa.processingTime.match(/\d+/g)?.map(Number) ?? [];
+              const nums = (visa.processingTime ?? "").match(/\d+/g)?.map(Number) ?? [];
               if (!nums.length) return null;
               const days = Math.max(...nums);
-              const date = new Date();
-              let added = 0;
-              while (added < days) { date.setDate(date.getDate() + 1); const d = date.getDay(); if (d !== 0 && d !== 6) added++; }
-              const label = date.toLocaleDateString("en-PK", { day: "numeric", month: "long" });
+              const d = new Date(); let added = 0;
+              while (added < days) { d.setDate(d.getDate()+1); const wd=d.getDay(); if(wd!==0&&wd!==6) added++; }
               return (
-                <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: "rgba(212,168,67,0.1)" }}>⏱</div>
+                <div className="mx-5 mb-4 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.25)" }}>
+                  <span className="text-2xl flex-shrink-0">⏱</span>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Estimated Ready By</p>
-                    <p className="font-display text-base font-bold" style={{ color: "var(--lp-ink)" }}>{label}</p>
-                    <p className="text-[10px] text-gray-400">Based on {visa.processingTime}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--lp-brass)" }}>Estimated Ready By</p>
+                    <p className="font-bold text-sm" style={{ color: "var(--lp-ink)" }}>{d.toLocaleDateString("en-PK",{day:"numeric",month:"long",year:"numeric"})}</p>
+                    <p className="text-[10px] text-gray-400">Based on {visa.processingTime} (working days)</p>
                   </div>
                 </div>
               );

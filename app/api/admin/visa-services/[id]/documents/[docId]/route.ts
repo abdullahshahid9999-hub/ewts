@@ -16,6 +16,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(body.description !== undefined && { description: body.description?.trim() || null }),
       ...(body.isRequired !== undefined && { isRequired: Boolean(body.isRequired) }),
       ...(body.sortOrder !== undefined && { sortOrder: Number(body.sortOrder) || 0 }),
+      ...(body.applicantCategory !== undefined && { applicantCategory: body.applicantCategory || null }),
+      ...(body.nationality !== undefined && { nationality: body.nationality?.trim() || null }),
+      ...(body.allowMultiple !== undefined && { allowMultiple: Boolean(body.allowMultiple) }),
+      ...(body.icon !== undefined && { icon: body.icon?.trim() || null }),
     },
   });
 

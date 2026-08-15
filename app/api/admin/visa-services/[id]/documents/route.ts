@@ -35,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       sortOrder: Number(body?.sortOrder) || 0,
       applicantCategory: typeof body?.applicantCategory === "string" && body.applicantCategory ? body.applicantCategory : null,
       nationality: typeof body?.nationality === "string" && body.nationality.trim() ? body.nationality.trim() : null,
+      allowMultiple: body?.allowMultiple === true,
     },
   });
 

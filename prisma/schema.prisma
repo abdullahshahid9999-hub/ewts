@@ -239,6 +239,7 @@ model VisaRequiredDocument {
   // combination; both null means universal.
   applicantCategory String? @map("applicant_category") // job_holder | business_owner | retired | student | other
   nationality       String? @map("nationality")
+  allowMultiple     Boolean @default(false) @map("allow_multiple") // e.g. passport page 1 + page 2
 
   visa      VisaService               @relation(fields: [visaId], references: [id], onDelete: Cascade)
   uploads   VisaApplicationDocument[]

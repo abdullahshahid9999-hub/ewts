@@ -16,6 +16,7 @@ type RequiredDoc = {
   description: string | null;
   isRequired: boolean;
   applicantCategory: string | null;
+  allowMultiple?: boolean;
   nationality: string | null;
 };
 
@@ -34,7 +35,7 @@ const emptyForm = {
   termsAndConditions: "", refundPolicy: "",
 };
 
-const emptyDoc = { name: "", icon: "", description: "", isRequired: true, applicantCategory: "", nationality: "" };
+const emptyDoc = { name: "", icon: "", description: "", isRequired: true, applicantCategory: "", nationality: "", allowMultiple: false };
 
 const iStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box" };
 
@@ -224,6 +225,7 @@ function VisaServicesInner() {
       isRequired: newDoc.isRequired,
       applicantCategory: newDoc.applicantCategory || null,
       nationality: newDoc.nationality.trim() || null,
+      allowMultiple: newDoc.allowMultiple ?? false,
     }]);
     setNewDoc(emptyDoc);
   }
@@ -234,7 +236,7 @@ function VisaServicesInner() {
     setSavingDoc(true);
     await adminFetch(`/api/admin/visa-services/${editingId}/documents`, accessToken, refresh, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newDoc.name.trim(), icon: newDoc.icon.trim() || null, description: newDoc.description.trim() || null, isRequired: newDoc.isRequired, applicantCategory: newDoc.applicantCategory || null, nationality: newDoc.nationality.trim() || null }),
+      body: JSON.stringify({ name: newDoc.name.trim(), icon: newDoc.icon.trim() || null, description: newDoc.description.trim() || null, isRequired: newDoc.isRequired, applicantCategory: newDoc.applicantCategory || null, nationality: newDoc.nationality.trim() || null, allowMultiple: newDoc.allowMultiple ?? false }),
     });
     setSavingDoc(false);
     setNewDoc(emptyDoc);
@@ -294,6 +296,15 @@ function VisaServicesInner() {
     load();
   }
 
+  async function handleToggleStatus(v: VisaService) {
+    const next = v.status === "active" ? "inactive" : "active";
+    await adminFetch(`/api/admin/visa-services/${v.id}`, accessToken, refresh, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...v, status: next }),
+    });
+    load();
+  }
+
   // ── Doc input row (shared between create/edit) ──
   const docInputRow = (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "flex-end", marginTop: 10 }}>
@@ -312,6 +323,8 @@ function VisaServicesInner() {
       <div style={{ flex: "1 1 100px" }}><input style={iStyle} placeholder="Nationality (optional)" value={newDoc.nationality} onChange={e => setNewDoc(f => ({ ...f, nationality: e.target.value }))} /></div>
       <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, whiteSpace: "nowrap", cursor: "pointer" }}>
         <input type="checkbox" checked={newDoc.isRequired} onChange={e => setNewDoc(f => ({ ...f, isRequired: e.target.checked }))} style={{ accentColor: "var(--a-gold)" }} /> Required
+                <label style={{ marginLeft: 16 }}>
+                <input type="checkbox" checked={newDoc.allowMultiple ?? false} onChange={e => setNewDoc(f => ({ ...f, allowMultiple: e.target.checked }))} style={{ accentColor: "var(--a-gold)" }} /> Allow multiple uploads (e.g. passport page 1 + 2)</label>
       </label>
       <button type="button" onClick={editingId ? addSavedDoc : addPendingDoc} disabled={savingDoc} className="adp-btn adp-btn-g" style={{ whiteSpace: "nowrap" }}>
         {savingDoc ? "Adding…" : "+ Add Doc"}
@@ -379,7 +392,8 @@ function VisaServicesInner() {
               <label>Status</label>
               <select style={iStyle} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="inactive">Inactive (Hidden)</option>
+                <option value="duplicate">Duplicate (Hidden)</option>
               </select>
             </div>
           </div>
@@ -552,6 +566,7 @@ function VisaServicesInner() {
 
             {/* Actions */}
             <div style={{ padding: "10px 16px", borderTop: "1px solid var(--a-border)", display: "flex", gap: 8 }}>
+              <button onClick={() => handleToggleStatus(v)} className={`adp-btn ${v.status === "active" ? "adp-btn-t" : "adp-btn-g"}`} style={{ fontSize: 11 }}>{v.status === "active" ? "Deactivate" : "Activate"}</button>
               <button onClick={() => openEdit(v)} className="adp-btn adp-btn-s" style={{ flex: 1 }}>Edit</button>
               <button onClick={() => handleDelete(v.id)} className="adp-btn adp-btn-r">Delete</button>
             </div>

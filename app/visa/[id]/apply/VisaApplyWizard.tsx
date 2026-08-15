@@ -199,7 +199,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
                   </div>
                   {t.files[doc.id] && <span className="text-green-600 text-xs font-bold shrink-0 mt-0.5">✓ Added</span>}
                 </div>
-                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={t.files[doc.id]} />
+                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={t.files[doc.id]} multiple={(doc as { allowMultiple?: boolean }).allowMultiple} />
                 {t.docWarnings[doc.id] && (
                   <p className={`text-xs mt-2 ${t.docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : t.docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
                     {t.docWarnings[doc.id]}
@@ -214,16 +214,17 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
   );
 }
 
-function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/webp,application/pdf" }: { onChange: (f: File) => void; uploaded?: File; accept?: string }) {
+function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/webp,application/pdf", multiple }: { onChange: (f: File) => void; uploaded?: File; accept?: string; multiple?: boolean }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); }} />
+      <input ref={ref} type="file" accept={accept} multiple={multiple} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); }} />
       <button type="button" onClick={() => ref.current?.click()}
         className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${uploaded ? "border-green-300 bg-green-50 text-green-700" : "border-border bg-surface text-[var(--lp-ink)] hover:border-[var(--lp-brass)]"}`}>
         <span>{uploaded ? "✅" : "📎"}</span>
-        {uploaded ? uploaded.name.length > 28 ? uploaded.name.slice(0, 25) + "…" : uploaded.name : "Choose Document"}
+        {uploaded ? (uploaded.name.length > 28 ? uploaded.name.slice(0,25)+"…" : uploaded.name) : `Choose ${multiple ? "Files" : "Document"}`}
       </button>
+      {multiple && !uploaded && <p className="text-[10px] text-muted mt-1">Multiple files allowed — upload one at a time</p>}
     </div>
   );
 }
