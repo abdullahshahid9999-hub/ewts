@@ -153,7 +153,7 @@ export default async function Home() {
             take care of the rest, the halal way.
           </p>
 
-          <SearchWidget facets={{ umrah: { destinations: facets.umrah.destinations, durations: facets.umrah.durations, departureCities: (facets.umrah as { departureCities?: string[] }).departureCities ?? [] }, tours: { destinations: facets.tours.destinations }, groupTickets: { routes: facets.groupTickets.routes }, visa: { countries: facets.visa.countries } }} />
+          <SearchWidget facets={{ umrah: { destinations: facets.umrah.destinations, durations: facets.umrah.durations, departureCities: (facets.umrah as { departureCities?: string[] }).departureCities ?? [] }, tours: { destinations: facets.tours.destinations }, groupTickets: { routes: facets.groupTickets.routes }, visa: { countries: facets.visa.countries, countryTypeMap: facets.visa.countryTypeMap ?? {} } }} />
 
           <div className="lp-rise lp-rise-3 flex flex-wrap justify-center gap-x-8 gap-y-3 mt-8">
             {HERO_STATS.map((s) => (

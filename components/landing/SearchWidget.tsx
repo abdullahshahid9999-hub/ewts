@@ -11,7 +11,7 @@ export type SearchFacets = {
   umrah: { destinations: string[]; durations: string[]; departureCities: string[] };
   tours: { destinations: string[] };
   groupTickets: { routes: string[] };
-  visa: { countries: string[] };
+visa: { countries: string[]; countryTypeMap: Record<string, string[]> };
 };
 
 const SERVICES: { key: ServiceKey; label: string; path: string; icon: string }[] = [
@@ -54,6 +54,11 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
+
+  // Dynamic visa categories filtered by selected destination
+  const visaTypes: string[] = destination && facets.visa.countryTypeMap?.[destination]
+    ? facets.visa.countryTypeMap[destination]
+    : Object.values(facets.visa.countryTypeMap ?? {}).flat().filter((v, i, a) => a.indexOf(v) === i);
   const [travellers, setTravellers] = useState(1);
   const [paxOpen, setPaxOpen] = useState(false);
 
@@ -150,7 +155,7 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
             {/* Country */}
             <div className="flex-[2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Country / State</p>
-              <select value={destination} onChange={e => setDestination(e.target.value)}
+              <select value={destination} onChange={e => { setDestination(e.target.value); setVisaCategory(""); }}
                 className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
                 style={{ color: destination ? "var(--lp-text)" : "var(--lp-muted)" }}>
                 <option value="">Select country…</option>
@@ -160,11 +165,12 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
             {/* Visa Category */}
             <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Visa Category</p>
-              <select value={visaCategory} onChange={e => setVisaCategory(e.target.value)}
-                className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
-                style={{ color: "var(--lp-text)" }}>
-                {VISA_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+            <select value={visaCategory} onChange={e => setVisaCategory(e.target.value)}
+              className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
+              style={{ color: "var(--lp-text)" }}>
+              <option value="">All Types</option>
+              {visaTypes.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            </select>
             </div>
             {/* Occupation */}
             <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
