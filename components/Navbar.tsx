@@ -124,26 +124,17 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile slide-in drawer */}
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
-        style={{
-          opacity: mobileOpen ? 1 : 0,
-          pointerEvents: mobileOpen ? "auto" : "none",
-          visibility: mobileOpen ? "visible" : "hidden",
-        }}
-        onClick={() => setMobileOpen(false)}
-      />
+      {/* Mobile slide-in drawer — only mounted when opened */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+          />
 
-      {/* Sidebar panel */}
-      <div
-        className="fixed top-0 right-0 z-50 h-full w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out"
-        style={{
-          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
-          visibility: mobileOpen ? "visible" : "hidden",
-        }}
-      >
+          {/* Sidebar panel */}
+          <div className="fixed top-0 right-0 z-50 h-full w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col">
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-border bg-[var(--lp-ink)]">
           <div className="flex items-center gap-2">
@@ -215,6 +206,8 @@ export default function Navbar() {
           <p className="text-center text-xs text-muted mt-3">We reply within minutes</p>
         </div>
       </div>
+        </>
+      )}
     </header>
   );
 }
