@@ -34,21 +34,21 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
         <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold tracking-tight">
           <Image src="/images/logo.png" alt="East & West Travel Services" width={44} height={44} className="rounded-md" />
-          <span className="hidden sm:inline">East <span className="text-[var(--lp-brass)] italic">&amp;</span> West <span className="font-normal">Travel Services</span></span>
+          <span className="hidden sm:inline">East <span className="text-amber-700 italic">&amp;</span> West <span className="font-normal">Travel Services</span></span>
           <span className="sm:hidden text-sm">eastwestpk</span>
         </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-text2">
-          <Link href="/" className="hover:text-[var(--lp-brass)] transition-colors">Home</Link>
-          <Link href="/about" className="hover:text-[var(--lp-brass)] transition-colors">About Us</Link>
+          <Link href="/" className="hover:text-amber-700 transition-colors">Home</Link>
+          <Link href="/about" className="hover:text-amber-700 transition-colors">About Us</Link>
 
           <div
             className="relative"
             onMouseEnter={() => setServicesOpen(true)}
             onMouseLeave={() => setServicesOpen(false)}
           >
-            <button className="hover:text-[var(--lp-brass)] transition-colors flex items-center gap-1">
+            <button className="hover:text-amber-700 transition-colors flex items-center gap-1">
               Services
               <span
                 className="text-xs transition-transform duration-200"
@@ -68,7 +68,7 @@ export default function Navbar() {
                   <Link
                     key={s.href}
                     href={s.href}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface hover:text-[var(--lp-brass)] transition-colors"
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-surface hover:text-amber-700 transition-colors"
                   >
                     <span>{s.icon}</span>
                     {s.label}
@@ -78,7 +78,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          <Link href="/blog" className="hover:text-[var(--lp-brass)] transition-colors">Blog</Link>
+          <Link href="/blog" className="hover:text-amber-700 transition-colors">Blog</Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -157,25 +157,25 @@ export default function Navbar() {
           <Link
             href="/"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 py-3 text-sm font-semibold text-[var(--lp-text)] hover:text-[var(--lp-brass)] border-b border-border/50 transition-colors"
+            className="flex items-center gap-3 py-3 text-sm font-semibold text-gray-800 hover:text-amber-700 border-b border-border/50 transition-colors"
           >
             🏠 Home
           </Link>
           <Link
             href="/about"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 py-3 text-sm font-semibold text-[var(--lp-text)] hover:text-[var(--lp-brass)] border-b border-border/50 transition-colors"
+            className="flex items-center gap-3 py-3 text-sm font-semibold text-gray-800 hover:text-amber-700 border-b border-border/50 transition-colors"
           >
             ℹ️ About Us
           </Link>
 
-          <p className="pt-4 pb-2 text-xs font-bold uppercase tracking-widest text-[var(--lp-brass)]">Our Services</p>
+          <p className="pt-4 pb-2 text-xs font-bold uppercase tracking-widest text-amber-700">Our Services</p>
           {serviceLinks.map((s) => (
             <Link
               key={s.href}
               href={s.href}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 py-3 pl-2 text-sm font-medium text-[var(--lp-text)] hover:text-[var(--lp-brass)] border-b border-border/30 transition-colors"
+              className="flex items-center gap-3 py-3 pl-2 text-sm font-medium text-gray-800 hover:text-amber-700 border-b border-border/30 transition-colors"
             >
               <span className="text-base">{s.icon}</span>
               {s.label}
@@ -185,7 +185,7 @@ export default function Navbar() {
           <Link
             href="/blog"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 py-3 mt-1 text-sm font-semibold text-[var(--lp-text)] hover:text-[var(--lp-brass)] transition-colors"
+            className="flex items-center gap-3 py-3 mt-1 text-sm font-semibold text-gray-800 hover:text-amber-700 transition-colors"
           >
             📰 Blog
           </Link>
