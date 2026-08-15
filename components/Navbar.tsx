@@ -16,6 +16,8 @@ const serviceLinks = [
 export default function Navbar() {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -124,8 +126,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile slide-in drawer — only mounted when opened */}
-      {mobileOpen && (
+      {/* Mobile slide-in drawer — only mounted client-side when opened */}
+      {mounted && mobileOpen && (
         <>
           {/* Backdrop */}
           <div
