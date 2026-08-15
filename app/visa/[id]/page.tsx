@@ -207,6 +207,27 @@ export default async function VisaDetailPage({
               </Link>
             </div>
 
+            {/* Processing countdown */}
+            {visa.processingTime && (() => {
+              const nums = visa.processingTime.match(/\d+/g)?.map(Number) ?? [];
+              if (!nums.length) return null;
+              const days = Math.max(...nums);
+              const date = new Date();
+              let added = 0;
+              while (added < days) { date.setDate(date.getDate() + 1); const d = date.getDay(); if (d !== 0 && d !== 6) added++; }
+              const label = date.toLocaleDateString("en-PK", { day: "numeric", month: "long" });
+              return (
+                <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl" style={{ background: "rgba(212,168,67,0.1)" }}>⏱</div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Estimated Ready By</p>
+                    <p className="font-display text-base font-bold" style={{ color: "var(--lp-ink)" }}>{label}</p>
+                    <p className="text-[10px] text-gray-400">Based on {visa.processingTime}</p>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* WhatsApp */}
             <div className="px-6 pb-5 pt-3 bg-white">
               <a href={waLink(waMsg)} target="_blank" rel="noopener noreferrer"
