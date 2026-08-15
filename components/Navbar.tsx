@@ -96,7 +96,7 @@ export default function Navbar() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white transition-colors hover:bg-surface"
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-white transition-colors hover:bg-surface shrink-0"
             aria-label="Menu"
             aria-expanded={mobileOpen}
           >
@@ -127,7 +127,7 @@ export default function Navbar() {
       {/* Mobile slide-in drawer */}
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity duration-300"
+        className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
         style={{
           opacity: mobileOpen ? 1 : 0,
           pointerEvents: mobileOpen ? "auto" : "none",
@@ -137,7 +137,7 @@ export default function Navbar() {
 
       {/* Sidebar panel */}
       <div
-        className="fixed top-0 right-0 z-50 h-full w-72 max-w-[85vw] bg-white shadow-2xl md:hidden flex flex-col transition-transform duration-300 ease-out"
+        className="fixed top-0 right-0 z-50 h-full w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out"
         style={{ transform: mobileOpen ? "translateX(0)" : "translateX(100%)" }}
       >
         {/* Sidebar header */}
