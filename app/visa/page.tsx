@@ -185,7 +185,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
                       </span>
                     </div>
                     <Link
-                      href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}`}
+                      href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`}
                       className="text-sm font-bold text-black px-4 py-2 rounded-xl transition-colors"
                       style={{ background: "var(--lp-brass)" }}
                     >
