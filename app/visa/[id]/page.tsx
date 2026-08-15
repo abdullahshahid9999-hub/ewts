@@ -207,24 +207,19 @@ export default async function VisaDetailPage({
               </Link>
             </div>
 
-            {/* Processing countdown — always visible */}
-            {visa.processingTime && (() => {
-              const nums = (visa.processingTime ?? "").match(/\d+/g)?.map(Number) ?? [];
-              if (!nums.length) return null;
-              const days = Math.max(...nums);
-              const d = new Date(); let added = 0;
-              while (added < days) { d.setDate(d.getDate()+1); const wd=d.getDay(); if(wd!==0&&wd!==6) added++; }
-              return (
-                <div className="mx-5 mb-4 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.25)" }}>
-                  <span className="text-2xl flex-shrink-0">⏱</span>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--lp-brass)" }}>Estimated Ready By</p>
-                    <p className="font-bold text-sm" style={{ color: "var(--lp-ink)" }}>{d.toLocaleDateString("en-PK",{day:"numeric",month:"long",year:"numeric"})}</p>
-                    <p className="text-[10px] text-gray-400">Based on {visa.processingTime} (working days)</p>
-                  </div>
+            {/* Processing countdown */}
+            {visa.processingTime && (visa.processingTime.match(/\d+/g)?.map(Number) ?? []).length > 0 && (
+              <div className="mx-5 mb-4 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: "rgba(212,168,67,0.12)", border: "1px solid rgba(212,168,67,0.25)" }}>
+                <span className="text-2xl flex-shrink-0">⏱</span>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: "var(--lp-brass)" }}>Estimated Ready By</p>
+                  <p className="font-bold text-sm" style={{ color: "var(--lp-ink)" }}>
+                    {addWorkingDays(Math.max(...(visa.processingTime.match(/\d+/g)?.map(Number) ?? [1])))}
+                  </p>
+                  <p className="text-[10px] text-gray-400">Based on {visa.processingTime} (working days)</p>
                 </div>
-              );
-            })()}
+              </div>
+            )}
 
             {/* WhatsApp */}
             <div className="px-6 pb-5 pt-3 bg-white">
@@ -256,6 +251,13 @@ export default async function VisaDetailPage({
       <Footer />
     </>
   );
+}
+
+function addWorkingDays(n: number): string {
+  const d = new Date();
+  let added = 0;
+  while (added < n) { d.setDate(d.getDate() + 1); const wd = d.getDay(); if (wd !== 0 && wd !== 6) added++; }
+  return d.toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
