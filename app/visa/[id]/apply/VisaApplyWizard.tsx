@@ -87,6 +87,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
         docWarnings: warnings,
         surname: scan.fullName && !t.surname ? surname : t.surname,
         givenName: scan.fullName && !t.givenName ? givenName : t.givenName,
+        dob: scan.dob && !t.dob ? scan.dob : t.dob,
         passportNumber: scan.passportNumber || t.passportNumber,
         passportExpiry: scan.passportExpiry || t.passportExpiry,
         nationality: scan.nationality || t.nationality,
@@ -123,7 +124,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
       {/* DOB + Nationality row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <DateField label="Date of Birth *" value={t.dob} onChange={v => onChange({ dob: v })} />
-        <Field label="Nationality *" value={t.nationality} onChange={v => onChange({ nationality: v })} placeholder="e.g. Pakistani" />
+        <NationalityField value={t.nationality} onChange={v => onChange({ nationality: v })} />
       </div>
 
       {/* Passport details */}
@@ -223,6 +224,21 @@ function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/we
         <span>{uploaded ? "✅" : "📎"}</span>
         {uploaded ? uploaded.name.length > 28 ? uploaded.name.slice(0, 25) + "…" : uploaded.name : "Choose Document"}
       </button>
+    </div>
+  );
+}
+
+const NATIONALITIES = ["Pakistani","Indian","Bangladeshi","Afghan","British","American","Canadian","Australian","Emirati","Saudi Arabian","Chinese","German","French","Turkish","Malaysian","Indonesian","Thai","Filipino","Nepali","Sri Lankan","Egyptian","Qatari","Kuwaiti","Omani","Bahraini","Japanese","Korean","South African","New Zealander"];
+
+function NationalityField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Nationality *</label>
+      <input list="nat-list" value={value} onChange={e => onChange(e.target.value)} placeholder="e.g. Pakistani"
+        className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--lp-brass)]" />
+      <datalist id="nat-list">
+        {NATIONALITIES.map(n => <option key={n} value={n} />)}
+      </datalist>
     </div>
   );
 }
