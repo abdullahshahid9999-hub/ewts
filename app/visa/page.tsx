@@ -120,9 +120,13 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-16">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
         <SearchResultsNotice q={q} basePath="/visa" />
-        <div className="flex gap-8 items-start">
+        {/* Mobile filter button */}
+        <div className="flex items-center justify-between mb-4 sm:hidden">
+          <p className="text-sm text-muted font-medium">{visas.length} visa{visas.length !== 1 ? "s" : ""} found</p>
+        </div>
+        <div className="flex gap-6 items-start">
           <Suspense fallback={null}>
             <FilterSidebar groups={[
               { key: "type", label: "Visa Type", options: facets.types },
