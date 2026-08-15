@@ -163,32 +163,34 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
                   )}
                 </div>
                 <div className="p-5 flex flex-col flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      {v.countryFlag && <span className="text-2xl leading-none">{v.countryFlag}</span>}
-                      <div>
-                        <h3 className="font-semibold text-base leading-tight">{v.title}</h3>
-                        <span className="inline-block mt-1 text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 capitalize">{v.type}</span>
+                  <div className="flex items-start gap-3 mb-3">
+                    {v.countryFlag && <span className="text-2xl leading-none flex-shrink-0 mt-0.5">{v.countryFlag}</span>}
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-base leading-tight text-gray-900">
+                        {/* Strip trailing country name if duplicated at end of title */}
+                        {v.title.replace(new RegExp(`\\s*${v.country}\\s*$`, "i"), "").trim() || v.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 capitalize">{v.type}</span>
+                        <span className="text-[11px] text-gray-400 font-medium">{v.country}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    {v.processingTime && <p>⏱ {v.processingTime}</p>}
-                    {v.validity && <p>📅 {v.validity}</p>}
-                    {v.maxStay && <p>🏨 Max stay {v.maxStay}</p>}
+                  <div className="grid grid-cols-1 gap-1 text-xs text-gray-500 mb-4">
+                    {v.processingTime && <p className="flex items-center gap-1.5"><span className="text-base">⏱</span> {v.processingTime}</p>}
+                    {v.validity && <p className="flex items-center gap-1.5"><span className="text-base">📅</span> {v.validity}</p>}
+                    {v.maxStay && <p className="flex items-center gap-1.5"><span className="text-base">🏨</span> Max stay: {v.maxStay}</p>}
                   </div>
-                  <div className="mt-auto flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="mt-auto flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
-                      <p className="text-[10px] text-gray-400 uppercase font-bold">Starting from</p>
-                      <span className="font-display text-xl font-semibold text-[var(--lp-brass)]">
+                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wide">Starting from</p>
+                      <span className="font-display text-xl font-semibold" style={{ color: "var(--lp-brass)" }}>
                         {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
                       </span>
                     </div>
-                    <Link
-                      href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`}
-                      className="text-sm font-bold text-black px-4 py-2 rounded-xl transition-colors"
-                      style={{ background: "var(--lp-brass)" }}
-                    >
+                    <Link href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`}
+                      className="text-sm font-bold text-black px-4 py-2 rounded-xl transition-colors flex items-center gap-1"
+                      style={{ background: "var(--lp-brass)" }}>
                       View &amp; Apply →
                     </Link>
                   </div>
