@@ -100,7 +100,7 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
   return (
     <div className="lp-ticket lp-rise lp-rise-2 w-full max-w-2xl mx-auto p-4 sm:p-6">
       {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-4 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+      <div className="lp-tabs-row flex gap-2 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {SERVICES.map((s) => (
           <button key={s.key} type="button"
             onClick={() => { setActive(s.key); setDestination(""); setPaxOpen(false); }}
