@@ -44,14 +44,14 @@ async function getVisas(q?: string, type?: string, processingTime?: string) {
 }
 
 const TRENDING = [
-  { label: "UAE", sub: "Visit Visa (30 Days)", flag: "🇦🇪", q: "UAE" },
-  { label: "Saudi Arabia", sub: "Visit Visa", flag: "🇸🇦", q: "Saudi Arabia" },
-  { label: "Malaysia", sub: "Tourist Visa", flag: "🇲🇾", q: "Malaysia" },
-  { label: "Thailand", sub: "Tourist Visa", flag: "🇹🇭", q: "Thailand" },
-  { label: "Turkey", sub: "Tourist Visa", flag: "🇹🇷", q: "Turkey" },
-  { label: "UK", sub: "Visit Visa", flag: "🇬🇧", q: "UK" },
-  { label: "Schengen", sub: "Visit Visa", flag: "🇪🇺", q: "Schengen" },
-  { label: "Canada", sub: "Visit Visa", flag: "🇨🇦", q: "Canada" },
+  { label: "Dubai", sub: "Visit Visa (30 Days)", flag: "🇦🇪", q: "UAE", img: "https://crm.mosafir.pk/uploads/visa_images/2026-07-01---19809.png" },
+  { label: "Saudi Arabia", sub: "Visit Visa", flag: "🇸🇦", q: "Saudi Arabia", img: "https://crm.mosafir.pk/uploads/visa_images/2026-07-24---70886.png" },
+  { label: "Turkey", sub: "Tourist Visa", flag: "🇹🇷", q: "Turkey", img: "https://crm.mosafir.pk/uploads/visa_images/2026-07-24---76678.png" },
+  { label: "Malaysia", sub: "Tourist Visa", flag: "🇲🇾", q: "Malaysia", img: "" },
+  { label: "Thailand", sub: "Tourist Visa", flag: "🇹🇭", q: "Thailand", img: "" },
+  { label: "UK", sub: "Visit Visa", flag: "🇬🇧", q: "UK", img: "" },
+  { label: "Schengen", sub: "Visit Visa", flag: "🇪🇺", q: "Schengen", img: "" },
+  { label: "Canada", sub: "Visit Visa", flag: "🇨🇦", q: "Canada", img: "" },
 ];
 
 const STATS = [
@@ -130,12 +130,15 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {TRENDING.map((t) => (
             <Link key={t.label} href={`/visa?q=${t.q}`}
-              className="relative rounded-xl overflow-hidden h-32 bg-gray-200 flex flex-col justify-end group hover:shadow-lg transition-shadow">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-10" />
-              <div className="absolute inset-0 flex items-center justify-center text-5xl z-0 opacity-40">{t.flag}</div>
+              className="relative rounded-xl overflow-hidden h-44 bg-gray-300 flex flex-col justify-end group hover:shadow-lg transition-shadow">
+              {t.img
+                ? <Image src={t.img} alt={t.label} fill className="object-cover group-hover:scale-105 transition-transform duration-300" unoptimized />
+                : <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-6xl">{t.flag}</div>
+              }
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-10" />
               <div className="relative z-20 p-3">
-                <p className="text-white font-bold text-sm">{t.label}</p>
-                <p className="text-white/75 text-xs">{t.sub}</p>
+                <p className="text-white font-bold text-sm drop-shadow">{t.label}</p>
+                <p className="text-white/80 text-xs">{t.sub}</p>
               </div>
             </Link>
           ))}

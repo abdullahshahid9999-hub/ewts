@@ -115,7 +115,7 @@ export default function VisaSearchBar({
         ).slice(0, 8).map(c => (
           <button key={c} type="button" onClick={() => { setCountry(c); setCategory(""); }}
             className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all border"
-            style={{ background: country === c ? "var(--lp-brass)" : "rgba(255,255,255,0.15)", borderColor: country === c ? "var(--lp-brass)" : "rgba(255,255,255,0.3)", color: country === c ? "#000" : "rgba(255,255,255,0.9)" }}>
+            style={{ background: country === c ? "#b45309" : "#fff", borderColor: country === c ? "#b45309" : "#d1d5db", color: country === c ? "#fff" : "#374151" }}>
             {c}
           </button>
         ))}

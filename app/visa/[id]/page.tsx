@@ -45,6 +45,14 @@ export default async function VisaDetailPage({
     <>
       <Navbar />
 
+      {/* Back button */}
+      <div className="max-w-5xl mx-auto px-4 pt-4">
+        <Link href="/visa" className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-amber-700 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back to Visa Services
+        </Link>
+      </div>
+
       {/* HERO — full-width with country image */}
       <section className="relative h-56 md:h-72 bg-[var(--lp-ink)] overflow-hidden">
         {visa.countryImage && (
