@@ -82,7 +82,7 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
       if (children) params.set("children", String(children));
       if (infants) params.set("infants", String(infants));
     } else if (active === "visa") {
-      if (visaCategory) params.set("type", visaCategory);
+      router.push("/visa"); return;
       if (occupation) params.set("occupation", occupation);
       if (adults !== 1) params.set("adults", String(adults));
       if (children) params.set("children", String(children));
@@ -153,51 +153,27 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
         ) : active === "visa" ? (
           <div className="flex flex-col sm:flex-row rounded-xl overflow-visible border" style={{ borderColor: "var(--lp-border)" }}>
             {/* Country */}
-            <div className="flex-[2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
+            <div className="flex-[2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
+              onClick={() => { router.push("/visa"); }}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Country / State</p>
-              <select value={destination} onChange={e => { setDestination(e.target.value); setVisaCategory(""); }}
-                className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
-                style={{ color: destination ? "var(--lp-text)" : "var(--lp-muted)" }}>
-                <option value="">Select country…</option>
-                {options.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <p className="text-sm font-bold" style={{ color: destination ? "var(--lp-text)" : "var(--lp-muted)" }}>{destination || "Where are you going?"}</p>
             </div>
             {/* Visa Category */}
-            <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
+            <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
+              onClick={() => router.push("/visa")}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Visa Category</p>
-            <select value={visaCategory} onChange={e => setVisaCategory(e.target.value)}
-              className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
-              style={{ color: "var(--lp-text)" }}>
-              <option value="">All Types</option>
-              {visaTypes.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-            </select>
+              <p className="text-sm font-bold" style={{ color: "var(--lp-muted)" }}>All Types</p>
             </div>
             {/* Occupation */}
-            <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "var(--lp-border)" }}>
+            <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
+              onClick={() => router.push("/visa")}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Occupation</p>
-              <select value={occupation} onChange={e => setOccupation(e.target.value)}
-                className="text-sm font-bold outline-none bg-transparent appearance-none w-full cursor-pointer"
-                style={{ color: "var(--lp-text)" }}>
-                <option value="">Any</option>
-                {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <p className="text-sm font-bold" style={{ color: "var(--lp-muted)" }}>Any</p>
             </div>
             {/* Traveller */}
-            <div className="flex-1 relative">
-              <button type="button" onClick={() => setPaxOpen(v => !v)}
-                className="w-full h-full flex flex-col justify-center px-4 py-3 text-left"
-                style={{ color: "var(--lp-text)" }}>
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Traveller</p>
-                <p className="text-sm font-bold">👤 {totalPax} Person{totalPax !== 1 ? "s" : ""}</p>
-              </button>
-              {paxOpen && (
-                <div className="absolute z-30 mt-1 right-0 w-64 rounded-xl p-4" style={{ background: "var(--lp-ivory)", border: "1.5px solid var(--lp-border)", boxShadow: "0 16px 40px -12px rgba(14,42,38,0.3)", top: "100%" }}>
-                  <PaxCounter label="Adults" value={adults} min={1} onChange={setAdults} />
-                  <PaxCounter label="Children" value={children} min={0} onChange={setChildren} />
-                  <PaxCounter label="Infants" value={infants} min={0} onChange={setInfants} />
-                  <button type="button" onClick={() => setPaxOpen(false)} className="lp-search-btn w-full mt-3 py-2 text-sm">Done</button>
-                </div>
-              )}
+            <div className="flex-1 flex flex-col justify-center px-4 py-3 cursor-pointer" onClick={() => router.push("/visa")}>
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Traveller</p>
+              <p className="text-sm font-bold" style={{ color: "var(--lp-text)" }}>👤 1 Person</p>
             </div>
           </div>
         ) : (

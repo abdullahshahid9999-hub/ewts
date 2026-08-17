@@ -296,6 +296,18 @@ function VisaServicesInner() {
     load();
   }
 
+  async function handleDuplicateVisa(id: string) {
+    if (!confirm("Duplicate this visa service?")) return;
+    const src = items.find(v => v.id === id);
+    if (!src) return;
+    await adminFetch("/api/admin/visa-services", accessToken, refresh, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...src, id: undefined, title: `${src.title} (Copy)`, status: "inactive", slug: src.slug ? `${src.slug}-copy` : undefined }),
+    });
+    load();
+  }
+
   async function handleToggleStatus(v: VisaService) {
     const next = v.status === "active" ? "inactive" : "active";
     await adminFetch(`/api/admin/visa-services/${v.id}`, accessToken, refresh, {
@@ -568,6 +580,7 @@ function VisaServicesInner() {
             <div style={{ padding: "10px 16px", borderTop: "1px solid var(--a-border)", display: "flex", gap: 8 }}>
               <button onClick={() => handleToggleStatus(v)} className={`adp-btn ${v.status === "active" ? "adp-btn-t" : "adp-btn-g"}`} style={{ fontSize: 11 }}>{v.status === "active" ? "Deactivate" : "Activate"}</button>
               <button onClick={() => openEdit(v)} className="adp-btn adp-btn-s" style={{ flex: 1 }}>Edit</button>
+              <button onClick={() => handleDuplicateVisa(v.id)} className="adp-btn" style={{ background: "var(--a-border)" }}>Duplicate</button>
               <button onClick={() => handleDelete(v.id)} className="adp-btn adp-btn-r">Delete</button>
             </div>
           </div>

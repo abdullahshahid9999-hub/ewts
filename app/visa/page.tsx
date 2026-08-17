@@ -123,7 +123,8 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      {/* TRENDING DESTINATIONS */}
+      {/* TRENDING DESTINATIONS — only show when not searching */}
+      {!q && (
       <section className="max-w-6xl mx-auto px-4 py-10">
         <h2 className="text-lg font-bold text-gray-900 mb-1">Trending Searches</h2>
         <div className="w-12 h-1 bg-amber-600 mb-5 rounded" />
@@ -144,6 +145,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
           ))}
         </div>
       </section>
+      )}
 
       {/* VISA CARDS + SIDEBAR */}
       <section className="max-w-6xl mx-auto px-4 pb-12">
@@ -222,7 +224,8 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
+      {/* TESTIMONIALS + SEO — only when not searching */}
+      {!q && (<>
       <section className="bg-gray-50 border-t border-gray-100 py-12 px-4">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-lg font-bold text-gray-900 mb-1">What Our Clients Say</h2>
@@ -248,6 +251,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
 
       {/* SEO CONTENT — collapsible via client component */}
       <VisaPageClient />
+      </>)}
 
       {/* FAQ */}
       <section className="max-w-4xl mx-auto px-4 pb-16">
