@@ -289,6 +289,8 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
   const [batchRef, setBatchRef] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [groupRelation, setGroupRelation] = useState<string>("");
+  const [showRelStep, setShowRelStep] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
   function scrollTop() { topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }
@@ -343,6 +345,11 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
     const err = validateStep();
     if (err) { setError(err); return; }
     setError(null);
+    // After contact step, if multiple travellers, ask relationship
+    if (step === 0 && totalTravellers > 1 && !groupRelation) {
+      setShowRelStep(true);
+      return;
+    }
     setStep(s => Math.min(s + 1, reviewStep));
     scrollTop();
   }
@@ -443,6 +450,42 @@ function estimatedReadyDate(processingTime: string | null): string | null {
 
   return (
     <div ref={topRef} className="max-w-3xl mx-auto px-4 py-8">
+
+      {/* Relationship modal */}
+      {showRelStep && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b">
+              <button onClick={() => setShowRelStep(false)} className="text-amber-700">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <h2 className="flex-1 text-center font-bold text-gray-900">Group Relationship</h2>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-600 mb-4">You have <strong>{totalTravellers} travellers</strong>. What is their relationship? This helps us determine which documents are required for each person.</p>
+              <div className="space-y-2">
+                {[
+                  { val: "family", label: "Family", sub: "One income proof, shared bank statement" },
+                  { val: "friends", label: "Friends", sub: "Each person needs separate documents" },
+                  { val: "couple", label: "Couple / Partners", sub: "Shared or individual documents" },
+                  { val: "colleagues", label: "Colleagues", sub: "Each person needs separate employment proof" },
+                  { val: "other", label: "Other", sub: "Individual documents for each traveller" },
+                ].map(r => (
+                  <button key={r.val} type="button" onClick={() => { setGroupRelation(r.val); setShowRelStep(false); setStep(1); scrollTop(); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-colors ${groupRelation === r.val ? "border-amber-600 bg-amber-50" : "border-gray-100 hover:border-amber-200"}`}>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-gray-800">{r.label}</p>
+                      <p className="text-xs text-gray-400">{r.sub}</p>
+                    </div>
+                    {groupRelation === r.val && <span className="text-amber-600">✓</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <p className="text-xs text-muted uppercase tracking-widest font-semibold mb-1">{visa.country} · {visa.type} visa</p>

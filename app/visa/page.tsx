@@ -127,13 +127,13 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
       <section className="max-w-6xl mx-auto px-4 py-10">
         <h2 className="text-lg font-bold text-gray-900 mb-1">Trending Searches</h2>
         <div className="w-12 h-1 bg-amber-600 mb-5 rounded" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none" }}>
           {TRENDING.map((t) => (
             <Link key={t.label} href={`/visa?q=${t.q}`}
-              className="relative rounded-xl overflow-hidden h-44 bg-gray-300 flex flex-col justify-end group hover:shadow-lg transition-shadow">
+              className="relative rounded-xl overflow-hidden shrink-0 w-40 h-44 bg-gray-300 flex flex-col justify-end group hover:shadow-lg transition-shadow">
               {t.img
                 ? <Image src={t.img} alt={t.label} fill className="object-cover group-hover:scale-105 transition-transform duration-300" unoptimized />
-                : <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-6xl">{t.flag}</div>
+                : <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-4xl font-bold text-white/40">{t.q.slice(0,2).toUpperCase()}</div>
               }
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-10" />
               <div className="relative z-20 p-3">
@@ -145,7 +145,7 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         </div>
       </section>
 
-      {/* VISA CARDS */}
+      {/* VISA CARDS + SIDEBAR */}
       <section className="max-w-6xl mx-auto px-4 pb-12">
         {q && (
           <p className="text-sm text-gray-500 mb-4">
@@ -155,54 +155,95 @@ export default async function VisaPage({ searchParams }: { searchParams: Promise
         )}
         <div className="flex gap-2 flex-wrap mb-6">
           {["All Visas","Tourist","Umrah","Business"].map((tab) => (
-            <Link key={tab} href={tab === "All Visas" ? "/visa" : `/visa?type=${tab}`}
+            <Link key={tab} href={tab === "All Visas" ? (q ? `/visa?q=${q}` : "/visa") : `/visa?type=${tab}${q ? `&q=${q}` : ""}`}
               className={`text-xs font-semibold px-4 py-1.5 rounded-full border transition-colors ${(!type && tab === "All Visas") || type === tab ? "bg-amber-700 text-white border-amber-700" : "border-gray-300 text-gray-600 hover:border-amber-500"}`}>
               {tab}
             </Link>
           ))}
         </div>
-        {visas.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-3">🛂</p>
-            <h3 className="font-bold text-lg mb-2">{q ? `No results for "${q}"` : "No visa services listed yet"}</h3>
-            <p className="text-gray-500 text-sm mb-5">Tell us your destination — we'll confirm requirements directly.</p>
-            <a href={waLink("Assalam o Alaikum! I'd like details about visa services.")} target="_blank" rel="noopener noreferrer"
-              className="inline-block bg-amber-700 text-white font-bold px-6 py-3 rounded-lg">Ask on WhatsApp</a>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {visas.map((v) => (
-              <div key={v.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                <div className="relative h-36 bg-gray-100">
-                  {v.countryImage
-                    ? <Image src={v.countryImage} alt={v.country} fill className="object-cover" />
-                    : <div className="absolute inset-0 flex items-center justify-center text-5xl">{v.countryFlag ?? "🌍"}</div>}
-                  <div className="absolute bottom-2 left-2 bg-white/90 text-xs font-bold px-2 py-0.5 rounded capitalize">{v.type}</div>
-                </div>
-                <div className="p-3 flex flex-col flex-1">
-                  <h3 className="font-bold text-sm text-gray-900 mb-1 leading-snug">{v.title}</h3>
-                  <div className="text-xs text-gray-400 space-y-0.5 mb-3">
-                    {v.processingTime && <p>⏱ {v.processingTime}</p>}
-                    {v.validity && <p>📅 {v.validity}</p>}
-                    {v.maxStay && <p>🏨 Max stay: {v.maxStay}</p>}
-                  </div>
-                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div>
-                      <p className="text-[10px] text-gray-400 uppercase font-bold">From</p>
-                      <p className="text-base font-bold text-amber-700">
-                        {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
-                      </p>
+        <div className="flex gap-6 items-start">
+          {/* Sidebar filters desktop */}
+          <aside className="hidden md:block w-52 shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm sticky top-24">
+            <h3 className="font-bold text-sm text-gray-800 mb-4">Filters</h3>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Processing Time</p>
+            {["1-3 Days","3-5 Days","5-10 Days","10-15 Days","15+ Days"].map(pt => (
+              <Link key={pt} href={`/visa?${new URLSearchParams({...(q?{q}:{}),processingTime:pt}).toString()}`}
+                className={`block text-sm py-1.5 px-2 rounded-lg mb-1 transition-colors ${processingTime===pt?"bg-amber-50 text-amber-700 font-semibold":"text-gray-600 hover:bg-gray-50"}`}>
+                {pt}
+              </Link>
+            ))}
+            {processingTime && <Link href={q?`/visa?q=${q}`:"/visa"} className="text-xs text-red-500 hover:underline mt-2 block">Clear filters</Link>}
+          </aside>
+          {/* Cards */}
+          <div className="flex-1 min-w-0">
+            {visas.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-4xl mb-3">🛂</p>
+                <h3 className="font-bold text-lg mb-2">{q ? `No results for "${q}"` : "No visa services listed yet"}</h3>
+                <p className="text-gray-500 text-sm mb-5">Tell us your destination — we&apos;ll confirm requirements directly.</p>
+                <a href={waLink("Assalam o Alaikum! I'd like details about visa services.")} target="_blank" rel="noopener noreferrer"
+                  className="inline-block bg-amber-700 text-white font-bold px-6 py-3 rounded-lg">Ask on WhatsApp</a>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {visas.map((v) => (
+                  <div key={v.id} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                    <div className="relative h-36 bg-gray-100">
+                      {v.countryImage
+                        ? <Image src={v.countryImage} alt={v.country} fill className="object-cover" />
+                        : <div className="absolute inset-0 flex items-center justify-center text-5xl">{v.countryFlag ?? "🌍"}</div>}
+                      <div className="absolute bottom-2 left-2 bg-white/90 text-xs font-bold px-2 py-0.5 rounded capitalize">{v.type}</div>
                     </div>
-                    <Link href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`}
-                      className="text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 px-3 py-1.5 rounded-lg transition-colors">
-                      Apply →
-                    </Link>
+                    <div className="p-3 flex flex-col flex-1">
+                      <h3 className="font-bold text-sm text-gray-900 mb-1 leading-snug">{v.title}</h3>
+                      <div className="text-xs text-gray-400 space-y-0.5 mb-3">
+                        {v.processingTime && <p>⏱ {v.processingTime}</p>}
+                        {v.validity && <p>📅 {v.validity}</p>}
+                        {v.maxStay && <p>🏨 Max stay: {v.maxStay}</p>}
+                      </div>
+                      <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-100">
+                        <div>
+                          <p className="text-[10px] text-gray-400 uppercase font-bold">From</p>
+                          <p className="text-base font-bold text-amber-700">
+                            {v.priceAdult != null ? `PKR ${v.priceAdult.toLocaleString()}` : (v.price ?? "Enquire")}
+                          </p>
+                        </div>
+                        <Link href={`/visa/${v.id}?adults=${adults}&children=${children}&infants=${infants}${occupation ? `&occupation=${occupation}` : ""}`}
+                          className="text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 px-3 py-1.5 rounded-lg transition-colors">
+                          Apply →
+                        </Link>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="bg-gray-50 border-t border-gray-100 py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">What Our Clients Say</h2>
+          <div className="w-12 h-1 bg-amber-600 mb-6 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { name: "Usman Tariq", city: "Faisalabad", text: "Got my UAE visa in 3 days! Completely hassle-free. Team guided me through every document.", visa: "UAE Visit Visa" },
+              { name: "Fatima Khalid", city: "Lahore", text: "Applied for Malaysia visa for the whole family. Professional service and great communication.", visa: "Malaysia E-Visa" },
+              { name: "Ahmed Raza", city: "Faisalabad", text: "Schengen visa approved on first try. They knew exactly what the embassy needed.", visa: "Schengen Visa" },
+            ].map((t) => (
+              <div key={t.name} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+                <div className="flex gap-0.5 mb-2">{"★★★★★".split("").map((s,i)=><span key={i} className="text-amber-500 text-sm">{s}</span>)}</div>
+                <p className="text-sm text-gray-700 mb-3 leading-relaxed">&ldquo;{t.text}&rdquo;</p>
+                <div className="flex items-center justify-between">
+                  <div><p className="text-xs font-bold text-gray-800">{t.name}</p><p className="text-xs text-gray-400">{t.city}</p></div>
+                  <span className="text-[10px] bg-amber-50 text-amber-700 font-semibold px-2 py-0.5 rounded-full">{t.visa}</span>
                 </div>
               </div>
             ))}
           </div>
-        )}
+        </div>
       </section>
 
       {/* SEO CONTENT — collapsible via client component */}
