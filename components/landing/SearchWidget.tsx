@@ -154,24 +154,24 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
           <div className="flex flex-col sm:flex-row rounded-xl overflow-visible border" style={{ borderColor: "var(--lp-border)" }}>
             {/* Country */}
             <div className="flex-[2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
-              onClick={() => { router.push("/visa"); }}>
+              onClick={() => setDestination("")}>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Country / State</p>
               <p className="text-sm font-bold" style={{ color: destination ? "var(--lp-text)" : "var(--lp-muted)" }}>{destination || "Where are you going?"}</p>
             </div>
             {/* Visa Category */}
             <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
-              onClick={() => router.push("/visa")}>
+              >
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Visa Category</p>
               <p className="text-sm font-bold" style={{ color: "var(--lp-muted)" }}>All Types</p>
             </div>
             {/* Occupation */}
             <div className="flex-[1.2] flex flex-col justify-center px-4 py-3 border-b sm:border-b-0 sm:border-r cursor-pointer" style={{ borderColor: "var(--lp-border)" }}
-              onClick={() => router.push("/visa")}>
+              >
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Occupation</p>
               <p className="text-sm font-bold" style={{ color: "var(--lp-muted)" }}>Any</p>
             </div>
             {/* Traveller */}
-            <div className="flex-1 flex flex-col justify-center px-4 py-3 cursor-pointer" onClick={() => router.push("/visa")}>
+            <div className="flex-1 flex flex-col justify-center px-4 py-3 cursor-pointer" >
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--lp-muted)" }}>Traveller</p>
               <p className="text-sm font-bold" style={{ color: "var(--lp-text)" }}>👤 1 Person</p>
             </div>
