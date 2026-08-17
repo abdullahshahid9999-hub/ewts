@@ -303,7 +303,7 @@ function VisaServicesInner() {
     await adminFetch("/api/admin/visa-services", accessToken, refresh, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...src, id: undefined, title: `${src.title} (Copy)`, status: "inactive", slug: src.slug ? `${src.slug}-copy` : undefined }),
+      body: JSON.stringify({ ...src, id: undefined, title: `${src.title} (Copy)`, status: "inactive" }),
     });
     load();
   }
