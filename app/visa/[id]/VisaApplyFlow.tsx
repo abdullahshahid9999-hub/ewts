@@ -390,8 +390,9 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                         setFile(activeIdx, doc.id, f);
                         const qualityWarning = await checkImageQuality(f);
                         setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
+                        const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
                         updateDraft(activeIdx, {
-                          fullName: scan.fullName || draft.fullName,
+                          fullName: scannedName || draft.fullName,
                           passportNumber: scan.passportNumber || draft.passportNumber,
                           passportExpiry: scan.passportExpiry || draft.passportExpiry,
                           nationality: scan.nationality || draft.nationality,
