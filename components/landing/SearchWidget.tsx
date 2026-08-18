@@ -211,9 +211,9 @@ export default function SearchWidget({ facets }: { facets: SearchFacets }) {
           </div>
         )}
 
-        <button type="submit" className="lp-search-btn px-8 py-3.5 sm:py-4 text-sm sm:text-base whitespace-nowrap w-full">
+        {active !== "visa" && <button type="submit" className="lp-search-btn px-8 py-3.5 sm:py-4 text-sm sm:text-base whitespace-nowrap w-full">
           Search →
-        </button>
+        </button>}
       </form>
       <p className="text-xs mt-3 text-center sm:text-left" style={{ color: "var(--lp-muted)" }}>
         More filters — package type, airline, direct flights &amp; more — on the next page.
