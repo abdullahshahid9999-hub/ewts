@@ -158,7 +158,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
                     { label: "Infant", sub: "Below 2 years", img: "https://mosafir.pk/visa/images/infant.svg", val: infants, set: setInfants, min: 0 },
                   ].map(({ label, sub, img, val, set, min }) => (
                     <div key={label} className="flex items-center gap-3">
-                      <Image src={img} alt={label} width={44} height={44} unoptimized className="shrink-0" />
+                      <Image src={img} alt={label} width={28} height={28} unoptimized className="shrink-0 opacity-80" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-800">{label}</p>
                         <p className="text-xs text-gray-400">{sub}</p>
