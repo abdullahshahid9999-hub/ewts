@@ -137,7 +137,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
 
       {/* Issuing country + occupation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Passport Issuing Country *" value={t.issuingCountry} onChange={v => onChange({ issuingCountry: v })} placeholder="e.g. Pakistan" />
+        <CountryField label="Passport Issuing Country *" value={t.issuingCountry} onChange={v => onChange({ issuingCountry: v })} placeholder="e.g. Pakistan" />
         {t.ageGroup === "adult" && (
           presetOccupation && t.applicantCategory ? (
             <div>
@@ -227,16 +227,89 @@ function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/we
   );
 }
 
-const NATIONALITIES = ["Pakistani","Indian","Bangladeshi","Afghan","British","American","Canadian","Australian","Emirati","Saudi Arabian","Chinese","German","French","Turkish","Malaysian","Indonesian","Thai","Filipino","Nepali","Sri Lankan","Egyptian","Qatari","Kuwaiti","Omani","Bahraini","Japanese","Korean","South African","New Zealander"];
+// { nationality label, country name, aliases/codes that should match }
+const COUNTRY_DATA: { nat: string; country: string; aliases: string[] }[] = [
+  { nat: "Pakistani",      country: "Pakistan",              aliases: ["pak","paki","pakistani","pkstan"] },
+  { nat: "Indian",         country: "India",                 aliases: ["ind","indian","bharat"] },
+  { nat: "Bangladeshi",    country: "Bangladesh",            aliases: ["bgd","bangladeshi","bangla"] },
+  { nat: "Afghan",         country: "Afghanistan",           aliases: ["afg","afghan","afghani"] },
+  { nat: "British",        country: "United Kingdom",        aliases: ["gbr","uk","british","english","brit"] },
+  { nat: "American",       country: "United States",         aliases: ["usa","us","american","american"] },
+  { nat: "Canadian",       country: "Canada",                aliases: ["can","canadian"] },
+  { nat: "Australian",     country: "Australia",             aliases: ["aus","australian","aussie"] },
+  { nat: "Emirati",        country: "United Arab Emirates",  aliases: ["are","uae","emirati","dubai"] },
+  { nat: "Saudi Arabian",  country: "Saudi Arabia",          aliases: ["sau","saudi","ksa","saudi arabian"] },
+  { nat: "Chinese",        country: "China",                 aliases: ["chn","chinese","china"] },
+  { nat: "German",         country: "Germany",               aliases: ["deu","german","germany"] },
+  { nat: "French",         country: "France",                aliases: ["fra","french","france"] },
+  { nat: "Turkish",        country: "Turkey",                aliases: ["tur","turkish","turkey"] },
+  { nat: "Malaysian",      country: "Malaysia",              aliases: ["mys","malaysian","malaysia"] },
+  { nat: "Indonesian",     country: "Indonesia",             aliases: ["idn","indonesian","indonesia"] },
+  { nat: "Thai",           country: "Thailand",              aliases: ["tha","thai","thailand"] },
+  { nat: "Filipino",       country: "Philippines",           aliases: ["phl","filipino","philippines"] },
+  { nat: "Nepali",         country: "Nepal",                 aliases: ["npl","nepali","nepal"] },
+  { nat: "Sri Lankan",     country: "Sri Lanka",             aliases: ["lka","sri lankan","srilanka"] },
+  { nat: "Egyptian",       country: "Egypt",                 aliases: ["egy","egyptian","egypt"] },
+  { nat: "Qatari",         country: "Qatar",                 aliases: ["qat","qatari","qatar"] },
+  { nat: "Kuwaiti",        country: "Kuwait",                aliases: ["kwt","kuwaiti","kuwait"] },
+  { nat: "Omani",          country: "Oman",                  aliases: ["omn","omani","oman"] },
+  { nat: "Bahraini",       country: "Bahrain",               aliases: ["bhr","bahraini","bahrain"] },
+  { nat: "Iranian",        country: "Iran",                  aliases: ["irn","iranian","iran"] },
+  { nat: "Japanese",       country: "Japan",                 aliases: ["jpn","japanese","japan"] },
+  { nat: "Korean",         country: "South Korea",           aliases: ["kor","korean","korea"] },
+  { nat: "South African",  country: "South Africa",          aliases: ["zaf","south african","southafrica"] },
+  { nat: "New Zealander",  country: "New Zealand",           aliases: ["nzl","kiwi","new zealand"] },
+];
+
+// Smart match: given any input, return the full nationality/country label
+function matchNationality(input: string): string {
+  const q = input.toLowerCase().trim();
+  if (!q) return input;
+  const exact = COUNTRY_DATA.find(c => c.nat.toLowerCase() === q || c.country.toLowerCase() === q);
+  if (exact) return exact.nat;
+  const alias = COUNTRY_DATA.find(c => c.aliases.some(a => a === q || q.startsWith(a) || a.startsWith(q)));
+  return alias ? alias.nat : input;
+}
+function matchCountry(input: string): string {
+  const q = input.toLowerCase().trim();
+  if (!q) return input;
+  const exact = COUNTRY_DATA.find(c => c.country.toLowerCase() === q || c.nat.toLowerCase() === q);
+  if (exact) return exact.country;
+  const alias = COUNTRY_DATA.find(c => c.aliases.some(a => a === q || q.startsWith(a) || a.startsWith(q)));
+  return alias ? alias.country : input;
+}
 
 function NationalityField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Nationality *</label>
-      <input list="nat-list" value={value} onChange={e => onChange(e.target.value)} placeholder="e.g. Pakistani"
+      <input list="nat-list" value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={e => onChange(matchNationality(e.target.value))}
+        placeholder="e.g. Pakistani"
         className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--lp-brass)]" />
       <datalist id="nat-list">
-        {NATIONALITIES.map(n => <option key={n} value={n} />)}
+        {COUNTRY_DATA.map(c => (
+          <option key={c.nat} value={c.nat}>{c.nat} — {c.country}</option>
+        ))}
+      </datalist>
+    </div>
+  );
+}
+
+function CountryField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">{label}</label>
+      <input list="country-list" value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={e => onChange(matchCountry(e.target.value))}
+        placeholder={placeholder || "e.g. Pakistan"}
+        className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-[var(--lp-brass)]" />
+      <datalist id="country-list">
+        {COUNTRY_DATA.map(c => (
+          <option key={c.country} value={c.country}>{c.country} ({c.nat})</option>
+        ))}
       </datalist>
     </div>
   );

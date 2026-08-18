@@ -264,12 +264,18 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
           <div>
             <label className="block text-xs font-semibold text-muted uppercase tracking-wide mb-1">Nationality *</label>
             <input
+              list="nat-list-flow"
               type="text"
               value={draft.nationality}
               onChange={(e) => updateDraft(activeIdx, { nationality: e.target.value })}
               placeholder="e.g. Pakistani"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-gold"
             />
+            <datalist id="nat-list-flow">
+              {["Pakistani","Indian","Bangladeshi","Afghan","British","American","Canadian","Australian","Emirati","Saudi Arabian","Chinese","German","French","Turkish","Malaysian","Indonesian","Thai","Filipino","Nepali","Sri Lankan","Egyptian","Qatari","Kuwaiti","Omani","Bahraini","Iranian","Japanese","Korean","South African","New Zealander"].map(n => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
           </div>
         </div>
         <p className="text-[11px] text-muted -mt-1">
