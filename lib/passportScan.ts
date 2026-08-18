@@ -1,14 +1,11 @@
-// Passport scanning via Claude Vision API (server-side) — replaces Tesseract.js client-side OCR
+// Passport scanning via Claude Vision API (server-side)
 export type PassportScanResult = {
   ok: boolean; warning: string | null;
-  fullName?: string; passportNumber?: string; nationality?: string;
-  passportExpiry?: string; dob?: string;
+  surname?: string; givenName?: string; passportNumber?: string; nationality?: string;
+  passportExpiry?: string; passportIssueDate?: string; dob?: string; gender?: string; issuingCountry?: string;
 };
 
 export async function scanPassport(file: File): Promise<PassportScanResult> {
-  if (!file.type.startsWith("image/")) {
-    return { ok: true, warning: "PDF saved — please fill in passport details manually." };
-  }
   try {
     const fd = new FormData();
     fd.append("passport", file);
@@ -17,15 +14,20 @@ export async function scanPassport(file: File): Promise<PassportScanResult> {
       const err = await res.json().catch(() => ({}));
       return { ok: false, warning: err.error || "OCR failed. Please fill in details manually." };
     }
-    const data = await res.json();
+    const d = await res.json();
+    // API returns: givenName, surname, passportNo, dateOfBirth, dateOfIssue, dateOfExpiry, gender, nationality, issuingCountry
     return {
       ok: true,
-      warning: data.warning || "✨ Auto-filled from passport — please double-check!",
-      fullName: data.fullName,
-      passportNumber: data.passportNumber,
-      nationality: data.nationality,
-      passportExpiry: data.passportExpiry,
-      dob: data.dob,
+      warning: null,
+      surname: d.surname || undefined,
+      givenName: d.givenName || undefined,
+      passportNumber: d.passportNo || undefined,
+      nationality: d.nationality || undefined,
+      passportExpiry: d.dateOfExpiry || undefined,
+      passportIssueDate: d.dateOfIssue || undefined,
+      dob: d.dateOfBirth || undefined,
+      gender: d.gender || undefined,
+      issuingCountry: d.issuingCountry || undefined,
     };
   } catch {
     return { ok: false, warning: "Could not read passport. Please fill in details manually." };

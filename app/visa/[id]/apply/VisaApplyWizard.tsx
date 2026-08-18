@@ -78,19 +78,17 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
       files[docId] = file;
       const qw = await checkImageQuality(file);
       warnings[docId] = scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled from passport — please double-check!";
-      // Parse fullName into surname/givenName
-      const nameParts = (scan.fullName ?? "").trim().split(/\s+/);
-      const surname = nameParts[0] ?? "";
-      const givenName = nameParts.slice(1).join(" ");
       onChange({
         files,
         docWarnings: warnings,
-        surname: scan.fullName && !t.surname ? surname : t.surname,
-        givenName: scan.fullName && !t.givenName ? givenName : t.givenName,
-        dob: scan.dob && !t.dob ? scan.dob : t.dob,
+        surname: scan.surname || t.surname,
+        givenName: scan.givenName || t.givenName,
+        dob: scan.dob || t.dob,
         passportNumber: scan.passportNumber || t.passportNumber,
+        passportIssueDate: scan.passportIssueDate || t.passportIssueDate,
         passportExpiry: scan.passportExpiry || t.passportExpiry,
         nationality: scan.nationality || t.nationality,
+        issuingCountry: scan.issuingCountry || t.issuingCountry,
       });
     } else {
       files[docId] = file;
