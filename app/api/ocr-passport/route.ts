@@ -4,12 +4,16 @@ import { uploadToR2 } from "@/lib/r2";
 
 export const dynamic = "force-dynamic";
 
-const client = new Anthropic();
-
 const IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export async function POST(req: NextRequest) {
   try {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error("OCR error: ANTHROPIC_API_KEY not set");
+      return NextResponse.json({ error: "OCR service not configured." }, { status: 500 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("passport") as File | null;
     if (!file) return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
@@ -19,9 +23,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Detect MIME — never trust client blindly, but use it as primary signal
     let mimeType = (file.type || "image/jpeg").toLowerCase();
-    // Normalise common aliases
     if (mimeType === "image/jpg") mimeType = "image/jpeg";
     if (!IMAGE_MIMES.has(mimeType) && mimeType !== "application/pdf") mimeType = "image/jpeg";
 
@@ -41,7 +43,6 @@ export async function POST(req: NextRequest) {
 }
 If any field is not visible or unclear, use null. Dates must be YYYY-MM-DD format.`;
 
-    // Build content block based on MIME
     let contentBlock: Anthropic.MessageParam["content"];
     if (IMAGE_MIMES.has(mimeType)) {
       contentBlock = [
@@ -56,20 +57,16 @@ If any field is not visible or unclear, use null. Dates must be YYYY-MM-DD forma
         { type: "text", text: prompt },
       ];
     } else {
-      // PDF — use document block
       contentBlock = [
         {
           type: "document",
-          source: {
-            type: "base64",
-            media_type: "application/pdf",
-            data: base64,
-          },
+          source: { type: "base64", media_type: "application/pdf", data: base64 },
         },
         { type: "text", text: prompt },
       ];
     }
 
+    const client = new Anthropic({ apiKey });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 500,
@@ -82,11 +79,10 @@ If any field is not visible or unclear, use null. Dates must be YYYY-MM-DD forma
       const clean = text.replace(/^```(?:json)?\n?|\n?```$/g, "").trim();
       parsed = JSON.parse(clean);
     } catch {
-      // Claude returned non-JSON — fail gracefully so frontend shows manual-fill
       return NextResponse.json({ error: "OCR failed. Please fill manually." }, { status: 422 });
     }
 
-    // Upload to R2 — do this AFTER OCR so a storage failure never kills OCR
+    // R2 upload AFTER OCR — failure here is non-fatal
     let passportImageUrl: string | null = null;
     try {
       const r2Mime = IMAGE_MIMES.has(mimeType) ? mimeType : "image/jpeg";
