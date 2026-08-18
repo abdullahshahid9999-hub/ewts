@@ -270,7 +270,8 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                         await setTravFile(activeTrav, doc.id, file);
                         const qw = await checkImageQuality(file);
                         setDocWarning(warnKey, scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled — please double-check!");
-                        updateTrav(activeTrav, { fullName: scan.fullName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality });
+                        const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
+                        updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality });
                       } else { await setTravFile(activeTrav, doc.id, file); setDocWarning(warnKey, await checkImageQuality(file)); }
                     }} />
                   {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}
