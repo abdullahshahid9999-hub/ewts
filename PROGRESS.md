@@ -258,6 +258,28 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAUL
 
 ---
 
+## Session — 2026-08-18
+
+### Agent Visa Apply — DOB / Passport Issue Date / Issuing Country (commit 9e12a8f)
+
+**Files changed:** `components/AgentVisaApplyFlow.tsx`, `lib/visaApplicationSubmit.ts`, `prisma/schema.prisma`
+
+- Added `dob`, `dateOfIssue`, `issuingCountry` to `Traveller` type in `AgentVisaApplyFlow.tsx`
+- Initialised all three fields as `""` in `buildTravellers()`
+- Added form inputs in Step 2 (Date of Birth, Passport Issue Date, Issuing Country) between Passport Expiry and Occupation
+- Added `trav_0_N_dob`, `trav_0_N_dateOfIssue`, `trav_0_N_issuingCountry` to `handleSubmit` FormData
+- `lib/visaApplicationSubmit.ts`: reads the three fields from FormData and passes them to `prisma.visaApplicant.create()`
+- `prisma/schema.prisma`: added `dob`, `dateOfIssue`, `issuingCountry` nullable String columns to `VisaApplicant` model
+
+**Pending SQL — run on Render Postgres console:**
+
+```sql
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS dob TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS date_of_issue TEXT;
+ALTER TABLE visa_applicants ADD COLUMN IF NOT EXISTS issuing_country TEXT;
+```
+
+
 ## Rules (apply every session)
 
 - `npx tsc --noEmit` clean before every commit (one pre-existing TS7031 in `app/api/admin/agents/route.ts` is known — ignore)
