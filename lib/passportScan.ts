@@ -1,5 +1,6 @@
-// Passport OCR — Tesseract.js (free, client-side, no API key)
-// Strategy: scan full image, extract MRZ lines, parse with regex
+"use client";
+// Passport OCR — Tesseract.js v5 client-side, MRZ parse via regex
+// Free, no API key, no server
 
 export type PassportScanResult = {
   ok: boolean; warning: string | null;
@@ -7,84 +8,113 @@ export type PassportScanResult = {
   passportExpiry?: string; passportIssueDate?: string; dob?: string; gender?: string; issuingCountry?: string;
 };
 
-// Parse ICAO 9303 MRZ — works for TD3 (standard passport, 2 lines of 44 chars)
-function parseMRZ(lines: string[]): Partial<PassportScanResult> | null {
-  // Find two consecutive lines that look like MRZ (44 chars, only A-Z 0-9 <)
-  const mrzRe = /^[A-Z0-9<]{44}$/;
-  const clean = lines.map((l: string) => l.replace(/\s/g, "").toUpperCase());
+function parseMRZ(raw: string): Partial<PassportScanResult> | null {
+  // Clean OCR noise: O→0 in numeric positions handled per-field, strip spaces
+  const lines = raw
+    .split("\n")
+    .map(l => l.replace(/\s+/g, "").toUpperCase())
+    .filter(l => l.length >= 30); // MRZ lines are 44 chars but OCR sometimes cuts
+
   let l1 = "", l2 = "";
-  for (let i = 0; i < clean.length - 1; i++) {
-    if (mrzRe.test(clean[i]) && mrzRe.test(clean[i + 1])) {
-      l1 = clean[i]; l2 = clean[i + 1]; break;
+
+  // Find lines that are mostly MRZ characters (>80% A-Z0-9<)
+  const mrzScore = (s: string) => {
+    const m = s.match(/[A-Z0-9<]/g);
+    return m ? m.length / s.length : 0;
+  };
+
+  const candidates = lines.filter(l => l.length >= 30 && mrzScore(l) > 0.8);
+
+  // Try exact 44-char match first
+  for (let i = 0; i < candidates.length - 1; i++) {
+    if (candidates[i].length === 44 && candidates[i + 1].length === 44) {
+      l1 = candidates[i]; l2 = candidates[i + 1]; break;
     }
   }
+
+  // Fallback: pad/trim to 44
+  if (!l1 && candidates.length >= 2) {
+    l1 = candidates[candidates.length - 2].slice(0, 44).padEnd(44, "<");
+    l2 = candidates[candidates.length - 1].slice(0, 44).padEnd(44, "<");
+  }
+
   if (!l1 || !l2) return null;
 
-  // Line 1: P<ISOSURNAME<<GIVENNAMES<<<...
+  // Fix common OCR mistakes in MRZ: spaces, O vs 0
+  const fixNums = (s: string) => s.replace(/O/g, "0").replace(/\s/g, "");
+
+  // Line 1: P<CCC SURNAME<<GIVENNAMES...
   const issuingCountry = l1.slice(2, 5).replace(/</g, "");
   const namePart = l1.slice(5);
-  const nameSplit = namePart.split("<<");
-  const surname = (nameSplit[0] || "").replace(/</g, " ").trim();
-  const givenName = (nameSplit.slice(1).join(" ") || "").replace(/</g, " ").trim();
+  const doubleBracket = namePart.indexOf("<<");
+  const surname = doubleBracket >= 0
+    ? namePart.slice(0, doubleBracket).replace(/</g, " ").trim()
+    : namePart.replace(/</g, " ").trim();
+  const givenName = doubleBracket >= 0
+    ? namePart.slice(doubleBracket + 2).replace(/</g, " ").trim()
+    : "";
 
-  // Line 2: passportNo(9) + check + nationality(3) + dob(6) + check + sex + expiry(6) + check ...
-  const passportNumber = l2.slice(0, 9).replace(/</g, "");
-  const nationality = l2.slice(10, 13).replace(/</g, "");
-  const dobRaw = l2.slice(13, 19);   // YYMMDD
-  const gender = l2.slice(20, 21);
-  const expiryRaw = l2.slice(21, 27); // YYMMDD
+  // Line 2 numeric fields — fix O→0
+  const l2n = fixNums(l2);
+  const passportNumber = l2n.slice(0, 9).replace(/</g, "");
+  const nationality    = l2.slice(10, 13).replace(/</g, "");
+  const dobRaw         = l2n.slice(13, 19);
+  const gender         = l2.slice(20, 21);
+  const expiryRaw      = l2n.slice(21, 27);
 
-  const parseDate = (yymmdd: string, isBirth: boolean): string | undefined => {
-    if (!/^\d{6}$/.test(yymmdd)) return undefined;
-    const yy = parseInt(yymmdd.slice(0, 2));
-    const mm = yymmdd.slice(2, 4);
-    const dd = yymmdd.slice(4, 6);
-    // Birth year: >30 → 1900s, ≤30 → 2000s
-    const yyyy = isBirth ? (yy > 30 ? 1900 + yy : 2000 + yy) : (yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy);
+  const parseYYMMDD = (s: string, isBirth: boolean): string | undefined => {
+    if (!/^\d{6}$/.test(s)) return undefined;
+    const yy = parseInt(s.slice(0, 2));
+    const mm = s.slice(2, 4);
+    const dd = s.slice(4, 6);
+    const yyyy = isBirth
+      ? (yy > 24 ? 1900 + yy : 2000 + yy)   // born after 2024 unlikely
+      : (yy <= 35 ? 2000 + yy : 1900 + yy);  // expiry before 2035 = 2000s
     return `${yyyy}-${mm}-${dd}`;
   };
 
   return {
-    surname: surname || undefined,
-    givenName: givenName || undefined,
+    surname:        surname || undefined,
+    givenName:      givenName || undefined,
     passportNumber: passportNumber || undefined,
-    nationality: nationality || undefined,
-    dob: parseDate(dobRaw, true),
-    passportExpiry: parseDate(expiryRaw, false),
-    gender: gender === "M" || gender === "F" ? gender : undefined,
+    nationality:    nationality || undefined,
     issuingCountry: issuingCountry || undefined,
+    dob:            parseYYMMDD(dobRaw, true),
+    passportExpiry: parseYYMMDD(expiryRaw, false),
+    gender:         (gender === "M" || gender === "F") ? gender : undefined,
   };
 }
 
 export async function scanPassport(file: File): Promise<PassportScanResult> {
+  if (file.type === "application/pdf") {
+    return { ok: true, warning: "PDF uploaded — please fill passport details manually." };
+  }
+
   try {
-    // Tesseract works on images only — PDF: ask to fill manually
-    if (file.type === "application/pdf") {
-      return { ok: true, warning: "PDF uploaded — please fill passport details manually." };
-    }
+    const Tesseract = await import("tesseract.js");
+    const createWorker = Tesseract.createWorker;
 
-    const { createWorker } = await import("tesseract.js");
-    const worker = await createWorker("eng", 1, {
-      // Use CDN — no local files needed
-      workerPath: "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js",
-      langPath: "https://tessdata.projectnaptha.com/4.0.0",
-      corePath: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js",
-      logger: () => {}, // silence logs
+    // v5 API: createWorker(lang) — no CDN path options needed, uses built-in defaults
+    const worker = await createWorker("eng");
+
+    // PSM 6 = uniform block of text — best for MRZ
+    await (worker as any).setParameters({
+      tessedit_pageseg_mode: "6",
+      tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<",
     });
-
-    // Use SINGLE_BLOCK for MRZ — better than auto segmentation
-    await worker.setParameters({ tessedit_pageseg_mode: "6" } as never);
 
     const url = URL.createObjectURL(file);
     const { data } = await worker.recognize(url);
     URL.revokeObjectURL(url);
     await worker.terminate();
 
-    const lines = data.text.split("\n").map(l => l.trim()).filter(Boolean);
-    const mrz = parseMRZ(lines);
+    const mrz = parseMRZ(data.text);
 
     if (!mrz || !mrz.passportNumber) {
-      return { ok: false, warning: "Could not read passport. Please fill in details manually." };
+      return {
+        ok: false,
+        warning: "Could not read passport MRZ. Please fill details manually.",
+      };
     }
 
     return { ok: true, warning: null, ...mrz };
