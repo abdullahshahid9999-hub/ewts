@@ -306,3 +306,34 @@ ALTER TABLE agents ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAUL
 **Routing logic** (admin-controlled, user cannot override):
 - `pkg.cardVersion === "v2"` → renders `UmrahCardV2` on both `/umrah` (public) and `/agent/umrah`
 - All other packages → existing V1 card unchanged
+
+---
+
+## Session — 2026-08-19
+
+### Fix: Visa Requirement Doc Edit + Occupation Categories (commit c6e5da9)
+
+**Root cause of client issue:**
+Admin had added an NTN document scoped to `business_owner` occupation on the Thailand visa (likely copy-pasted from UAE setup). When a businessman selected "Business Owner" occupation, the NTN doc appeared — but Thailand visa doesn't need NTN. Admin had no way to edit the doc's occupation scope without deleting and recreating it.
+
+**Fix 1 — Edit button for saved requirement docs** (`app/admin/visa-services/page.tsx`):
+- Added ✏️ edit button next to each saved requirement doc in the visa edit form
+- Clicking it opens an inline edit panel with all fields: icon, name, description, occupation scope (dropdown), nationality scope, required/optional toggle, allowMultiple toggle
+- Save calls PATCH `/api/admin/visa-services/[id]/documents/[docId]` (already existed)
+- Cancel returns to read view without changes
+- State: `editingDocId` + `editingDocForm` added to component
+
+**Fix 2 — Occupation categories expanded** (`lib/visaApplicantCategory.ts`):
+- `business_owner` label changed to "Business Owner / Businessman" (same value, no DB change)
+- Added `self_employed` → "Self Employed / Freelancer"
+- Added `housewife` → "Housewife"
+- Covers more real-world cases that were being shoe-horned into "Other"
+
+**No schema changes. No SQL needed.**
+
+**Immediate action for owner:**
+1. Go to Admin → Visa Services → Edit Thailand visa
+2. Find the NTN / business document in the requirements list
+3. Click ✏️ → change "Occupation" scope to "All occupations" (blank) OR delete it entirely
+4. Save — that client can resubmit without the NTN block
+
