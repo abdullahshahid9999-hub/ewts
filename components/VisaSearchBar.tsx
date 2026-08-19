@@ -155,8 +155,8 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
 
             {/* Travellers step */}
             {modal === "travellers" && (
-              <div className="flex flex-col" style={{minHeight:0}}>
-                <div className="overflow-y-auto p-5">
+              <div className="flex flex-col flex-1 min-h-0" style={{minHeight:0}}>
+                <div className="overflow-y-auto flex-1 p-5">
                   <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
                     {[
                       { label: "Adult(s)", sub: "Above 12 years", img: "/assets/adult.svg", val: adults, set: setAdults, min: 1 },
