@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 type Props = {
   defaultCountry?: string;
@@ -110,7 +111,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
                 <div className="overflow-y-auto">
                   {filtered.map(c => (
                     <button key={c} type="button" onClick={() => pickCountry(c)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 border-b border-gray-50 text-left transition-colors">
-                        <span className="text-lg shrink-0">🌍</span>
+                        <Image src="/assets/visa.svg" alt="" width={32} height={32} className="shrink-0" />
                       <span className="text-sm font-medium text-gray-800">{c}</span>
                     </button>
                   ))}
@@ -150,27 +151,32 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
             {/* Travellers step */}
             {modal === "travellers" && (
               <div className="p-5">
-                <div className="bg-gray-50 rounded-2xl p-4 space-y-4 mb-6">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
                   {[
-                    { label: "Adult(s)", sub: "Above 12 years", icon: "🧑", val: adults, set: setAdults, min: 1 },
-                    { label: "Child", sub: "Between 2-12 years", icon: "🧒", val: children, set: setChildren, min: 0 },
-                    { label: "Infant", sub: "Below 2 years", icon: "👶", val: infants, set: setInfants, min: 0 },
-                  ].map(({ label, sub, icon, val, set, min }) => (
-                    <div key={label} className="flex items-center gap-3">
-                      <span className="text-xl shrink-0">{icon}</span>
+                    { label: "Adult(s)", sub: "Above 12 years", img: "/assets/adult.svg", val: adults, set: setAdults, min: 1 },
+                    { label: "Child", sub: "Between 2-12 years", img: "/assets/child.svg", val: children, set: setChildren, min: 0 },
+                    { label: "Infant", sub: "Below 2 years", img: "/assets/infant.svg", val: infants, set: setInfants, min: 0 },
+                  ].map(({ label, sub, img, val, set, min }, i, arr) => (
+                    <div key={label} className={`flex items-center gap-4 px-4 py-4 ${i < arr.length - 1 ? "border-b border-gray-100" : ""}`}>
+                      <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                        <Image src={img} alt={label} width={48} height={48} className="object-contain" />
+                      </div>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-800">{label}</p>
                         <p className="text-xs text-gray-400">{sub}</p>
                       </div>
                       <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => set(Math.max(min, val - 1))} className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-600 font-bold hover:border-amber-600 transition-colors">−</button>
-                        <span className="w-6 text-center font-bold text-gray-800">{val}</span>
-                        <button type="button" onClick={() => set(val + 1)} className="w-8 h-8 rounded-full border-2 border-amber-600 text-amber-700 flex items-center justify-center font-bold hover:bg-amber-50 transition-colors">+</button>
+                        <button type="button" onClick={() => set(Math.max(min, val - 1))}
+                          className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 text-lg font-bold hover:border-red-500 hover:text-red-500 transition-colors">−</button>
+                        <span className="w-6 text-center font-bold text-gray-800 text-base">{val}</span>
+                        <button type="button" onClick={() => set(val + 1)}
+                          className="w-8 h-8 rounded-full border-2 border-red-600 text-red-600 flex items-center justify-center text-lg font-bold hover:bg-red-50 transition-colors">+</button>
                       </div>
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={confirmTravellers} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-full text-sm tracking-wider transition-colors">CONFIRM</button>
+                <button type="button" onClick={confirmTravellers}
+                  className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3.5 rounded-full text-sm tracking-widest transition-colors uppercase">CONFIRM</button>
               </div>
             )}
           </div>
