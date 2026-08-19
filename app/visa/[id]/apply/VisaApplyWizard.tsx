@@ -21,7 +21,7 @@ type Traveller = {
   nationality: string;
   issuingCountry: string;
   applicantCategory: string;
-  files: Record<string, File>;
+  files: Record<string, File[]>;
   docWarnings: Record<string, string | null>;
 };
 
@@ -62,7 +62,8 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
   async function handlePassportUpload(docId: string, file: File | null) {
     if (!file) return;
     const warnings = { ...t.docWarnings };
-    const files = { ...t.files };
+    const files: Record<string, File[]> = {};
+    for (const [k, v] of Object.entries(t.files)) files[k] = [...v];
     const isPassportDoc = /passport/i.test(docs.find(d => d.id === docId)?.name ?? "");
     if (isPassportDoc) {
       warnings[docId] = "🔍 Reading passport…";
@@ -75,7 +76,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
         onChange({ docWarnings: warnings });
         return;
       }
-      files[docId] = file;
+      files[docId] = [file]; // passport always single — replace
       const qw = await checkImageQuality(file);
       warnings[docId] = scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled from passport — please double-check!";
       onChange({
@@ -91,7 +92,9 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
         issuingCountry: scan.issuingCountry || t.issuingCountry,
       });
     } else {
-      files[docId] = file;
+      // For allowMultiple docs — append; for single docs — replace
+      const isMulti = (docs.find(d => d.id === docId) as { allowMultiple?: boolean } | undefined)?.allowMultiple;
+      files[docId] = isMulti ? [...(files[docId] ?? []), file] : [file];
       const qw = await checkImageQuality(file);
       warnings[docId] = qw;
       onChange({ files, docWarnings: warnings });
@@ -188,16 +191,20 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
         ) : (
           <div className="space-y-3">
             {filteredDocs.map(doc => (
-              <div key={doc.id} className={`rounded-xl border p-4 ${t.files[doc.id] ? "border-green-200 bg-green-50" : doc.isRequired ? "border-border bg-white" : "border-dashed border-border bg-surface"}`}>
+              <div key={doc.id} className={`rounded-xl border p-4 ${(t.files[doc.id]?.length ?? 0) > 0 ? "border-green-200 bg-green-50" : doc.isRequired ? "border-border bg-white" : "border-dashed border-border bg-surface"}`}>
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <span className="text-sm font-semibold">{(doc as { icon?: string | null }).icon || "📄"} {doc.name}</span>
                     {doc.isRequired ? <span className="ml-2 text-xs text-red-500 font-bold">*required</span> : <span className="ml-2 text-xs text-muted">(optional)</span>}
                     {doc.description && <p className="text-xs text-muted mt-0.5">{doc.description}</p>}
                   </div>
-                  {t.files[doc.id] && <span className="text-green-600 text-xs font-bold shrink-0 mt-0.5">✓ Added</span>}
+                  {(t.files[doc.id]?.length ?? 0) > 0 && (
+                    <span className="text-green-600 text-xs font-bold shrink-0 mt-0.5">
+                      ✓ {t.files[doc.id].length === 1 ? "Added" : `${t.files[doc.id].length} files`}
+                    </span>
+                  )}
                 </div>
-                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={t.files[doc.id]} multiple={(doc as { allowMultiple?: boolean }).allowMultiple} />
+                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={(t.files[doc.id]?.length ?? 0) > 0 ? t.files[doc.id][0] : undefined} multiple={(doc as { allowMultiple?: boolean }).allowMultiple} />
                 {t.docWarnings[doc.id] && (
                   <p className={`text-xs mt-2 ${t.docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : t.docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
                     {t.docWarnings[doc.id]}
@@ -405,7 +412,7 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
       // Check required docs
       const filteredDocs = filterDocsForApplicant(visa.requiredDocuments, t.applicantCategory, t.nationality);
       for (const doc of filteredDocs.filter(d => d.isRequired)) {
-        if (!t.files[doc.id]) return `Please upload: ${doc.name}`;
+        if (!(t.files[doc.id]?.length)) return `Please upload: ${doc.name}`;
       }
       return null;
     }
@@ -454,8 +461,10 @@ export default function VisaApplyWizard({ visa, initialAdults = 1, initialChildr
         form.set(`trav_0_${ti}_nationality`, t.nationality);
         form.set(`trav_0_${ti}_issuingCountry`, t.issuingCountry);
         form.set(`trav_0_${ti}_applicantCategory`, t.applicantCategory);
-        Object.entries(t.files).forEach(([docId, file]) => {
-          form.set(`travdoc_0_${ti}_${docId}`, file);
+        Object.entries(t.files).forEach(([docId, fileArr]) => {
+          fileArr.forEach((file, idx) => {
+            form.append(`travdoc_0_${ti}_${docId}_${idx}`, file);
+          });
         });
       });
       const res = await fetch("/api/visa-applications", { method: "POST", body: form });

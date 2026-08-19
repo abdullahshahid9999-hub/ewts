@@ -107,7 +107,10 @@ export async function submitVisaApplicationBatch(
         const travFullName = ((form.get(`trav_${i}_${t}_fullName`) as string | null) ?? "").trim();
         if (!travFullName) continue; // empty row, skipped later too — nothing to validate
         for (const doc of requiredDocs) {
-          const file = form.get(`travdoc_${i}_${t}_${doc.id}`);
+          // Check indexed key _0 first, then bare key (fallback)
+          const indexed = form.get(`travdoc_${i}_${t}_${doc.id}_0`);
+          const bare = form.get(`travdoc_${i}_${t}_${doc.id}`);
+          const file = indexed ?? bare;
           if (!file || !(file instanceof Blob) || file.size === 0) {
             throw new VisaSubmissionError(
               `Application ${i + 1}, Traveller ${t + 1}: "${doc.name}" is a required document — please attach it.`
@@ -201,22 +204,35 @@ export async function submitVisaApplicationBatch(
       });
       if (dobRaw || dateOfIssueRaw || issuingCountry) {
         await prisma.$executeRawUnsafe(
-          `UPDATE visa_applicants SET dob = $1, date_of_issue = $2, issuing_country = $3 WHERE id = $4`,
+          `UPDATE visa_applicants SET dob = $1, date_of_issue = $2, issuing_country = $3 WHERE id = $4::uuid`,
           dobRaw ?? null, dateOfIssueRaw ?? null, issuingCountry ?? null, applicant.id
         );
       }
 
       for (const doc of visa.requiredDocuments) {
-        const file = form.get(`travdoc_${i}_${t}_${doc.id}`);
-        if (!file || !(file instanceof Blob) || file.size === 0) continue;
-        const ct = file.type || "application/pdf";
-        if (!ALLOWED_DOC_TYPES.includes(ct)) continue;
-        const buf = Buffer.from(await file.arrayBuffer());
-        const fileUrl = await uploadToR2({ buffer: buf, contentType: ct, folder: "visas" });
-        const fileName = (file as File).name ?? doc.name;
-        await prisma.visaApplicationDocument.create({
-          data: { appId: application.id, docId: doc.id, applicantId: applicant.id, fileUrl, fileName },
-        });
+        // Collect files: try indexed keys first (travdoc_i_t_docId_0, _1, …)
+        // then fall back to bare key for legacy single-file submissions.
+        const filesToUpload: Blob[] = [];
+        for (let x = 0; x < 20; x++) {
+          const f = form.get(`travdoc_${i}_${t}_${doc.id}_${x}`);
+          if (!f || !(f instanceof Blob) || f.size === 0) break;
+          filesToUpload.push(f);
+        }
+        // fallback — old bare key (public apply wizard older sessions)
+        if (filesToUpload.length === 0) {
+          const f = form.get(`travdoc_${i}_${t}_${doc.id}`);
+          if (f && f instanceof Blob && f.size > 0) filesToUpload.push(f);
+        }
+        for (const file of filesToUpload) {
+          const ct = file.type || "application/pdf";
+          if (!ALLOWED_DOC_TYPES.includes(ct)) continue;
+          const buf = Buffer.from(await file.arrayBuffer());
+          const fileUrl = await uploadToR2({ buffer: buf, contentType: ct, folder: "visas" });
+          const fileName = (file as File).name ?? doc.name;
+          await prisma.visaApplicationDocument.create({
+            data: { appId: application.id, docId: doc.id, applicantId: applicant.id, fileUrl, fileName },
+          });
+        }
       }
     }
 
