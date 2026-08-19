@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     include: {
       visa: { select: { title: true, country: true, type: true } },
-      applicants: { select: { id: true, fullName: true, ageGroup: true } },
+      applicants: { select: { id: true, fullName: true, ageGroup: true, passportNumber: true, passportExpiry: true, dateOfBirth: true, dateOfIssue: true, issuingCountry: true, nationality: true, applicantCategory: true, documents: { select: { id: true, fileUrl: true, fileName: true } } } },
     },
   });
 

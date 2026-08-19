@@ -84,7 +84,7 @@ function VisaBookingsInner() {
           ) : (
             <table className="ap-table">
               <thead>
-                <tr><th>Reference</th><th>Visa</th><th>Travellers</th><th>Status</th><th>Total</th><th>Created</th></tr>
+                <tr><th>Reference</th><th>Visa</th><th>Travellers</th><th>Status</th><th>Total</th><th>Created</th><th></th></tr>
               </thead>
               <tbody>
                 {apps.map((a) => {
@@ -108,6 +108,12 @@ function VisaBookingsInner() {
                       </td>
                       <td>PKR {a.totalPricePkr.toLocaleString()}</td>
                       <td>{new Date(a.createdAt).toLocaleDateString()}</td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <a href={`/agent/visa-applications/${a.id}/print`} target="_blank" rel="noreferrer"
+                          style={{ fontSize: 11, color: "var(--gold)", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}>
+                          🖨️ Print
+                        </a>
+                      </td>
                     </tr>
                   );
                 })}

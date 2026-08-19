@@ -39,7 +39,7 @@ type Application = {
   updatedAt: string;
   visa: { title: string; country: string; type: string };
   agent: { fullName: string; agentCode: string } | null;
-  applicants?: { id: string; fullName: string; passportNumber: string | null; ageGroup: string; documents: { id: string; fileUrl: string; fileName: string }[] }[];
+  applicants?: { id: string; fullName: string; passportNumber: string | null; passportExpiry: string | null; ageGroup: string; nationality: string | null; applicantCategory: string | null; dateOfBirth: string | null; dateOfIssue: string | null; issuingCountry: string | null; documents: { id: string; fileUrl: string; fileName: string }[] }[];
   documents: AppDoc[];
 };
 
@@ -338,10 +338,18 @@ function VisaApplicationsInner() {
                                   </div>
                                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                     {app.applicants.map((a, i) => (
-                                      <div key={a.id} style={{ fontSize: 12 }}>
+                                      <div key={a.id} style={{ fontSize: 12, background: "var(--a-surface,#f8f9fb)", borderRadius: 8, padding: "8px 10px" }}>
                                         <strong>{i + 1}. {a.fullName}</strong>{" "}
-                                        <span style={{ color: "var(--a-muted)", textTransform: "capitalize" }}>({a.ageGroup}{a.passportNumber ? ` · ${a.passportNumber}` : ""})</span>
-                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
+                                        <span style={{ color: "var(--a-muted)", textTransform: "capitalize" }}>({a.ageGroup})</span>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px 16px", marginTop: 4, fontSize: 11, color: "var(--a-muted)" }}>
+                                          {a.passportNumber && <span>🛂 Passport: <strong style={{color:"var(--a-text)"}}>{a.passportNumber}</strong></span>}
+                                          {a.passportExpiry && <span>📅 Expiry: <strong style={{color:"var(--a-text)"}}>{a.passportExpiry.slice(0,10)}</strong></span>}
+                                          {a.dateOfBirth && <span>🎂 DOB: <strong style={{color:"var(--a-text)"}}>{new Date(a.dateOfBirth).toLocaleDateString("en-PK")}</strong></span>}
+                                          {a.dateOfIssue && <span>📋 Issue Date: <strong style={{color:"var(--a-text)"}}>{new Date(a.dateOfIssue).toLocaleDateString("en-PK")}</strong></span>}
+                                          {a.issuingCountry && <span>🌍 Issued In: <strong style={{color:"var(--a-text)"}}>{a.issuingCountry}</strong></span>}
+                                          {a.nationality && <span>🏳️ Nationality: <strong style={{color:"var(--a-text)"}}>{a.nationality}</strong></span>}
+                                        </div>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
                                           {a.documents.map((doc) => (
                                             <a key={doc.id} href={doc.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "var(--a-gold)", fontWeight: 600 }}>
                                               📎 {doc.fileName}

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     include: {
       visa: { select: { title: true, country: true, type: true } },
       agent: { select: { fullName: true, agentCode: true } },
-      applicants: { include: { documents: true } },
+      applicants: { select: { id: true, fullName: true, ageGroup: true, passportNumber: true, passportExpiry: true, dateOfBirth: true, dateOfIssue: true, issuingCountry: true, nationality: true, applicantCategory: true, documents: { select: { id: true, fileUrl: true, fileName: true } } } },
       documents: {
         include: { document: { select: { name: true } } },
       },

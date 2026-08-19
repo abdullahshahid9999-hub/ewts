@@ -21,6 +21,10 @@ export async function GET(req: NextRequest) {
     activeVisaServices,
     revenueThisMonthAgg,
     payableAgg,
+    visaPending,
+    visaMoreInfo,
+    visaApprovedMonth,
+    visaTodayCount,
   ] = await Promise.all([
     prisma.agent.count(),
     prisma.agentBooking.count({ where: { status: { in: ["pending", "issue_requested"] } } }),
@@ -44,6 +48,10 @@ export async function GET(req: NextRequest) {
       where: { balance: { lt: 0 } },
       _sum: { balance: true },
     }),
+    prisma.visaApplication.count({ where: { status: "pending" } }),
+    prisma.visaApplication.count({ where: { status: "more_info" } }),
+    prisma.visaApplication.count({ where: { status: "approved", updatedAt: { gte: monthStart } } }),
+    prisma.visaApplication.count({ where: { createdAt: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) } } }),
   ]);
 
   return NextResponse.json({
@@ -57,5 +65,6 @@ export async function GET(req: NextRequest) {
     },
     revenueThisMonth: revenueThisMonthAgg._sum.sellPrice ?? 0,
     totalPayable: Math.abs(payableAgg._sum.balance ?? 0),
+    visa: { pending: visaPending, moreInfo: visaMoreInfo, approvedThisMonth: visaApprovedMonth, today: visaTodayCount },
   });
 }

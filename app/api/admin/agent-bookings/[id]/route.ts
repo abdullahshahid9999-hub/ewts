@@ -43,11 +43,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const booking = await prisma
     .$transaction(async (tx) => {
+      if (releasesInventory && existing.packageId && existing.status === "issued" && (existing.serviceType === "umrah" || existing.serviceType === "tours")) {
+        await tx.package.update({ where: { id: existing.packageId }, data: { seatsBooked: { decrement: slotsHeld } } });
+      }
       if (releasesInventory && existing.serviceType === "group_ticket" && existing.groupFlightId) {
         await tx.groupFlight.update({ where: { id: existing.groupFlightId }, data: { seats: { increment: 1 } } });
       }
       if (releasesInventory && roomType && roomType.availableSlots !== null) {
         await tx.packageRoomType.update({ where: { id: roomType.id }, data: { availableSlots: { increment: slotsHeld } } });
+      }
+
+      if (isBeingIssued && existing.packageId && (existing.serviceType === "umrah" || existing.serviceType === "tours")) {
+        await tx.package.update({ where: { id: existing.packageId }, data: { seatsBooked: { increment: slotsHeld } } });
       }
 
       if (isBeingIssued) {

@@ -13,6 +13,7 @@ type DashboardStats = {
   listingsBreakdown: { packages: number; groupFlights: number; visaServices: number };
   revenueThisMonth: number;
   totalPayable: number;
+  visa: { pending: number; moreInfo: number; approvedThisMonth: number; today: number };
 };
 
 function pkr(n: number) {
@@ -97,6 +98,27 @@ function DashboardInner() {
             <div className="adp-sc-l">{c.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Visa Pipeline Summary */}
+      <div style={{ background: "var(--a-surface,#f8f9fb)", border: "1px solid var(--a-bdr,#e5e7eb)", borderRadius: 12, padding: "16px 20px", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--a-muted)" }}>🛂 Visa Pipeline</span>
+          <a href="/admin/visa-applications" style={{ fontSize: 12, color: "var(--a-gold,#d4a843)", fontWeight: 600 }}>View All →</a>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+          {[
+            { label: "Pending Review", value: stats?.visa.pending, color: "#B45309" },
+            { label: "More Info Needed", value: stats?.visa.moreInfo, color: "#7C3AED" },
+            { label: "Approved This Month", value: stats?.visa.approvedThisMonth, color: "#047857" },
+            { label: "Received Today", value: stats?.visa.today, color: "var(--a-navy,#0A1930)" },
+          ].map((v) => (
+            <div key={v.label} style={{ background: "#fff", border: "1px solid var(--a-bdr,#e5e7eb)", borderRadius: 8, padding: "10px 14px" }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: v.color }}>{loading ? "…" : v.value ?? "—"}</div>
+              <div style={{ fontSize: 11, color: "var(--a-muted)", marginTop: 2 }}>{v.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
 {SECTION_GROUPS.map((grp) => (
