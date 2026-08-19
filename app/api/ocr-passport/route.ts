@@ -14,6 +14,66 @@ const ISO3: Record<string, string> = {
   EGY: "Egypt", IRN: "Iran", IRQ: "Iraq", AFG: "Afghanistan", BGD: "Bangladesh",
 };
 
+// Fallback: extract passport fields directly from OCR text when MRZ is unreadable
+// Works for Pakistani bio-page style passports where fields are printed clearly
+function parseFromText(raw: string): Record<string, string | undefined> | null {
+  const text = raw.toUpperCase();
+  const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+
+  // Passport number: e.g. "KH1000125" or "AA1234567" — 2 letters + 7 digits
+  const passportNoMatch = text.match(/\b([A-Z]{2}\d{7})\b/);
+  const passportNo = passportNoMatch?.[1];
+
+  // Surname and given name — look for lines after "SURNAME" or "NOM"
+  let surname = "", givenName = "";
+  for (let i = 0; i < lines.length; i++) {
+    if (/surname|nom\/surname/i.test(lines[i]) && lines[i+1]) {
+      surname = lines[i+1].replace(/[^A-Za-z ]/g, "").trim();
+    }
+    if (/given.?name|pr.?nom/i.test(lines[i]) && lines[i+1]) {
+      givenName = lines[i+1].replace(/[^A-Za-z ]/g, "").trim();
+    }
+  }
+  // Fallback: try MRZ-like line at bottom
+  if (!surname || !givenName) {
+    const mrzLike = lines.find(l => /^P<[A-Z]{3}/.test(l.replace(/\s/g,"")));
+    if (mrzLike) {
+      const clean = mrzLike.replace(/\s/g,"").slice(5);
+      const sep = clean.indexOf("<<");
+      if (sep >= 0) {
+        surname = clean.slice(0, sep).replace(/</g, " ").trim();
+        givenName = clean.slice(sep + 2).replace(/</g, " ").trim();
+      }
+    }
+  }
+
+  // Dates: DD MMM YYYY or DD/MM/YYYY or YYYY-MM-DD
+  const months: Record<string,string> = {
+    JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",
+    JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"
+  };
+  const dateRe = /(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(\d{4})/gi;
+  const allDates: string[] = [];
+  let dm: RegExpExecArray | null;
+  while ((dm = dateRe.exec(raw)) !== null) {
+    const dd = dm[1].padStart(2,"0");
+    const mm = months[dm[2].toUpperCase()];
+    allDates.push(`${dm[3]}-${mm}-${dd}`);
+  }
+  allDates.sort();
+  // earliest = DOB (usually), middle = issue, latest = expiry
+  const dob = allDates[0];
+  const dateOfIssue = allDates.length >= 2 ? allDates[1] : undefined;
+  const dateOfExpiry = allDates.length >= 3 ? allDates[allDates.length - 1] : undefined;
+
+  // Nationality
+  const natMatch = text.match(/nationality[:\s]+([A-Z]+)/i);
+  const nationality = natMatch ? (ISO3[natMatch[1]] || natMatch[1]) : "Pakistan";
+
+  if (!passportNo) return null;
+  return { passportNo, surname, givenName, nationality, issuingCountry: "Pakistan", dateOfBirth: dob, dateOfIssue, dateOfExpiry, gender: undefined };
+}
+
 function parseMRZ(raw: string): Record<string, string | undefined> | null {
   const lines = raw.toUpperCase().split("\n")
     .map(l => l.replace(/\s+/g, "").replace(/[^A-Z0-9<]/g, ""))
@@ -136,7 +196,12 @@ export async function POST(req: NextRequest) {
     const rawText = ocrData.ParsedResults[0].ParsedText;
     const parsed = parseMRZ(rawText);
 
+    // If MRZ failed, try to extract from OCR text directly (works for clear bio-page scans)
     if (!parsed || !parsed.passportNo) {
+      const textParsed = parseFromText(rawText);
+      if (textParsed && textParsed.passportNo) {
+        return NextResponse.json({ ...textParsed, passportImageUrl: null });
+      }
       return NextResponse.json({ error: "Could not read passport MRZ. Please fill manually." }, { status: 422 });
     }
 

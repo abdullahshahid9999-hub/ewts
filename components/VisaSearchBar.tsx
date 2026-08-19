@@ -52,39 +52,44 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
 
   return (
     <>
-      {/* Search bar — Mosafir style horizontal */}
-      <div className="flex flex-col sm:flex-row items-stretch bg-white border border-gray-200 rounded-2xl shadow-md overflow-visible">
+      {/* Search bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Country */}
-        <button type="button" onClick={() => setModal("country")} className="flex-1 text-left px-5 py-3.5 border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-gray-50 transition-colors rounded-l-2xl">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Country / State</p>
-          <p className={`text-sm font-semibold ${country ? "text-gray-900" : "text-gray-400"}`}>{country || "Where are you going?"}</p>
+        <button type="button" onClick={() => setModal("country")}
+          className="text-left px-4 py-4 border-b sm:border-b-0 border-r border-gray-100 hover:bg-amber-50 transition-colors group">
+          <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">🌍 Country / State</p>
+          <p className={`text-sm font-bold truncate ${country ? "text-gray-900" : "text-gray-400"}`}>{country || "Where are you going?"}</p>
         </button>
         {/* Visa Category */}
-        <button type="button" onClick={() => setModal("category")} className="flex-1 text-left px-5 py-3.5 border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-gray-50 transition-colors">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Visa Category</p>
-          <p className={`text-sm font-semibold ${category ? "text-gray-900" : "text-gray-400"}`}>{category || "All Types"}</p>
+        <button type="button" onClick={() => setModal("category")}
+          className="text-left px-4 py-4 border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-amber-50 transition-colors">
+          <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">🛂 Visa Category</p>
+          <p className={`text-sm font-bold truncate ${category ? "text-gray-900" : "text-gray-400"}`}>{category || "All Types"}</p>
         </button>
         {/* Occupation */}
-        <button type="button" onClick={() => setModal("occupation")} className="flex-1 text-left px-5 py-3.5 border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-gray-50 transition-colors">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Occupation</p>
-          <p className={`text-sm font-semibold ${occupation ? "text-gray-900" : "text-gray-400"}`}>{occupation || "Any"}</p>
+        <button type="button" onClick={() => setModal("occupation")}
+          className="text-left px-4 py-4 border-r border-gray-100 hover:bg-amber-50 transition-colors">
+          <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">💼 Occupation</p>
+          <p className={`text-sm font-bold truncate ${occupation ? "text-gray-900" : "text-gray-400"}`}>{occupation || "Any"}</p>
         </button>
-        {/* Traveller */}
-        <button type="button" onClick={() => setModal("travellers")} className="flex-1 text-left px-5 py-3.5 border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-gray-50 transition-colors">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Traveller</p>
-          <p className="text-sm font-semibold text-gray-900">👤 {totalTravellers} Person{totalTravellers !== 1 ? "s" : ""}</p>
-        </button>
-        {/* Search btn */}
-        <button type="button" onClick={doSearch} className="flex items-center justify-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-bold px-6 py-3.5 rounded-b-2xl sm:rounded-r-2xl sm:rounded-bl-none transition-colors text-sm whitespace-nowrap">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          Search
-        </button>
+        {/* Traveller + Search */}
+        <div className="flex">
+          <button type="button" onClick={() => setModal("travellers")}
+            className="flex-1 text-left px-4 py-4 hover:bg-amber-50 transition-colors border-r border-gray-100">
+            <p className="text-[9px] font-black uppercase tracking-widest text-amber-600 mb-1">👥 Traveller</p>
+            <p className="text-sm font-bold text-gray-900">{totalTravellers} Person{totalTravellers !== 1 ? "s" : ""}</p>
+          </button>
+          <button type="button" onClick={doSearch}
+            className="flex items-center justify-center bg-amber-700 hover:bg-amber-800 text-white font-bold px-5 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </button>
+        </div>
       </div>
 
       {/* MODAL WIZARD */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.45)" }} onClick={() => setModal(null)}>
-          <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Modal header */}
             <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
               <button onClick={() => { const idx = STEPS.indexOf(modal); setModal(idx > 0 ? STEPS[idx - 1] : null); }} className="text-amber-700 hover:text-amber-900">
