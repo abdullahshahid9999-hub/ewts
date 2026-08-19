@@ -197,11 +197,14 @@ export async function submitVisaApplicationBatch(
           applicantCategory,
           nationality,
           passportExpiry,
-          dob: dobRaw ?? null,
-          dateOfIssue: dateOfIssueRaw ?? null,
-          issuingCountry,
         },
       });
+      if (dobRaw || dateOfIssueRaw || issuingCountry) {
+        await prisma.$executeRawUnsafe(
+          `UPDATE visa_applicants SET dob = $1, date_of_issue = $2, issuing_country = $3 WHERE id = $4`,
+          dobRaw ?? null, dateOfIssueRaw ?? null, issuingCountry ?? null, applicant.id
+        );
+      }
 
       for (const doc of visa.requiredDocuments) {
         const file = form.get(`travdoc_${i}_${t}_${doc.id}`);
