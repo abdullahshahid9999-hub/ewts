@@ -5,7 +5,7 @@ export async function POST() {
   res.cookies.set("agent_refresh_token", "", {
     httpOnly: true,
     secure: true,
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/api/agent/refresh",
     maxAge: 0,
   });

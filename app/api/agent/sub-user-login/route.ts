@@ -39,6 +39,6 @@ export async function POST(req: NextRequest) {
     subUser: { id: subUser.id, fullName: subUser.fullName, email: subUser.email, designation: subUser.designation ?? null, permissions: (subUser.permissions ?? {}) as Record<string, boolean> },
     mustChangePassword: subUser.mustChangePassword,
   });
-  res.cookies.set("agent_refresh_token", refreshToken, { httpOnly: true, secure: true, sameSite: "lax", path: "/api/agent/refresh", maxAge: 30 * 24 * 60 * 60 });
+  res.cookies.set("agent_refresh_token", refreshToken, { httpOnly: true, secure: true, sameSite: "strict", path: "/api/agent/refresh", maxAge: 30 * 24 * 60 * 60 });
   return res;
 }
