@@ -160,6 +160,8 @@ function VisaServicesInner() {
   const [newDoc, setNewDoc] = useState(emptyDoc);
   const [savingDoc, setSavingDoc] = useState(false);
   const [expandedDocs, setExpandedDocs] = useState<string | null>(null); // which card's docs are open
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editingDocForm, setEditingDocForm] = useState<RequiredDoc>(emptyDoc);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -258,6 +260,26 @@ function VisaServicesInner() {
     loadSavedDocs(editingId);
   }
 
+  async function updateSavedDoc() {
+    if (!editingId || !editingDocId) return;
+    setSavingDoc(true);
+    await adminFetch(`/api/admin/visa-services/${editingId}/documents/${editingDocId}`, accessToken, refresh, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: editingDocForm.name.trim(),
+        icon: editingDocForm.icon?.trim() || null,
+        description: editingDocForm.description?.trim() || null,
+        isRequired: editingDocForm.isRequired,
+        applicantCategory: editingDocForm.applicantCategory || null,
+        nationality: editingDocForm.nationality?.trim() || null,
+        allowMultiple: editingDocForm.allowMultiple ?? false,
+      }),
+    });
+    setSavingDoc(false);
+    setEditingDocId(null);
+    loadSavedDocs(editingId);
+  }
+
   // ── Submit main form ──
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -346,19 +368,62 @@ function VisaServicesInner() {
 
   const docList = (docs: RequiredDoc[], onDelete?: (id: string) => void, onToggle?: (doc: RequiredDoc & { id: string }) => void) => (
     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
-      {docs.map((d, i) => (
-        <div key={d.id ?? i} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid var(--a-border)", borderRadius: 8, padding: "8px 12px" }}>
-          <span style={{ fontSize: 13, flex: 1 }}><span style={{ marginRight: 6 }}>{d.icon || "📄"}</span>{d.name}{d.description ? <span style={{ opacity: 0.5, fontSize: 11, marginLeft: 6 }}>— {d.description}</span> : null}</span>
-          {d.applicantCategory && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.applicantCategory}</span>}
-          {d.nationality && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.nationality}</span>}
-          <span style={{ fontSize: 11, fontWeight: 600, color: d.isRequired ? "var(--a-red)" : "var(--a-muted)", cursor: onToggle ? "pointer" : "default" }}
-            onClick={() => onToggle && d.id && onToggle(d as RequiredDoc & { id: string })}>
-            {d.isRequired ? "Required" : "Optional"}
-          </span>
-          {onDelete && d.id && <button type="button" onClick={() => onDelete(d.id!)} className="adp-btn adp-btn-r" style={{ fontSize: 11, padding: "2px 8px" }}>✕</button>}
-          {!d.id && <button type="button" onClick={() => setPendingDocs(prev => prev.filter((_, j) => j !== i))} className="adp-btn adp-btn-r" style={{ fontSize: 11, padding: "2px 8px" }}>✕</button>}
-        </div>
-      ))}
+      {docs.map((d, i) => {
+        const isBeingEdited = !!d.id && editingDocId === d.id;
+        if (isBeingEdited) {
+          return (
+            <div key={d.id} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid var(--a-border2)", borderRadius: 8, padding: "10px 12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Icon</label>
+                  <input style={iStyle} value={editingDocForm.icon ?? ""} onChange={e => setEditingDocForm(f => ({ ...f, icon: e.target.value }))} placeholder="📄" /></div>
+                <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Name *</label>
+                  <input style={iStyle} value={editingDocForm.name} onChange={e => setEditingDocForm(f => ({ ...f, name: e.target.value }))} /></div>
+              </div>
+              <div style={{ marginBottom: 8 }}><label style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Description</label>
+                <input style={iStyle} value={editingDocForm.description ?? ""} onChange={e => setEditingDocForm(f => ({ ...f, description: e.target.value }))} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Occupation (blank = all)</label>
+                  <select style={iStyle} value={editingDocForm.applicantCategory ?? ""} onChange={e => setEditingDocForm(f => ({ ...f, applicantCategory: e.target.value }))}>
+                    <option value="">All occupations</option>
+                    {APPLICANT_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select></div>
+                <div><label style={{ fontSize: 11, fontWeight: 600, color: "var(--a-muted)" }}>Nationality (blank = all)</label>
+                  <input style={iStyle} value={editingDocForm.nationality ?? ""} onChange={e => setEditingDocForm(f => ({ ...f, nationality: e.target.value }))} placeholder="e.g. Pakistani" /></div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                  <input type="checkbox" checked={editingDocForm.isRequired} onChange={e => setEditingDocForm(f => ({ ...f, isRequired: e.target.checked }))} /> Required
+                </label>
+                <label style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                  <input type="checkbox" checked={editingDocForm.allowMultiple ?? false} onChange={e => setEditingDocForm(f => ({ ...f, allowMultiple: e.target.checked }))} /> Allow Multiple
+                </label>
+                <div style={{ flex: 1 }} />
+                <button type="button" className="adp-btn adp-btn-g" style={{ fontSize: 11, padding: "3px 10px" }} onClick={updateSavedDoc} disabled={savingDoc}>{savingDoc ? "Saving…" : "Save"}</button>
+                <button type="button" className="adp-btn adp-btn-t" style={{ fontSize: 11, padding: "3px 10px" }} onClick={() => setEditingDocId(null)}>Cancel</button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div key={d.id ?? i} style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid var(--a-border)", borderRadius: 8, padding: "8px 12px" }}>
+            <span style={{ fontSize: 13, flex: 1 }}><span style={{ marginRight: 6 }}>{d.icon || "📄"}</span>{d.name}{d.description ? <span style={{ opacity: 0.5, fontSize: 11, marginLeft: 6 }}>— {d.description}</span> : null}</span>
+            {d.applicantCategory && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.applicantCategory}</span>}
+            {d.nationality && <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 12, background: "rgba(255,255,255,0.08)", border: "1px solid var(--a-border)" }}>{d.nationality}</span>}
+            <span style={{ fontSize: 11, fontWeight: 600, color: d.isRequired ? "var(--a-red)" : "var(--a-muted)", cursor: onToggle ? "pointer" : "default" }}
+              onClick={() => onToggle && d.id && onToggle(d as RequiredDoc & { id: string })}>
+              {d.isRequired ? "Required" : "Optional"}
+            </span>
+            {onDelete && d.id && (
+              <button type="button" className="adp-btn adp-btn-t" style={{ fontSize: 11, padding: "2px 8px" }}
+                onClick={() => { setEditingDocId(d.id!); setEditingDocForm({ name: d.name, icon: d.icon ?? "", description: d.description ?? "", isRequired: d.isRequired, applicantCategory: d.applicantCategory ?? "", nationality: d.nationality ?? "", allowMultiple: d.allowMultiple ?? false }); }}>
+                ✏️
+              </button>
+            )}
+            {onDelete && d.id && <button type="button" onClick={() => onDelete(d.id!)} className="adp-btn adp-btn-r" style={{ fontSize: 11, padding: "2px 8px" }}>✕</button>}
+            {!d.id && <button type="button" onClick={() => setPendingDocs(prev => prev.filter((_, j) => j !== i))} className="adp-btn adp-btn-r" style={{ fontSize: 11, padding: "2px 8px" }}>✕</button>}
+          </div>
+        );
+      })}
     </div>
   );
 

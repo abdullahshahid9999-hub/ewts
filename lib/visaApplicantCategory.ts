@@ -1,8 +1,10 @@
 export const APPLICANT_CATEGORIES = [
   { value: "job_holder", label: "Job Holder (Salaried)" },
-  { value: "business_owner", label: "Business Owner" },
+  { value: "business_owner", label: "Business Owner / Businessman" },
+  { value: "self_employed", label: "Self Employed / Freelancer" },
   { value: "retired", label: "Retired" },
   { value: "student", label: "Student" },
+  { value: "housewife", label: "Housewife" },
   { value: "other", label: "Other" },
 ];
 
