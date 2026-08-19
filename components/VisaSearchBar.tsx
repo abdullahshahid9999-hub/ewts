@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -20,6 +21,8 @@ type Step = typeof STEPS[number];
 
 export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "", defaultOccupation = "", defaultAdults = 1, defaultChildren = 0, defaultInfants = 0, dbCountries = [], countryTypeMap = {} }: Props) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [modal, setModal] = useState<Step | null>(null);
   const [country, setCountry] = useState(defaultCountry);
   const [category, setCategory] = useState(defaultCategory);
@@ -86,9 +89,9 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
         </div>
       </div>
 
-      {/* MODAL WIZARD */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.45)" }} onClick={() => setModal(null)}>
+      {/* MODAL WIZARD — rendered via portal so fixed positioning works inside any stacking context */}
+      {modal && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.55)" }} onClick={() => setModal(null)}>
           <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Modal header */}
             <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
@@ -190,7 +193,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
             )}
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }
