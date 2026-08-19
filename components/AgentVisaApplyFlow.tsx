@@ -276,12 +276,16 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                       if (isPassport) {
                         setDocWarning(warnKey, "🔍 Reading passport…");
                         const scan = await scanPassport(file);
-                        if (!scan.ok) { setDocWarning(warnKey, `❌ ${scan.warning}`); e.target.value = ""; return; }
+                        // Always accept file — OCR failure just means manual fill
                         await setTravFile(activeTrav, doc.id, file);
-                        const qw = await checkImageQuality(file);
-                        setDocWarning(warnKey, scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled — please double-check!");
-                        const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
-                        updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality, dob: scan.dob || travellers[activeTrav].dob, dateOfIssue: scan.passportIssueDate || travellers[activeTrav].dateOfIssue, issuingCountry: scan.issuingCountry || travellers[activeTrav].issuingCountry });
+                        if (!scan.ok) {
+                          setDocWarning(warnKey, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details manually."}`);
+                        } else {
+                          const qw = await checkImageQuality(file);
+                          setDocWarning(warnKey, scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled — please double-check!");
+                          const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
+                          updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality, dob: scan.dob || travellers[activeTrav].dob, dateOfIssue: scan.passportIssueDate || travellers[activeTrav].dateOfIssue, issuingCountry: scan.issuingCountry || travellers[activeTrav].issuingCountry });
+                        }
                       } else { await setTravFile(activeTrav, doc.id, file); setDocWarning(warnKey, await checkImageQuality(file)); }
                     }} />
                   {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}

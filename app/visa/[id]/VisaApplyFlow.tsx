@@ -388,21 +388,21 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                       if (isPassportDoc) {
                         setDocWarning(doc.id, "🔍 Reading passport…");
                         const scan = await scanPassport(f);
-                        if (!scan.ok) {
-                          setDocWarning(doc.id, `❌ ${scan.warning}`);
-                          e.target.value = "";
-                          return; // reject — don't attach an unreadable scan
-                        }
+                        // Always accept the file — even if OCR fails the user can fill manually
                         setFile(activeIdx, doc.id, f);
-                        const qualityWarning = await checkImageQuality(f);
-                        setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
-                        const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
-                        updateDraft(activeIdx, {
-                          fullName: scannedName || draft.fullName,
-                          passportNumber: scan.passportNumber || draft.passportNumber,
-                          passportExpiry: scan.passportExpiry || draft.passportExpiry,
-                          nationality: scan.nationality || draft.nationality,
-                        });
+                        if (!scan.ok) {
+                          setDocWarning(doc.id, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details below manually."}`);
+                        } else {
+                          const qualityWarning = await checkImageQuality(f);
+                          setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
+                          const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
+                          updateDraft(activeIdx, {
+                            fullName: scannedName || draft.fullName,
+                            passportNumber: scan.passportNumber || draft.passportNumber,
+                            passportExpiry: scan.passportExpiry || draft.passportExpiry,
+                            nationality: scan.nationality || draft.nationality,
+                          });
+                        }
                       } else {
                         setFile(activeIdx, doc.id, f);
                         setDocWarning(doc.id, await checkImageQuality(f));

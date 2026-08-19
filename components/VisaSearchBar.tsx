@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 type Props = {
   defaultCountry?: string;
@@ -83,7 +82,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
 
       {/* MODAL WIZARD */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" style={{ background: "rgba(0,0,0,0.45)" }} onClick={() => setModal(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.45)" }} onClick={() => setModal(null)}>
           <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
             {/* Modal header */}
             <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 border-b border-gray-100">
@@ -111,7 +110,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
                 <div className="overflow-y-auto">
                   {filtered.map(c => (
                     <button key={c} type="button" onClick={() => pickCountry(c)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 border-b border-gray-50 text-left transition-colors">
-                      <Image src="https://mosafir.pk/home_assets/images/visa.svg" alt="" width={28} height={28} unoptimized className="shrink-0" />
+                        <span className="text-lg shrink-0">🌍</span>
                       <span className="text-sm font-medium text-gray-800">{c}</span>
                     </button>
                   ))}
@@ -153,12 +152,12 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
               <div className="p-5">
                 <div className="bg-gray-50 rounded-2xl p-4 space-y-4 mb-6">
                   {[
-                    { label: "Adult(s)", sub: "Above 12 years", img: "https://mosafir.pk/visa/images/adult.svg", val: adults, set: setAdults, min: 1 },
-                    { label: "Child", sub: "Between 2-12 years", img: "https://mosafir.pk/visa/images/child.svg", val: children, set: setChildren, min: 0 },
-                    { label: "Infant", sub: "Below 2 years", img: "https://mosafir.pk/visa/images/infant.svg", val: infants, set: setInfants, min: 0 },
-                  ].map(({ label, sub, img, val, set, min }) => (
+                    { label: "Adult(s)", sub: "Above 12 years", icon: "🧑", val: adults, set: setAdults, min: 1 },
+                    { label: "Child", sub: "Between 2-12 years", icon: "🧒", val: children, set: setChildren, min: 0 },
+                    { label: "Infant", sub: "Below 2 years", icon: "👶", val: infants, set: setInfants, min: 0 },
+                  ].map(({ label, sub, icon, val, set, min }) => (
                     <div key={label} className="flex items-center gap-3">
-                      <Image src={img} alt={label} width={28} height={28} unoptimized className="shrink-0 opacity-80" />
+                      <span className="text-xl shrink-0">{icon}</span>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-gray-800">{label}</p>
                         <p className="text-xs text-gray-400">{sub}</p>
