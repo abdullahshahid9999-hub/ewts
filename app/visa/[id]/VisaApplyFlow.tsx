@@ -377,45 +377,105 @@ export default function VisaApplyFlow({ visa, initialAdults, initialChildren, in
                       <span className="text-green-600 text-xs font-bold shrink-0">✓ Added</span>
                     )}
                   </div>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    className="text-xs w-full"
-                    onChange={async (e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      if (!f) return;
-                      const isPassportDoc = /passport/i.test(doc.name);
-                      if (isPassportDoc) {
-                        setDocWarning(doc.id, "🔍 Reading passport…");
-                        const scan = await scanPassport(f);
-                        // Always accept the file — even if OCR fails the user can fill manually
-                        setFile(activeIdx, doc.id, f);
-                        if (!scan.ok) {
-                          setDocWarning(doc.id, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details below manually."}`);
-                        } else {
-                          const qualityWarning = await checkImageQuality(f);
-                          setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
-                          const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
-                          updateDraft(activeIdx, {
-                            fullName: scannedName || draft.fullName,
-                            passportNumber: scan.passportNumber || draft.passportNumber,
-                            passportExpiry: scan.passportExpiry || draft.passportExpiry,
-                            nationality: scan.nationality || draft.nationality,
-                          });
-                        }
-                      } else {
-                        setFile(activeIdx, doc.id, f);
-                        setDocWarning(doc.id, await checkImageQuality(f));
-                      }
-                    }}
-                  />
-                  {draft.files[doc.id] && (
-                    <p className="text-xs text-muted mt-1">📎 {draft.files[doc.id].name}</p>
-                  )}
-                  {docWarnings[doc.id] && (
-                    <p className={`text-xs mt-1 ${docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
-                      {docWarnings[doc.id]}
-                    </p>
+                  {draft.files[doc.id] ? (
+                    /* ── File uploaded — show preview + actions ── */
+                    <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3">
+                      <div className="flex items-center gap-3">
+                        {draft.files[doc.id].type?.startsWith("image/") ? (
+                          <img
+                            src={URL.createObjectURL(draft.files[doc.id])}
+                            alt="preview"
+                            className="w-14 h-14 object-cover rounded-md border border-green-300 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 flex items-center justify-center bg-white rounded-md border border-green-300 shrink-0 text-2xl">📄</div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-green-700 truncate">✓ {draft.files[doc.id].name}</p>
+                          <p className="text-xs text-green-600">{(draft.files[doc.id].size / 1024).toFixed(0)} KB</p>
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          {draft.files[doc.id].type?.startsWith("image/") && (
+                            <a
+                              href={URL.createObjectURL(draft.files[doc.id])}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-semibold text-blue-600 hover:underline"
+                            >👁 View</a>
+                          )}
+                          <label className="text-xs font-semibold text-amber-700 hover:underline cursor-pointer">
+                            🔄 Reupload
+                            <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden"
+                              onChange={async (e) => {
+                                const f = e.target.files?.[0] ?? null;
+                                if (!f) return;
+                                const isPassportDoc = /passport/i.test(doc.name);
+                                if (isPassportDoc) {
+                                  setDocWarning(doc.id, "🔍 Reading passport…");
+                                  const scan = await scanPassport(f);
+                                  setFile(activeIdx, doc.id, f);
+                                  if (!scan.ok) {
+                                    setDocWarning(doc.id, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details below manually."}`);
+                                  } else {
+                                    const qualityWarning = await checkImageQuality(f);
+                                    setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
+                                    const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
+                                    updateDraft(activeIdx, { fullName: scannedName || draft.fullName, passportNumber: scan.passportNumber || draft.passportNumber, passportExpiry: scan.passportExpiry || draft.passportExpiry, nationality: scan.nationality || draft.nationality });
+                                  }
+                                } else {
+                                  setFile(activeIdx, doc.id, f);
+                                  setDocWarning(doc.id, await checkImageQuality(f));
+                                }
+                              }}
+                            />
+                          </label>
+                          <button type="button" className="text-xs font-semibold text-red-500 hover:underline text-left"
+                            onClick={() => { setFile(activeIdx, doc.id, null); setDocWarning(doc.id, null); }}>
+                            🗑 Remove
+                          </button>
+                        </div>
+                      </div>
+                      {docWarnings[doc.id] && (
+                        <p className={`text-xs mt-2 ${docWarnings[doc.id]?.startsWith("✨") ? "text-green-700" : docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
+                          {docWarnings[doc.id]}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* ── No file yet — show upload button ── */
+                    <div className="mt-2">
+                      <label className="inline-flex items-center gap-2 cursor-pointer border border-border rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+                        <span>📎</span> Choose Document
+                        <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden"
+                          onChange={async (e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            if (!f) return;
+                            const isPassportDoc = /passport/i.test(doc.name);
+                            if (isPassportDoc) {
+                              setDocWarning(doc.id, "🔍 Reading passport…");
+                              const scan = await scanPassport(f);
+                              setFile(activeIdx, doc.id, f);
+                              if (!scan.ok) {
+                                setDocWarning(doc.id, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details below manually."}`);
+                              } else {
+                                const qualityWarning = await checkImageQuality(f);
+                                setDocWarning(doc.id, scan.warning ? `⚠️ ${scan.warning}` : qualityWarning ? `⚠️ ${qualityWarning}` : "✨ Auto-filled from your passport — please double-check below!");
+                                const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
+                                updateDraft(activeIdx, { fullName: scannedName || draft.fullName, passportNumber: scan.passportNumber || draft.passportNumber, passportExpiry: scan.passportExpiry || draft.passportExpiry, nationality: scan.nationality || draft.nationality });
+                              }
+                            } else {
+                              setFile(activeIdx, doc.id, f);
+                              setDocWarning(doc.id, await checkImageQuality(f));
+                            }
+                          }}
+                        />
+                      </label>
+                      {docWarnings[doc.id] && (
+                        <p className={`text-xs mt-1 ${docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
+                          {docWarnings[doc.id]}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

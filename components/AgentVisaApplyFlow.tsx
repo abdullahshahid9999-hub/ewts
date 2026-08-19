@@ -269,14 +269,13 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                     {f && <span style={{ color: "#16a34a", fontSize: 12, fontWeight: 700 }}>✓</span>}
                   </div>
                   {doc.description && <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>{doc.description}</p>}
-                  <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ fontSize: 11, width: "100%" }}
-                    onChange={async e => {
-                      const file = e.target.files?.[0] ?? null; if (!file) return;
+                  {/* Reusable upload handler */}
+                  {(() => {
+                    const handleFile = async (file: File) => {
                       const isPassport = /passport/i.test(doc.name);
                       if (isPassport) {
                         setDocWarning(warnKey, "🔍 Reading passport…");
                         const scan = await scanPassport(file);
-                        // Always accept file — OCR failure just means manual fill
                         await setTravFile(activeTrav, doc.id, file);
                         if (!scan.ok) {
                           setDocWarning(warnKey, `⚠️ ${scan.warning ?? "Could not auto-read passport. Please fill details manually."}`);
@@ -286,10 +285,51 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                           const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
                           updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality, dob: scan.dob || travellers[activeTrav].dob, dateOfIssue: scan.passportIssueDate || travellers[activeTrav].dateOfIssue, issuingCountry: scan.issuingCountry || travellers[activeTrav].issuingCountry });
                         }
-                      } else { await setTravFile(activeTrav, doc.id, file); setDocWarning(warnKey, await checkImageQuality(file)); }
-                    }} />
-                  {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}
-                  {docWarnings[warnKey] && <p style={{ fontSize: 11, marginTop: 4, color: docWarnings[warnKey]?.startsWith("✨") ? "#16a34a" : docWarnings[warnKey]?.startsWith("🔍") ? "#2563eb" : "#B45309" }}>{docWarnings[warnKey]}</p>}
+                      } else {
+                        await setTravFile(activeTrav, doc.id, file);
+                        setDocWarning(warnKey, await checkImageQuality(file));
+                      }
+                    };
+                    return f ? (
+                      <div style={{ marginTop: 8, borderRadius: 8, border: "1px solid #bbf7d0", background: "#f0fdf4", padding: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          {f.type?.startsWith("image/") ? (
+                            <img src={URL.createObjectURL(f)} alt="preview" style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 6, border: "1px solid #86efac", flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 52, height: 52, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", borderRadius: 6, border: "1px solid #86efac", fontSize: 22, flexShrink: 0 }}>📄</div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 11, fontWeight: 600, color: "#15803d", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>✓ {f.name}</p>
+                            <p style={{ fontSize: 10, color: "#16a34a" }}>{(f.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                            {f.type?.startsWith("image/") && (
+                              <a href={URL.createObjectURL(f)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#2563eb", fontWeight: 600, textDecoration: "none" }}>👁 View</a>
+                            )}
+                            <label style={{ fontSize: 11, color: "#b45309", fontWeight: 600, cursor: "pointer" }}>
+                              🔄 Reupload
+                              <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ display: "none" }}
+                                onChange={async e => { const file = e.target.files?.[0]; if (file) await handleFile(file); }} />
+                            </label>
+                            <button type="button" style={{ fontSize: 11, color: "#dc2626", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}
+                              onClick={() => { setTravFile(activeTrav, doc.id, null); setDocWarning(warnKey, null); }}>
+                              🗑 Remove
+                            </button>
+                          </div>
+                        </div>
+                        {docWarnings[warnKey] && <p style={{ fontSize: 11, marginTop: 6, color: docWarnings[warnKey]?.startsWith("✨") ? "#15803d" : docWarnings[warnKey]?.startsWith("🔍") ? "#2563eb" : "#b45309" }}>{docWarnings[warnKey]}</p>}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 8 }}>
+                        <label style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", border: "1px solid var(--bdr)", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 500 }}>
+                          📎 Choose Document
+                          <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ display: "none" }}
+                            onChange={async e => { const file = e.target.files?.[0]; if (file) await handleFile(file); }} />
+                        </label>
+                        {docWarnings[warnKey] && <p style={{ fontSize: 11, marginTop: 4, color: docWarnings[warnKey]?.startsWith("🔍") ? "#2563eb" : "#b45309" }}>{docWarnings[warnKey]}</p>}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
