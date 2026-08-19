@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAgentAuth, agentFetch } from "@/lib/agentAuthClient";
 import { useEffect, useState } from "react";
@@ -79,9 +78,8 @@ export default function AgentSidebar({ open, onClose, dark, onToggleDark }: { op
       </div>
       <div className="ap-sb-agent">
         {agent?.logoUrl && (
-          <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}>
-            <Image src={agent.logoUrl} alt="Agency Logo" width={80} height={80}
-              style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(212,168,67,0.4)", background: "#fff" }} />
+          <div style={{ padding: "10px 18px 4px", display: "flex", justifyContent: "center" }}>
+            <img src={agent.logoUrl} alt="Agency Logo" style={{ maxHeight: 64, maxWidth: 140, objectFit: "contain", borderRadius: 8, background: "rgba(255,255,255,0.1)", padding: "4px 10px" }} />
           </div>
         )}
         <div className="ap-sb-agent-name">{agent?.fullName ?? "Loading…"}</div>
