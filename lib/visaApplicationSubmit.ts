@@ -197,8 +197,8 @@ export async function submitVisaApplicationBatch(
           applicantCategory,
           nationality,
           passportExpiry,
-          dateOfBirth: dobRaw ? new Date(dobRaw) : null,
-          dateOfIssue: dateOfIssueRaw ? new Date(dateOfIssueRaw) : null,
+          dob: dobRaw ?? null,
+          dateOfIssue: dateOfIssueRaw ?? null,
           issuingCountry,
         },
       });
