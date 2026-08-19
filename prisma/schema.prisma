@@ -360,6 +360,9 @@ model VisaApplicant {
   applicantCategory String? @map("applicant_category")
   nationality       String?
   passportExpiry    String? @map("passport_expiry")
+  dob               String? @map("dob")
+  dateOfIssue       String? @map("date_of_issue")
+  issuingCountry    String? @map("issuing_country")
   createdAt      DateTime @default(now()) @map("created_at")
 
   application VisaApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
