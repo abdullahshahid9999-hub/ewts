@@ -53,7 +53,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
   return (
     <>
       {/* Search bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 bg-white rounded-2xl shadow-lg border border-gray-100" style={{overflow:"visible"}}>
         {/* Country */}
         <button type="button" onClick={() => setModal("country")}
           className="text-left px-4 py-4 border-b sm:border-b-0 border-r border-gray-100 hover:bg-amber-50 transition-colors group">
@@ -80,7 +80,7 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
             <p className="text-sm font-bold text-gray-900">{totalTravellers} Person{totalTravellers !== 1 ? "s" : ""}</p>
           </button>
           <button type="button" onClick={doSearch}
-            className="flex items-center justify-center bg-amber-700 hover:bg-amber-800 text-white font-bold px-5 transition-colors">
+            className="flex items-center justify-center bg-amber-700 hover:bg-amber-800 text-white font-bold px-5 transition-colors rounded-br-2xl rounded-tr-2xl">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           </button>
         </div>
@@ -155,33 +155,37 @@ export default function VisaSearchBar({ defaultCountry = "", defaultCategory = "
 
             {/* Travellers step */}
             {modal === "travellers" && (
-              <div className="p-5">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-                  {[
-                    { label: "Adult(s)", sub: "Above 12 years", img: "/assets/adult.svg", val: adults, set: setAdults, min: 1 },
-                    { label: "Child", sub: "Between 2-12 years", img: "/assets/child.svg", val: children, set: setChildren, min: 0 },
-                    { label: "Infant", sub: "Below 2 years", img: "/assets/infant.svg", val: infants, set: setInfants, min: 0 },
-                  ].map(({ label, sub, img, val, set, min }, i, arr) => (
-                    <div key={label} className={`flex items-center gap-4 px-4 py-4 ${i < arr.length - 1 ? "border-b border-gray-100" : ""}`}>
-                      <div className="w-12 h-12 flex items-center justify-center shrink-0">
-                        <Image src={img} alt={label} width={48} height={48} className="object-contain" />
+              <div className="flex flex-col" style={{minHeight:0}}>
+                <div className="overflow-y-auto p-5">
+                  <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+                    {[
+                      { label: "Adult(s)", sub: "Above 12 years", img: "/assets/adult.svg", val: adults, set: setAdults, min: 1 },
+                      { label: "Child", sub: "Between 2-12 years", img: "/assets/child.svg", val: children, set: setChildren, min: 0 },
+                      { label: "Infant", sub: "Below 2 years", img: "/assets/infant.svg", val: infants, set: setInfants, min: 0 },
+                    ].map(({ label, sub, img, val, set, min }, i, arr) => (
+                      <div key={label} className={`flex items-center gap-4 px-4 py-4 ${i < arr.length - 1 ? "border-b border-gray-100" : ""}`}>
+                        <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                          <Image src={img} alt={label} width={48} height={48} className="object-contain" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-800">{label}</p>
+                          <p className="text-xs text-gray-400">{sub}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button type="button" onClick={() => set(Math.max(min, val - 1))}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 text-lg font-bold hover:border-red-500 hover:text-red-500 transition-colors">−</button>
+                          <span className="w-6 text-center font-bold text-gray-800 text-base">{val}</span>
+                          <button type="button" onClick={() => set(val + 1)}
+                            className="w-8 h-8 rounded-full border-2 border-red-600 text-red-600 flex items-center justify-center text-lg font-bold hover:bg-red-50 transition-colors">+</button>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-800">{label}</p>
-                        <p className="text-xs text-gray-400">{sub}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button type="button" onClick={() => set(Math.max(min, val - 1))}
-                          className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center text-gray-500 text-lg font-bold hover:border-red-500 hover:text-red-500 transition-colors">−</button>
-                        <span className="w-6 text-center font-bold text-gray-800 text-base">{val}</span>
-                        <button type="button" onClick={() => set(val + 1)}
-                          className="w-8 h-8 rounded-full border-2 border-red-600 text-red-600 flex items-center justify-center text-lg font-bold hover:bg-red-50 transition-colors">+</button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-                <button type="button" onClick={confirmTravellers}
-                  className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3.5 rounded-full text-sm tracking-widest transition-colors uppercase">CONFIRM</button>
+                <div className="px-5 pb-5 shrink-0">
+                  <button type="button" onClick={confirmTravellers}
+                    className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3.5 rounded-full text-sm tracking-widest transition-colors uppercase">CONFIRM</button>
+                </div>
               </div>
             )}
           </div>
