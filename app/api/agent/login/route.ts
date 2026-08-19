@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const genericError = () =>
     NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
 
-  const agent = await prisma.agent.findUnique({ where: { email }, select: { id: true, email: true, agentCode: true, fullName: true, passwordHash: true, status: true, tier: true, balance: true, creditLimit: true, loginAttempts: true, lockedUntil: true, totpEnabled: true, totpSecret: true, mustChangePassword: true } });
+  const agent = await prisma.agent.findUnique({ where: { email }, select: { id: true, email: true, agentCode: true, fullName: true, passwordHash: true, status: true, tier: true, balance: true, creditLimit: true, logoUrl: true, loginAttempts: true, lockedUntil: true, totpEnabled: true, totpSecret: true, mustChangePassword: true } });
   if (!agent) return genericError();
 
   if (agent.status !== "active")
@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       tier: agent.tier,
       balance: agent.balance,
       creditLimit: agent.creditLimit,
+      logoUrl: agent.logoUrl ?? null,
     },
   });
 

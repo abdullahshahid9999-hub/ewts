@@ -17,8 +17,8 @@ type VisaInfo = {
 type AgeGroup = "adult" | "child" | "infant";
 type Traveller = {
   fullName: string; passportNumber: string; passportExpiry: string;
-  applicantCategory: string; nationality: string; ageGroup: AgeGroup; files: Record<string, File>;
   dob: string; dateOfIssue: string; issuingCountry: string;
+  applicantCategory: string; nationality: string; ageGroup: AgeGroup; files: Record<string, File>;
 };
 
 function priceFor(visa: VisaInfo, g: AgeGroup) {
@@ -81,9 +81,9 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
 
   function buildTravellers() {
     const list: Traveller[] = [];
-    for (let i = 0; i < counts.adults; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "adult", files: {}, dob: "", dateOfIssue: "", issuingCountry: "" });
-    for (let i = 0; i < counts.children; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "child", files: {}, dob: "", dateOfIssue: "", issuingCountry: "" });
-    for (let i = 0; i < counts.infants; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", applicantCategory: "", nationality: "", ageGroup: "infant", files: {}, dob: "", dateOfIssue: "", issuingCountry: "" });
+    for (let i = 0; i < counts.adults; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", dob: "", dateOfIssue: "", issuingCountry: "", applicantCategory: "", nationality: "", ageGroup: "adult", files: {} });
+    for (let i = 0; i < counts.children; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", dob: "", dateOfIssue: "", issuingCountry: "", applicantCategory: "", nationality: "", ageGroup: "child", files: {} });
+    for (let i = 0; i < counts.infants; i++) list.push({ fullName: "", passportNumber: "", passportExpiry: "", dob: "", dateOfIssue: "", issuingCountry: "", applicantCategory: "", nationality: "", ageGroup: "infant", files: {} });
     setTravellers(list); setActiveTrav(0);
   }
 
@@ -125,11 +125,11 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
       form.set(`trav_0_${ti}_passportNumber`, t.passportNumber.trim());
       form.set(`trav_0_${ti}_ageGroup`, t.ageGroup);
       form.set(`trav_0_${ti}_passportExpiry`, t.passportExpiry);
-      form.set(`trav_0_${ti}_applicantCategory`, t.applicantCategory);
-      form.set(`trav_0_${ti}_nationality`, t.nationality);
       form.set(`trav_0_${ti}_dob`, t.dob);
       form.set(`trav_0_${ti}_dateOfIssue`, t.dateOfIssue);
       form.set(`trav_0_${ti}_issuingCountry`, t.issuingCountry);
+      form.set(`trav_0_${ti}_applicantCategory`, t.applicantCategory);
+      form.set(`trav_0_${ti}_nationality`, t.nationality);
       Object.entries(t.files).forEach(([docId, file]) => form.set(`travdoc_0_${ti}_${docId}`, file));
     });
     try {
@@ -218,16 +218,10 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
             <label>Passport Expiry</label>
             <input type="date" value={travellers[activeTrav].passportExpiry} onChange={e => updateTrav(activeTrav, { passportExpiry: e.target.value })} />
             {passportExpiryWarning(travellers[activeTrav].passportExpiry) && <p style={{ fontSize: 11, color: "#B45309", marginTop: 4 }}>⚠️ {passportExpiryWarning(travellers[activeTrav].passportExpiry)}</p>}
-          </div>
-          <div className="ap-field">
             <label>Date of Birth</label>
             <input type="date" value={travellers[activeTrav].dob} onChange={e => updateTrav(activeTrav, { dob: e.target.value })} />
-          </div>
-          <div className="ap-field">
             <label>Passport Issue Date</label>
             <input type="date" value={travellers[activeTrav].dateOfIssue} onChange={e => updateTrav(activeTrav, { dateOfIssue: e.target.value })} />
-          </div>
-          <div className="ap-field">
             <label>Issuing Country</label>
             <input value={travellers[activeTrav].issuingCountry} onChange={e => updateTrav(activeTrav, { issuingCountry: e.target.value })} placeholder="e.g. Pakistan" />
           </div>
@@ -287,7 +281,7 @@ export default function AgentVisaApplyFlow({ visa }: { visa: VisaInfo }) {
                         const qw = await checkImageQuality(file);
                         setDocWarning(warnKey, scan.warning ? `⚠️ ${scan.warning}` : qw ? `⚠️ ${qw}` : "✨ Auto-filled — please double-check!");
                         const scannedName = [scan.givenName, scan.surname].filter(Boolean).join(" ");
-                        updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality });
+                        updateTrav(activeTrav, { fullName: scannedName || travellers[activeTrav].fullName, passportNumber: scan.passportNumber || travellers[activeTrav].passportNumber, passportExpiry: scan.passportExpiry || travellers[activeTrav].passportExpiry, nationality: scan.nationality || travellers[activeTrav].nationality, dob: scan.dob || travellers[activeTrav].dob, dateOfIssue: scan.passportIssueDate || travellers[activeTrav].dateOfIssue, issuingCountry: scan.issuingCountry || travellers[activeTrav].issuingCountry });
                       } else { await setTravFile(activeTrav, doc.id, file); setDocWarning(warnKey, await checkImageQuality(file)); }
                     }} />
                   {f && <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>📎 {f.name}</p>}

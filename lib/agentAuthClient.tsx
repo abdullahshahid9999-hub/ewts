@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 
-type Agent = { id: string; agentCode: string; fullName: string; email: string; tier: string; balance: number; creditLimit: number };
+type Agent = { id: string; agentCode: string; fullName: string; email: string; tier: string; balance: number; creditLimit: number; logoUrl?: string | null };
 export type SubUserInfo = { id: string; fullName: string; email: string; designation: string | null; permissions: Record<string, boolean> };
 
 type AgentAuthContextValue = {

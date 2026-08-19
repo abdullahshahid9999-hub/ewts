@@ -184,8 +184,8 @@ export async function submitVisaApplicationBatch(
       const applicantCategory = ((form.get(`trav_${i}_${t}_applicantCategory`) as string | null) ?? "").trim() || null;
       const nationality = ((form.get(`trav_${i}_${t}_nationality`) as string | null) ?? "").trim() || null;
       const passportExpiry = ((form.get(`trav_${i}_${t}_passportExpiry`) as string | null) ?? "").trim() || null;
-      const dob = ((form.get(`trav_${i}_${t}_dob`) as string | null) ?? "").trim() || null;
-      const dateOfIssue = ((form.get(`trav_${i}_${t}_dateOfIssue`) as string | null) ?? "").trim() || null;
+      const dobRaw = ((form.get(`trav_${i}_${t}_dob`) as string | null) ?? "").trim() || null;
+      const dateOfIssueRaw = ((form.get(`trav_${i}_${t}_dateOfIssue`) as string | null) ?? "").trim() || null;
       const issuingCountry = ((form.get(`trav_${i}_${t}_issuingCountry`) as string | null) ?? "").trim() || null;
 
       const applicant = await prisma.visaApplicant.create({
@@ -197,8 +197,8 @@ export async function submitVisaApplicationBatch(
           applicantCategory,
           nationality,
           passportExpiry,
-          dob,
-          dateOfIssue,
+          dateOfBirth: dobRaw ? new Date(dobRaw) : null,
+          dateOfIssue: dateOfIssueRaw ? new Date(dateOfIssueRaw) : null,
           issuingCountry,
         },
       });

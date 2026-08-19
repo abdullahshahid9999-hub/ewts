@@ -5,19 +5,13 @@ export const dynamic = "force-dynamic";
 
 const IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
-const ISO3_COUNTRY: Record<string, string> = {
+// 3-letter ISO → full country name
+const ISO3: Record<string, string> = {
   PAK: "Pakistan", USA: "United States", GBR: "United Kingdom", ARE: "United Arab Emirates",
   SAU: "Saudi Arabia", CHN: "China", IND: "India", TUR: "Turkey", MYS: "Malaysia",
   SGP: "Singapore", THA: "Thailand", AUS: "Australia", CAN: "Canada", DEU: "Germany",
   FRA: "France", ITA: "Italy", ESP: "Spain", JPN: "Japan", KOR: "South Korea",
   EGY: "Egypt", IRN: "Iran", IRQ: "Iraq", AFG: "Afghanistan", BGD: "Bangladesh",
-};
-const ISO3_DEMONYM: Record<string, string> = {
-  PAK: "Pakistani", USA: "American", GBR: "British", ARE: "Emirati", SAU: "Saudi Arabian",
-  CHN: "Chinese", IND: "Indian", TUR: "Turkish", MYS: "Malaysian", SGP: "Singaporean",
-  THA: "Thai", AUS: "Australian", CAN: "Canadian", DEU: "German", FRA: "French",
-  ITA: "Italian", ESP: "Spanish", JPN: "Japanese", KOR: "Korean", EGY: "Egyptian",
-  IRN: "Iranian", IRQ: "Iraqi", AFG: "Afghan", BGD: "Bangladeshi",
 };
 
 function parseMRZ(raw: string): Record<string, string | undefined> | null {
@@ -47,9 +41,7 @@ function parseMRZ(raw: string): Record<string, string | undefined> | null {
   const namePart = l1.slice(5);
   const sepIdx = namePart.indexOf("<<");
   const surname   = sepIdx >= 0 ? namePart.slice(0, sepIdx).replace(/</g, " ").trim() : "";
-  // Given name: take only up to next "<<" group — trim trailing filler chars
-  const givenRaw  = sepIdx >= 0 ? namePart.slice(sepIdx + 2) : "";
-  const givenName = givenRaw.split("<<")[0].replace(/</g, " ").trim();
+  const givenName = sepIdx >= 0 ? namePart.slice(sepIdx + 2).replace(/</g, " ").trim() : "";
 
   const fixNum = (s: string) => s.replace(/O/g, "0").replace(/[^0-9]/g, "0");
   const passportNo  = l2.slice(0, 9).replace(/</g, "");
@@ -69,23 +61,24 @@ function parseMRZ(raw: string): Record<string, string | undefined> | null {
     surname,
     givenName,
     passportNo,
-    nationality:    ISO3_DEMONYM[natIso] || natIso,   // "Pakistani"
-    issuingCountry: ISO3_COUNTRY[iso3]   || iso3,      // "Pakistan"
+    nationality:    ISO3[natIso] || natIso,   // "Pakistan" not "PAK"
+    issuingCountry: ISO3[iso3] || iso3,        // "Pakistan" not "PAK"
     dateOfBirth:    yymmdd(dobRaw, true),
     dateOfExpiry:   yymmdd(expiryRaw, false),
     gender:         (gender === "M" || gender === "F") ? gender : undefined,
   };
 }
 
-// Extract issue date from raw OCR text
-// Must be AFTER DOB and BEFORE expiry — avoids picking up DOB as issue date
-function extractIssueDate(raw: string, dob?: string, expiry?: string): string | undefined {
+// Extract issue date from raw OCR text (not in MRZ — must read from page)
+// Looks for patterns like "06 SEP 2024" or "2024-09-06" near "issue" keyword
+function extractIssueDate(raw: string): string | undefined {
   const text = raw.toUpperCase();
   const months: Record<string, string> = {
     JAN:"01",FEB:"02",MAR:"03",APR:"04",MAY:"05",JUN:"06",
     JUL:"07",AUG:"08",SEP:"09",OCT:"10",NOV:"11",DEC:"12"
   };
 
+  // Pattern: "06 SEP 2024" or "06-SEP-2024"
   const re = /(\d{1,2})\s*[-\/]?\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*[-\/]?\s*(20\d{2})/g;
   const found: string[] = [];
   let m;
@@ -96,21 +89,12 @@ function extractIssueDate(raw: string, dob?: string, expiry?: string): string | 
     found.push(`${yyyy}-${mm2}-${dd}`);
   }
 
-  if (!found.length) return undefined;
-
-  // Filter: issue date must be strictly after DOB and strictly before expiry
-  const candidates = found.filter(d => {
-    if (dob && d <= dob) return false;       // not DOB itself or earlier
-    if (expiry && d >= expiry) return false;  // not expiry itself or later
-    return true;
-  });
-
-  if (candidates.length) {
-    candidates.sort();
-    return candidates[0]; // earliest valid candidate = issue date
+  // Issue date is usually the earlier date on the page (expiry is later)
+  if (found.length >= 2) {
+    found.sort();
+    return found[0]; // earliest = issue date
   }
-
-  // Fallback: if no candidate passes filter, skip — better blank than wrong
+  if (found.length === 1) return found[0];
   return undefined;
 }
 
@@ -157,7 +141,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract issue date from full OCR text
-    parsed.dateOfIssue = extractIssueDate(rawText, parsed.dateOfBirth, parsed.dateOfExpiry);
+    parsed.dateOfIssue = extractIssueDate(rawText);
 
     // R2 upload — non-fatal
     let passportImageUrl: string | null = null;

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session expired." }, { status: 401 });
     return NextResponse.json({
       accessToken: signAccessToken({ sub: agent.id, role: "agent" }),
-      agent: { id: agent.id, agentCode: agent.agentCode, fullName: agent.fullName, email: agent.email, tier: agent.tier, balance: agent.balance, creditLimit: agent.creditLimit },
+      agent: { id: agent.id, agentCode: agent.agentCode, fullName: agent.fullName, email: agent.email, tier: agent.tier, balance: agent.balance, creditLimit: agent.creditLimit, logoUrl: agent.logoUrl ?? null },
       subUser: null,
     });
   }
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Session expired." }, { status: 401 });
   return NextResponse.json({
     accessToken: signAccessToken({ sub: subUser.id, role: "agent_user" }),
-    agent: { id: subUser.agent.id, agentCode: subUser.agent.agentCode, fullName: subUser.agent.fullName, email: subUser.agent.email, tier: subUser.agent.tier, balance: subUser.agent.balance, creditLimit: subUser.agent.creditLimit },
+    agent: { id: subUser.agent.id, agentCode: subUser.agent.agentCode, fullName: subUser.agent.fullName, email: subUser.agent.email, tier: subUser.agent.tier, balance: subUser.agent.balance, creditLimit: subUser.agent.creditLimit, logoUrl: subUser.agent.logoUrl ?? null },
     subUser: { id: subUser.id, fullName: subUser.fullName, email: subUser.email, designation: subUser.designation ?? null, permissions: (subUser.permissions ?? {}) as Record<string, boolean> },
   });
 }
