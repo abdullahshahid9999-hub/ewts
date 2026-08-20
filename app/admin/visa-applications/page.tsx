@@ -319,12 +319,14 @@ function VisaApplicationsInner() {
                               ✕
                             </button>
                           )}
-                          <button
+                          {!app.finalDocumentUrl && app.status !== "approved" && (
+                            <button
                             title="Delete this application"
                             onClick={(e) => { e.stopPropagation(); setDeleteTarget(app.id); setDeleteText(""); }}
                             className="adp-btn adp-btn-s"
                             style={{ padding: "4px 8px", background: "var(--a-red-bg)", color: "var(--a-red)", border: "1px solid var(--a-red)" }}
                           >🗑</button>
+                          )}
                           <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
                             {expandedId === app.id ? "▲ hide" : "▼ details"}
                           </span>
