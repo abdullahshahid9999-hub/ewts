@@ -34,6 +34,9 @@ type Application = {
   trackingCountry: string | null;
   trackingLink: string | null;
   trackingNumber: string | null;
+  appliedVia: string | null;
+  supplierName: string | null;
+  appliedNotes: string | null;
   finalDocumentUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -119,6 +122,8 @@ function VisaApplicationsInner() {
   // Delete confirmation state — null = closed, string = appId being deleted
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleteText, setDeleteText] = useState("");
+  // Applied submission form state
+  const [appliedForm, setAppliedForm] = useState<{ via: string; supplier: string; notes: string }>({ via: "", supplier: "", notes: "" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -135,10 +140,11 @@ function VisaApplicationsInner() {
   async function updateStatus(id: string, newStatus: string, note?: string) {
     setActing(true);
     setError(null);
+    const extra = newStatus === "applied" ? { appliedVia: appliedForm.via || null, supplierName: appliedForm.supplier || null, appliedNotes: appliedForm.notes || null } : {};
     const res = await adminFetch(`/api/admin/visa-applications/${id}`, accessToken, refresh, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus, ...(note !== undefined && { adminNote: note }) }),
+      body: JSON.stringify({ status: newStatus, ...(note !== undefined && { adminNote: note }), ...extra }),
     });
     const data = await res.json().catch(() => ({}));
     setActing(false);
@@ -147,6 +153,7 @@ function VisaApplicationsInner() {
     setNoteText("");
     setPendingAction(null);
     setConfirmTarget(null);
+    setAppliedForm({ via: "", supplier: "", notes: "" });
     load();
   }
 
@@ -475,33 +482,60 @@ function VisaApplicationsInner() {
                                       slow it down otherwise, so it gets a short "are you
                                       sure" instead of firing immediately. */}
                                   {confirmTarget?.appId === app.id && (
-                                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: confirmTarget.status === "applied" ? "#EFF6FF" : "#F0FDF4", border: `1px solid ${confirmTarget.status === "applied" ? "#BFDBFE" : "#BBF7D0"}` }}>
-                                      <div style={{ fontSize: 12, color: confirmTarget.status === "applied" ? "#1D4ED8" : "#15803D", marginBottom: 6, fontWeight: 600 }}>
-                                        {confirmTarget.status === "applied"
-                                          ? "📨 Mark as Applied (Submitted to Embassy)?"
-                                          : "✅ Approve this application?"}
-                                      </div>
-                                      <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>
-                                        {confirmTarget.status === "applied"
-                                          ? "This will send an email to the applicant confirming their application has been submitted to the embassy/consulate."
-                                          : "The applicant will be notified of approval."}
-                                      </div>
-                                      <div style={{ display: "flex", gap: 6 }}>
-                                        <button
-                                          disabled={acting}
-                                          onClick={(e) => { e.stopPropagation(); updateStatus(app.id, confirmTarget.status); }}
-                                          className="adp-btn adp-btn-s"
-                                          style={{ background: confirmTarget.status === "applied" ? "#2563EB" : "var(--a-green)", color: "#fff" }}
-                                        >
-                                          {confirmTarget.status === "applied" ? "Yes, Mark as Applied" : "Yes, Approve"}
-                                        </button>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }}
-                                          className="adp-btn adp-btn-s"
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
+                                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 8, background: confirmTarget.status === "applied" ? "#EFF6FF" : "#F0FDF4", border: `1px solid ${confirmTarget.status === "applied" ? "#BFDBFE" : "#BBF7D0"}` }}>
+                                      {confirmTarget.status === "applied" ? (
+                                        <>
+                                          <div style={{ fontSize: 12, fontWeight: 700, color: "#1D4ED8", marginBottom: 10 }}>📨 Mark as Applied — Submission Details</div>
+                                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                            <div>
+                                              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Submitted Via *</label>
+                                              <select value={appliedForm.via} onChange={e => setAppliedForm(f => ({ ...f, via: e.target.value }))}
+                                                style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, background: "#fff" }}>
+                                                <option value="">— Select —</option>
+                                                <option value="self">Self (We submitted directly)</option>
+                                                <option value="supplier">Via Supplier / Agent</option>
+                                                <option value="embassy_direct">Embassy Direct Walk-in</option>
+                                                <option value="online_portal">Online Portal (VFS/BLS etc.)</option>
+                                                <option value="other">Other</option>
+                                              </select>
+                                            </div>
+                                            {appliedForm.via === "supplier" && (
+                                              <div>
+                                                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Supplier Name</label>
+                                                <input value={appliedForm.supplier} onChange={e => setAppliedForm(f => ({ ...f, supplier: e.target.value }))}
+                                                  placeholder="e.g. Al-Falah Visa Services"
+                                                  style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} />
+                                              </div>
+                                            )}
+                                            <div>
+                                              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Internal Notes (optional)</label>
+                                              <textarea value={appliedForm.notes} onChange={e => setAppliedForm(f => ({ ...f, notes: e.target.value }))}
+                                                placeholder="Any submission details, reference numbers, instructions…"
+                                                rows={2} style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, resize: "vertical", boxSizing: "border-box" }} />
+                                            </div>
+                                          </div>
+                                          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                                            <button disabled={acting || !appliedForm.via}
+                                              onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "applied"); }}
+                                              className="adp-btn adp-btn-s"
+                                              style={{ background: appliedForm.via ? "#2563EB" : "#9CA3AF", color: "#fff", opacity: acting ? 0.7 : 1 }}>
+                                              {acting ? "Saving…" : "✓ Confirm Applied"}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }} className="adp-btn adp-btn-s">Cancel</button>
+                                          </div>
+                                          {!appliedForm.via && <p style={{ fontSize: 10, color: "var(--a-red)", marginTop: 4 }}>Please select how the application was submitted.</p>}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div style={{ fontSize: 12, color: "#15803D", marginBottom: 6, fontWeight: 600 }}>✅ Approve this application?</div>
+                                          <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>The applicant will be notified of approval.</div>
+                                          <div style={{ display: "flex", gap: 6 }}>
+                                            <button disabled={acting} onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "approved"); }}
+                                              className="adp-btn adp-btn-s" style={{ background: "var(--a-green)", color: "#fff" }}>Yes, Approve</button>
+                                            <button onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }} className="adp-btn adp-btn-s">Cancel</button>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                   )}
                                 </>
@@ -512,7 +546,17 @@ function VisaApplicationsInner() {
                                   actually emails the applicant/agent — not a separate,
                                   easy-to-forget step. */}
                               {(app.status === "applied" || app.trackingLink || app.finalDocumentUrl) && (
-                                <TrackingPanel app={app} accessToken={accessToken} refresh={refresh} onDone={load} acting={acting} />
+                                <>
+                                  {(app.appliedVia || app.supplierName || app.appliedNotes) && (
+                                    <div style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", fontSize: 12 }}>
+                                      <div style={{ fontWeight: 700, color: "#1D4ED8", marginBottom: 4 }}>📨 Submission Details</div>
+                                      {app.appliedVia && <div style={{ color: "#374151" }}>Via: <strong>{{ self: "Self (Direct)", supplier: "Supplier / Agent", embassy_direct: "Embassy Direct Walk-in", online_portal: "Online Portal (VFS/BLS)", other: "Other" }[app.appliedVia] ?? app.appliedVia}</strong></div>}
+                                      {app.supplierName && <div style={{ color: "#374151" }}>Supplier: <strong>{app.supplierName}</strong></div>}
+                                      {app.appliedNotes && <div style={{ color: "#6B7280", marginTop: 4 }}>📝 {app.appliedNotes}</div>}
+                                    </div>
+                                  )}
+                                  <TrackingPanel app={app} accessToken={accessToken} refresh={refresh} onDone={load} acting={acting} />
+                                </>
                               )}
 
                               {/* Note editor — shared by the Reject / More Info Needed

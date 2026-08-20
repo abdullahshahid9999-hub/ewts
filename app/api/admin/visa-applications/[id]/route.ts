@@ -12,7 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json().catch(() => null) ?? {};
-  const { status, adminNote } = body;
+  const { status, adminNote, appliedVia, supplierName, appliedNotes } = body;
 
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
@@ -43,6 +43,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...(status && { status }),
         ...(adminNote !== undefined && { adminNote: adminNote?.trim() || null }),
+        ...(status === "applied" && {
+          ...(appliedVia !== undefined && { appliedVia: appliedVia || null }),
+          ...(supplierName !== undefined && { supplierName: supplierName?.trim() || null }),
+          ...(appliedNotes !== undefined && { appliedNotes: appliedNotes?.trim() || null }),
+        }),
       },
     });
   });

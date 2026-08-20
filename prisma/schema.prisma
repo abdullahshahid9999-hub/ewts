@@ -307,6 +307,10 @@ model VisaApplication {
   trackingCountry String? @map("tracking_country")
   trackingLink    String? @map("tracking_link")
   trackingNumber  String? @map("tracking_number")
+  // How/where the application was submitted when status moved to "applied"
+  appliedVia      String? @map("applied_via")   // "self" | "supplier" | "embassy_direct" | "online_portal" | "other"
+  supplierName    String? @map("supplier_name") // name of supplier/agent used, if appliedVia = supplier
+  appliedNotes    String? @map("applied_notes") // any internal notes about submission
   // The actual issued visa document, uploaded by admin once it arrives.
   // Uploading this is what triggers the automatic email to the
   // applicant (and agent, if this was an agent submission).
