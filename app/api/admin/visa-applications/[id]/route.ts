@@ -58,8 +58,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Email applicant when status moves to "applied" (embassy submitted)
   if (status === "applied" && existing.status !== "applied" && existing.email) {
-    const visa = await prisma.visaService.findUnique({ where: { id: existing.visaId }, select: { country: true, visaType: true } });
-    const label = visa ? `${visa.country} – ${visa.visaType}` : "Visa";
+    const visa = await prisma.visaService.findUnique({ where: { id: existing.visaId }, select: { country: true, title: true, type: true } });
+    const label = visa ? `${visa.country} – ${visa.title}` : "Visa";
     try {
       await sendEmail({
         to: existing.email,
