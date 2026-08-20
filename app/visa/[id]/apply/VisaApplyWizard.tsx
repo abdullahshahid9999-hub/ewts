@@ -186,7 +186,7 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
         {filteredDocs.length === 0 && !needsOccupation ? (
           <div className="border border-dashed border-border rounded-xl p-4 bg-surface">
             <p className="text-xs text-muted mb-2">Upload passport scan to auto-fill details, plus any supporting documents.</p>
-            <UploadBtn onChange={f => handlePassportUpload(passportDocId, f)} />
+            <UploadBtn onChange={f => handlePassportUpload(passportDocId, f)} uploaded={t.files[passportDocId]?.[0]} />
           </div>
         ) : (
           <div className="space-y-3">
