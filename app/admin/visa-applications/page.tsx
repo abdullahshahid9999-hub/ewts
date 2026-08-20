@@ -702,6 +702,7 @@ function TrackingPanel({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [isEarly, setIsEarly] = useState(false);
 
   async function saveTracking() {
     setSaving(true);
@@ -723,6 +724,7 @@ function TrackingPanel({
     setError(null);
     const form = new FormData();
     form.set("document", file);
+    form.set("isEarlyDelivery", String(isEarly));
     const res = await adminFetch(`/api/admin/visa-applications/${app.id}/document`, accessToken, refresh, { method: "POST", body: form });
     const data = await res.json().catch(() => ({}));
     setUploading(false);
@@ -763,6 +765,10 @@ function TrackingPanel({
         )}
       </div>
       <div style={{ borderTop: "1px dashed var(--a-border)", paddingTop: 10 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8, cursor: "pointer", color: "#374151" }}>
+          <input type="checkbox" checked={isEarly} onChange={e => setIsEarly(e.target.checked)} style={{ width: 14, height: 14 }} />
+          🎉 Visa arrived <strong>early</strong> (send congratulations email)
+        </label>
         <label className="adp-btn adp-btn-g adp-btn-s" style={{ cursor: "pointer", display: "inline-block" }}>
           {uploading ? "Uploading…" : "📄 Upload Visa & Email Applicant"}
           <input
