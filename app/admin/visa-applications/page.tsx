@@ -116,6 +116,9 @@ function VisaApplicationsInner() {
   const [confirmTarget, setConfirmTarget] = useState<{ appId: string; status: string } | null>(null);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Delete confirmation state — null = closed, string = appId being deleted
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleteText, setDeleteText] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,6 +151,18 @@ function VisaApplicationsInner() {
   }
 
   // Opens the expanded row (if not already) and jumps straight into the
+  async function deleteApp(id: string) {
+    setActing(true);
+    const res = await adminFetch(`/api/admin/visa-applications/${id}`, accessToken, refresh, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirm: "delete this visa" }),
+    });
+    setActing(false);
+    if (res.ok) { setDeleteTarget(null); setDeleteText(""); load(); }
+    else { const d = await res.json().catch(() => ({})); alert(d.error ?? "Delete failed."); }
+  }
+
   // right flow for a status — used by both the detail-panel buttons and
   // the quick action icons on the collapsed row, so triage doesn't
   // require expanding first just to click Approve/Reject.
@@ -158,7 +173,7 @@ function VisaApplicationsInner() {
       setNoteText(targetStatus === "more_info_needed" ? (currentNote ?? "") : "");
       setPendingAction({ appId, status: targetStatus });
       setConfirmTarget(null);
-    } else if (targetStatus === "approved") {
+    } else if (targetStatus === "approved" || targetStatus === "applied") {
       setConfirmTarget({ appId, status: targetStatus });
       setNoteTarget(null);
       setPendingAction(null);
@@ -297,6 +312,12 @@ function VisaApplicationsInner() {
                               ✕
                             </button>
                           )}
+                          <button
+                            title="Delete this application"
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(app.id); setDeleteText(""); }}
+                            className="adp-btn adp-btn-s"
+                            style={{ padding: "4px 8px", background: "var(--a-red-bg)", color: "var(--a-red)", border: "1px solid var(--a-red)" }}
+                          >🗑</button>
                           <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
                             {expandedId === app.id ? "▲ hide" : "▼ details"}
                           </span>
@@ -454,18 +475,25 @@ function VisaApplicationsInner() {
                                       slow it down otherwise, so it gets a short "are you
                                       sure" instead of firing immediately. */}
                                   {confirmTarget?.appId === app.id && (
-                                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-                                      <div style={{ fontSize: 12, color: "#15803D", marginBottom: 8 }}>
-                                        Approve this application? The applicant will be notified.
+                                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: confirmTarget.status === "applied" ? "#EFF6FF" : "#F0FDF4", border: `1px solid ${confirmTarget.status === "applied" ? "#BFDBFE" : "#BBF7D0"}` }}>
+                                      <div style={{ fontSize: 12, color: confirmTarget.status === "applied" ? "#1D4ED8" : "#15803D", marginBottom: 6, fontWeight: 600 }}>
+                                        {confirmTarget.status === "applied"
+                                          ? "📨 Mark as Applied (Submitted to Embassy)?"
+                                          : "✅ Approve this application?"}
+                                      </div>
+                                      <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>
+                                        {confirmTarget.status === "applied"
+                                          ? "This will send an email to the applicant confirming their application has been submitted to the embassy/consulate."
+                                          : "The applicant will be notified of approval."}
                                       </div>
                                       <div style={{ display: "flex", gap: 6 }}>
                                         <button
                                           disabled={acting}
-                                          onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "approved"); }}
+                                          onClick={(e) => { e.stopPropagation(); updateStatus(app.id, confirmTarget.status); }}
                                           className="adp-btn adp-btn-s"
-                                          style={{ background: "var(--a-green)", color: "#fff" }}
+                                          style={{ background: confirmTarget.status === "applied" ? "#2563EB" : "var(--a-green)", color: "#fff" }}
                                         >
-                                          Yes, Approve
+                                          {confirmTarget.status === "applied" ? "Yes, Mark as Applied" : "Yes, Approve"}
                                         </button>
                                         <button
                                           onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }}
@@ -563,6 +591,44 @@ function VisaApplicationsInner() {
           )}
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          onClick={() => { setDeleteTarget(null); setDeleteText(""); }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, maxWidth: 420, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>🗑️ Delete Application</div>
+            <p style={{ fontSize: 14, color: "#374151", margin: "0 0 16px" }}>
+              This will permanently delete this visa application and all its documents. <strong>This cannot be undone.</strong>
+            </p>
+            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 10px" }}>
+              Type <strong>delete this visa</strong> to confirm:
+            </p>
+            <input
+              autoFocus
+              value={deleteText}
+              onChange={e => setDeleteText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && deleteText === "delete this visa" && deleteApp(deleteTarget)}
+              placeholder="delete this visa"
+              style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #FCA5A5", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                disabled={deleteText !== "delete this visa" || acting}
+                onClick={() => deleteApp(deleteTarget)}
+                style={{ flex: 1, padding: "10px 0", background: deleteText === "delete this visa" ? "#DC2626" : "#F3F4F6", color: deleteText === "delete this visa" ? "#fff" : "#9CA3AF", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: deleteText === "delete this visa" ? "pointer" : "not-allowed" }}
+              >
+                {acting ? "Deleting…" : "Delete Permanently"}
+              </button>
+              <button onClick={() => { setDeleteTarget(null); setDeleteText(""); }}
+                style={{ padding: "10px 20px", background: "#F3F4F6", border: "none", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
