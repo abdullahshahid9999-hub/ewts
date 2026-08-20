@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://eastwestpk.com";
   const inviteLink = `${baseUrl}/admin/invite-accept?token=${token}`;
 
-  await sendEmail({
+  try { await sendEmail({
     to: email,
     subject: "You've been invited to East & West Travel Admin Panel",
     html: `
@@ -67,7 +67,10 @@ export async function POST(req: NextRequest) {
         <p style="color:#9CA3AF;font-size:12px">East &amp; West Travel Services · eastwestpk.com</p>
       </div>
     `,
-  });
+  }); } catch (emailErr) {
+    console.error("Invite email failed:", emailErr);
+    return NextResponse.json({ ok: true, emailWarning: "Invite saved but email delivery failed. Check Resend config." });
+  }
 
   return NextResponse.json({ ok: true });
 }
