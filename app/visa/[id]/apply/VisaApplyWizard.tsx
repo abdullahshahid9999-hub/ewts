@@ -204,7 +204,13 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
                     </span>
                   )}
                 </div>
-                <UploadBtn onChange={f => handlePassportUpload(doc.id, f)} uploaded={(t.files[doc.id]?.length ?? 0) > 0 ? t.files[doc.id][0] : undefined} multiple={(doc as { allowMultiple?: boolean }).allowMultiple} />
+                <UploadBtn
+                  onChange={f => handlePassportUpload(doc.id, f)}
+                  onChangeMultiple={files => files.forEach(f => handlePassportUpload(doc.id, f))}
+                  uploaded={(doc as { allowMultiple?: boolean }).allowMultiple ? undefined : (t.files[doc.id]?.[0])}
+                  uploadedCount={(doc as { allowMultiple?: boolean }).allowMultiple ? (t.files[doc.id]?.length ?? 0) : undefined}
+                  multiple={(doc as { allowMultiple?: boolean }).allowMultiple}
+                />
                 {t.docWarnings[doc.id] && (
                   <p className={`text-xs mt-2 ${t.docWarnings[doc.id]?.startsWith("✨") ? "text-green-600" : t.docWarnings[doc.id]?.startsWith("🔍") ? "text-blue-600" : "text-amber-700"}`}>
                     {t.docWarnings[doc.id]}
@@ -219,21 +225,29 @@ function TravellerForm({ t, docs, onChange, label, presetOccupation }: { t: Trav
   );
 }
 
-function UploadBtn({ onChange, uploaded, accept = "image/jpeg,image/png,image/webp,application/pdf", multiple }: { onChange: (f: File) => void; uploaded?: File; accept?: string; multiple?: boolean }) {
+function UploadBtn({ onChange, onChangeMultiple, uploaded, uploadedCount, accept = "image/jpeg,image/png,image/webp,application/pdf", multiple }: { onChange?: (f: File) => void; onChangeMultiple?: (files: File[]) => void; uploaded?: File; uploadedCount?: number; accept?: string; multiple?: boolean }) {
   const ref = useRef<HTMLInputElement>(null);
+  const hasFiles = (uploadedCount ?? 0) > 0 || !!uploaded;
   return (
     <div>
-      <input ref={ref} type="file" accept={accept} multiple={multiple} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onChange(f); }} />
+      <input ref={ref} type="file" accept={accept} multiple={multiple} className="hidden" onChange={e => {
+        const files = Array.from(e.target.files ?? []);
+        if (!files.length) return;
+        if (multiple && onChangeMultiple) { onChangeMultiple(files); }
+        else if (onChange) { onChange(files[0]); }
+        e.target.value = "";
+      }} />
       <button type="button" onClick={() => ref.current?.click()}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${uploaded ? "border-green-300 bg-green-50 text-green-700" : "border-border bg-surface text-[var(--lp-ink)] hover:border-[var(--lp-brass)]"}`}>
-        <span>{uploaded ? "✅" : "📎"}</span>
-        {uploaded ? (uploaded.name.length > 28 ? uploaded.name.slice(0,25)+"…" : uploaded.name) : `Choose ${multiple ? "Files" : "Document"}`}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${hasFiles ? "border-green-300 bg-green-50 text-green-700" : "border-border bg-surface text-[var(--lp-ink)] hover:border-[var(--lp-brass)]"}`}>
+        <span>{hasFiles ? "✅" : "📎"}</span>
+        {multiple
+          ? (uploadedCount ? `${uploadedCount} file${uploadedCount > 1 ? "s" : ""} added — add more?` : "Choose Files")
+          : (uploaded ? (uploaded.name.length > 28 ? uploaded.name.slice(0,25)+"…" : uploaded.name) : "Choose Document")}
       </button>
-      {multiple && !uploaded && <p className="text-[10px] text-muted mt-1">Multiple files allowed — upload one at a time</p>}
+      {multiple && <p className="text-[10px] text-muted mt-1">Multiple files allowed — select all at once or add one by one</p>}
     </div>
   );
 }
-
 // { nationality label, country name, aliases/codes that should match }
 const COUNTRY_DATA: { nat: string; country: string; aliases: string[] }[] = [
   { nat: "Pakistani",      country: "Pakistan",              aliases: ["pak","paki","pakistani","pkstan"] },
