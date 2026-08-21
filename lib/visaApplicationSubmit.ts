@@ -39,6 +39,7 @@ export async function submitVisaApplicationBatch(
   if (indices.length === 0) throw new VisaSubmissionError("No applications submitted.");
 
   const batchRef = `VA-${crypto.randomBytes(4).toString("hex").toUpperCase().slice(0, 7)}`;
+  const uploadToken = crypto.randomBytes(24).toString("hex"); // secure per-application token for doc upload
   const discountTiers = await prisma.visaDiscountTier.findMany();
   const results: { id: string; visaId: string; visa: string; totalPricePkr: number }[] = [];
 
@@ -130,6 +131,7 @@ export async function submitVisaApplicationBatch(
     const application = await prisma.visaApplication.create({
       data: {
         batchRef,
+        uploadToken,
         visaId,
         agentId: opts.agentId ?? null,
         fullName,

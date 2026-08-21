@@ -1,21 +1,24 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
 function TrackInner() {
   const sp = useSearchParams();
   const [ref, setRef] = useState(sp.get("ref") ?? "");
+  const token = sp.get("token") ?? ""; // secret from email link — never shown in UI
   const [files, setFiles] = useState<File[]>([]);
   const [step, setStep] = useState<"form" | "uploading" | "done" | "error">("form");
   const [msg, setMsg] = useState("");
   const [appInfo, setAppInfo] = useState<{ fullName: string; visaLabel: string } | null>(null);
 
+  useEffect(() => { if (ref && token) lookup(); }, []); // eslint-disable-line
+
   async function lookup() {
     if (!ref.trim()) return;
-    const res = await fetch(`/api/visa/track?ref=${encodeURIComponent(ref.trim())}`);
+    const res = await fetch(`/api/visa/track?ref=${encodeURIComponent(ref.trim())}&token=${encodeURIComponent(token)}`);
     const d = await res.json();
     if (res.ok) { setAppInfo(d); setStep("form"); }
-    else setMsg(d.error ?? "Application not found. Please check your reference number.");
+    else setMsg(d.error ?? "Invalid link. Please use the exact link from your email.");
   }
 
   async function submit() {
@@ -23,6 +26,7 @@ function TrackInner() {
     setStep("uploading");
     const form = new FormData();
     form.set("ref", ref.trim());
+    form.set("token", token);
     files.forEach(f => form.append("files", f));
     const res = await fetch("/api/visa/track", { method: "POST", body: form });
     const d = await res.json();
@@ -72,6 +76,7 @@ function TrackInner() {
                 </button>
               </div>
               {msg && !appInfo && <p style={{ color: "#DC2626", fontSize: 13, marginTop: 6 }}>{msg}</p>}
+              {!token && <p style={{ color: "#9CA3AF", fontSize: 12, marginTop: 6 }}>ℹ️ This page should be opened from the link in your email.</p>}
             </div>
 
             {appInfo && (

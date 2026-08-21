@@ -8,7 +8,7 @@ import { emailWrap, refTable, ctaButton, waButton, uploadButton, travelersStr } 
 const VALID_STATUSES = ["pending", "under_review", "applied", "approved", "rejected", "more_info_needed"];
 
 async function sendStatusEmail(
-  app: { email: string; fullName: string; batchRef: string; adults: number; children: number; infants: number; adminNote?: string | null },
+  app: { email: string; fullName: string; batchRef: string; uploadToken: string; adults: number; children: number; infants: number; adminNote?: string | null },
   visa: { title: string; country: string } | null,
   status: string,
   finalDocUrl?: string | null,
@@ -71,7 +71,7 @@ async function sendStatusEmail(
       <p style="color:#374151;margin:0 0 16px">We need some additional information or documents to proceed with your <strong>${label}</strong> application.</p>
       ${table}
       ${app.adminNote ? `<div style="background:#FFFBEB;border-left:3px solid #D97706;padding:12px 16px;border-radius:4px;margin:0 0 16px;font-size:13px;color:#92400E"><strong>What we need:</strong> ${app.adminNote}</div>` : ""}
-      ${uploadButton(app.batchRef)}
+      ${uploadButton(app.batchRef, app.uploadToken)}
       ${waButton(app.batchRef)}`;
 
   } else if (finalDocUrl) {
@@ -144,7 +144,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (existing.email) {
     const visa = await prisma.visaService.findUnique({ where: { id: existing.visaId }, select: { country: true, title: true } });
-    const emailApp = { email: existing.email, fullName: existing.fullName, batchRef: existing.batchRef, adults: existing.adults, children: existing.children, infants: existing.infants, adminNote: adminNote ?? existing.adminNote };
+    const emailApp = { email: existing.email, fullName: existing.fullName, batchRef: existing.batchRef, uploadToken: existing.uploadToken ?? "", adults: existing.adults, children: existing.children, infants: existing.infants, adminNote: adminNote ?? existing.adminNote };
     try {
       if (finalDocumentUrl && finalDocumentUrl !== existing.finalDocumentUrl) {
         await sendStatusEmail(emailApp, visa, "approved", finalDocumentUrl, isEarlyDelivery ?? false);

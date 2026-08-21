@@ -67,8 +67,8 @@ export function waButton(refNo: string): string {
   return ctaButton(`${WA}?text=${msg}`, "💬 Message Us on WhatsApp", "#25D366");
 }
 
-export function uploadButton(batchRef: string): string {
-  return ctaButton(`${BASE}/visa/track?ref=${batchRef}`, "📎 Upload Your Documents", "#2563EB");
+export function uploadButton(batchRef: string, uploadToken: string): string {
+  return ctaButton(`${BASE}/visa/track?ref=${batchRef}&token=${uploadToken}`, "📎 Upload Your Documents", "#2563EB");
 }
 
 export function travelersStr(adults: number, children: number, infants: number): string {
