@@ -337,3 +337,29 @@ Admin had added an NTN document scoped to `business_owner` occupation on the Tha
 3. Click ✏️ → change "Occupation" scope to "All occupations" (blank) OR delete it entirely
 4. Save — that client can resubmit without the NTN block
 
+
+---
+
+## Session — 2026-08-21
+
+### Context
+Pulled remote (10 commits ahead) — remote already had applied_via/supplier_name/applied_notes text panel AND a full email system, upload token, /visa/track page. Merged those in and reconciled schema conflict (removed my FK-based supplierId approach, kept remote's simpler text-based supplier_name).
+
+### SQL to run on Render (if not already run for remote commits)
+Check if columns exist before running — remote commits may have already prompted these:
+
+```sql
+ALTER TABLE visa_applications
+  ADD COLUMN IF NOT EXISTS applied_via     TEXT,
+  ADD COLUMN IF NOT EXISTS supplier_name   TEXT,
+  ADD COLUMN IF NOT EXISTS applied_notes   TEXT,
+  ADD COLUMN IF NOT EXISTS upload_token    TEXT;
+```
+
+### What this session fixed (commits 147f7bc, c6e5da9, b9ad0e4, 563474f)
+- visa apply 500 error: uuid cast fix in raw SQL
+- allowMultiple doc uploads: File[] array, indexed form keys
+- Edit button for visa requirement docs
+- Occupation categories expanded (Businessman, Self Employed, Housewife)
+- Merged remote applied_via supplier panel + email system
+
