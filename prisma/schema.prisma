@@ -163,9 +163,9 @@ model Supplier {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  groupFlights  GroupFlight[]
-  ledger        SupplierTransaction[]
-  agentBookings AgentBooking[] @relation("AgentBookingSupplier")
+  groupFlights      GroupFlight[]
+  ledger            SupplierTransaction[]
+  agentBookings     AgentBooking[] @relation("AgentBookingSupplier")
 
   @@map("suppliers")
 }
@@ -301,12 +301,9 @@ model VisaApplication {
   // Pipeline: pending → under_review → applied → approved | rejected | more_info_needed
   status         String   @default("pending")
   adminNote      String?  @map("admin_note")
-  // Set once admin formally lodges the application with the
-  // embassy/consulate (status="applied") — lets admin jump straight to
-  // the tracking portal instead of re-typing the URL every time.
-  trackingCountry String? @map("tracking_country")
-  trackingLink    String? @map("tracking_link")
-  trackingNumber  String? @map("tracking_number")
+  // Set when admin marks as applied — which channel was used to submit
+  // to the embassy/consulate. supplierId links to the Supplier record
+  // when submitted via a visa supplier/agent.
   // How/where the application was submitted when status moved to "applied"
   appliedVia      String? @map("applied_via")   // "self" | "supplier" | "embassy_direct" | "online_portal" | "other"
   supplierName    String? @map("supplier_name") // name of supplier/agent used, if appliedVia = supplier

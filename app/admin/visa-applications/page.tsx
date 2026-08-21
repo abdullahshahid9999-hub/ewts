@@ -34,9 +34,6 @@ type Application = {
   trackingCountry: string | null;
   trackingLink: string | null;
   trackingNumber: string | null;
-  appliedVia: string | null;
-  supplierName: string | null;
-  appliedNotes: string | null;
   finalDocumentUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -119,11 +116,13 @@ function VisaApplicationsInner() {
   const [confirmTarget, setConfirmTarget] = useState<{ appId: string; status: string } | null>(null);
   const [acting, setActing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Delete confirmation state — null = closed, string = appId being deleted
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [deleteText, setDeleteText] = useState("");
-  // Applied submission form state
-  const [appliedForm, setAppliedForm] = useState<{ via: string; supplier: string; notes: string }>({ via: "", supplier: "", notes: "" });
+  // "Mark as Applied" panel — shown inline when admin picks that action
+  const [appliedTarget, setAppliedTarget] = useState<string | null>(null);
+  const [appliedVia, setAppliedVia] = useState("supplier");
+  const [appliedSupplierId, setAppliedSupplierId] = useState("");
+  const [appliedSupplierNote, setAppliedSupplierNote] = useState("");
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [supplierSearch, setSupplierSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,14 +136,44 @@ function VisaApplicationsInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function updateStatus(id: string, newStatus: string, note?: string) {
+  // Load suppliers once for the Applied panel
+  useEffect(() => {
+    adminFetch("/api/admin/suppliers", accessToken, refresh)
+      .then(r => r.json()).then(d => setSuppliers(d.suppliers ?? [])).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+  async function confirmApplied(id: string) {
     setActing(true);
     setError(null);
-    const extra = newStatus === "applied" ? { appliedVia: appliedForm.via || null, supplierName: appliedForm.supplier || null, appliedNotes: appliedForm.notes || null } : {};
     const res = await adminFetch(`/api/admin/visa-applications/${id}`, accessToken, refresh, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus, ...(note !== undefined && { adminNote: note }), ...extra }),
+      body: JSON.stringify({
+        status: "applied",
+        submittedVia: appliedVia,
+        supplierId: appliedVia === "supplier" && appliedSupplierId ? appliedSupplierId : null,
+        supplierNote: appliedSupplierNote.trim() || null,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setActing(false);
+    if (!res.ok) { setError(data.error ?? "Could not update."); return; }
+    setAppliedTarget(null);
+    setAppliedVia("supplier");
+    setAppliedSupplierId("");
+    setAppliedSupplierNote("");
+    setSupplierSearch("");
+    load();
+  }
+
+  async function updateStatus(id: string, newStatus: string, note?: string) {
+    setActing(true);
+    setError(null);
+    const res = await adminFetch(`/api/admin/visa-applications/${id}`, accessToken, refresh, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus, ...(note !== undefined && { adminNote: note }) }),
     });
     const data = await res.json().catch(() => ({}));
     setActing(false);
@@ -153,34 +182,30 @@ function VisaApplicationsInner() {
     setNoteText("");
     setPendingAction(null);
     setConfirmTarget(null);
-    setAppliedForm({ via: "", supplier: "", notes: "" });
     load();
   }
 
   // Opens the expanded row (if not already) and jumps straight into the
-  async function deleteApp(id: string) {
-    setActing(true);
-    const res = await adminFetch(`/api/admin/visa-applications/${id}`, accessToken, refresh, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ confirm: "delete this visa" }),
-    });
-    setActing(false);
-    if (res.ok) { setDeleteTarget(null); setDeleteText(""); load(); }
-    else { const d = await res.json().catch(() => ({})); alert(d.error ?? "Delete failed."); }
-  }
-
   // right flow for a status — used by both the detail-panel buttons and
   // the quick action icons on the collapsed row, so triage doesn't
   // require expanding first just to click Approve/Reject.
   function startAction(appId: string, targetStatus: string, currentNote: string | null) {
     setExpandedId(appId);
-    if (REQUIRES_NOTE.includes(targetStatus)) {
+    if (targetStatus === "applied") {
+      setAppliedTarget(appId);
+      setAppliedVia("supplier");
+      setAppliedSupplierId("");
+      setAppliedSupplierNote("");
+      setSupplierSearch("");
+      setNoteTarget(null);
+      setPendingAction(null);
+      setConfirmTarget(null);
+    } else if (REQUIRES_NOTE.includes(targetStatus)) {
       setNoteTarget(appId);
       setNoteText(targetStatus === "more_info_needed" ? (currentNote ?? "") : "");
       setPendingAction({ appId, status: targetStatus });
       setConfirmTarget(null);
-    } else if (targetStatus === "approved" || targetStatus === "applied") {
+    } else if (targetStatus === "approved") {
       setConfirmTarget({ appId, status: targetStatus });
       setNoteTarget(null);
       setPendingAction(null);
@@ -318,14 +343,6 @@ function VisaApplicationsInner() {
                             >
                               ✕
                             </button>
-                          )}
-                          {!app.finalDocumentUrl && app.status !== "approved" && (
-                            <button
-                            title="Delete this application"
-                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(app.id); setDeleteText(""); }}
-                            className="adp-btn adp-btn-s"
-                            style={{ padding: "4px 8px", background: "var(--a-red-bg)", color: "var(--a-red)", border: "1px solid var(--a-red)" }}
-                          >🗑</button>
                           )}
                           <span style={{ fontSize: 11, color: "var(--a-muted)" }}>
                             {expandedId === app.id ? "▲ hide" : "▼ details"}
@@ -484,60 +501,112 @@ function VisaApplicationsInner() {
                                       slow it down otherwise, so it gets a short "are you
                                       sure" instead of firing immediately. */}
                                   {confirmTarget?.appId === app.id && (
-                                    <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 8, background: confirmTarget.status === "applied" ? "#EFF6FF" : "#F0FDF4", border: `1px solid ${confirmTarget.status === "applied" ? "#BFDBFE" : "#BBF7D0"}` }}>
-                                      {confirmTarget.status === "applied" ? (
-                                        <>
-                                          <div style={{ fontSize: 12, fontWeight: 700, color: "#1D4ED8", marginBottom: 10 }}>📨 Mark as Applied — Submission Details</div>
-                                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                            <div>
-                                              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Submitted Via *</label>
-                                              <select value={appliedForm.via} onChange={e => setAppliedForm(f => ({ ...f, via: e.target.value }))}
-                                                style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, background: "#fff" }}>
-                                                <option value="">— Select —</option>
-                                                <option value="self">Self (We submitted directly)</option>
-                                                <option value="supplier">Via Supplier / Agent</option>
-                                                <option value="embassy_direct">Embassy Direct Walk-in</option>
-                                                <option value="online_portal">Online Portal (VFS/BLS etc.)</option>
-                                                <option value="other">Other</option>
-                                              </select>
+                                    <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
+                                      <div style={{ fontSize: 12, color: "#15803D", marginBottom: 8 }}>
+                                        Approve this application? The applicant will be notified.
+                                      </div>
+                                      <div style={{ display: "flex", gap: 6 }}>
+                                        <button
+                                          disabled={acting}
+                                          onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "approved"); }}
+                                          className="adp-btn adp-btn-s"
+                                          style={{ background: "var(--a-green)", color: "#fff" }}
+                                        >
+                                          Yes, Approve
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }}
+                                          className="adp-btn adp-btn-s"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Mark as Applied — supplier/channel selection panel */}
+                                  {appliedTarget === app.id && (
+                                    <div onClick={e => e.stopPropagation()} style={{ marginTop: 10, padding: "12px 14px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid var(--a-border2)" }}>
+                                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--a-muted)", marginBottom: 10, letterSpacing: "0.05em" }}>📨 MARK AS APPLIED — SUBMISSION DETAILS</div>
+
+                                      {/* Submitted Via */}
+                                      <div style={{ marginBottom: 10 }}>
+                                        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 4 }}>SUBMITTED VIA *</label>
+                                        <select
+                                          value={appliedVia}
+                                          onChange={e => { setAppliedVia(e.target.value); setAppliedSupplierId(""); setSupplierSearch(""); }}
+                                          style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid var(--a-border2)", background: "var(--a-surface)", color: "var(--a-text)", fontSize: 13 }}
+                                        >
+                                          <option value="supplier">Via Supplier / Agent</option>
+                                          <option value="direct">Direct to Embassy / Consulate</option>
+                                          <option value="portal">Online Portal (VFS / BLS etc.)</option>
+                                          <option value="other">Other</option>
+                                        </select>
+                                      </div>
+
+                                      {/* Supplier selector — only when "Via Supplier" */}
+                                      {appliedVia === "supplier" && (
+                                        <div style={{ marginBottom: 10 }}>
+                                          <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 4 }}>SELECT SUPPLIER</label>
+                                          <input
+                                            type="text"
+                                            placeholder="Search suppliers…"
+                                            value={supplierSearch}
+                                            onChange={e => { setSupplierSearch(e.target.value); setAppliedSupplierId(""); }}
+                                            style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid var(--a-border2)", background: "var(--a-surface)", color: "var(--a-text)", fontSize: 13, marginBottom: 4 }}
+                                          />
+                                          {supplierSearch.trim() && (
+                                            <div style={{ border: "1px solid var(--a-border2)", borderRadius: 8, overflow: "hidden", maxHeight: 160, overflowY: "auto" }}>
+                                              {suppliers
+                                                .filter(s => s.status === "active" && s.name.toLowerCase().includes(supplierSearch.toLowerCase()))
+                                                .map(s => (
+                                                  <div
+                                                    key={s.id}
+                                                    onClick={() => { setAppliedSupplierId(s.id); setSupplierSearch(s.name); }}
+                                                    style={{ padding: "8px 12px", fontSize: 13, cursor: "pointer", background: appliedSupplierId === s.id ? "var(--a-green)" : "var(--a-surface)", color: appliedSupplierId === s.id ? "#fff" : "var(--a-text)", borderBottom: "1px solid var(--a-border)" }}
+                                                  >
+                                                    {s.name}
+                                                  </div>
+                                                ))}
+                                              {suppliers.filter(s => s.status === "active" && s.name.toLowerCase().includes(supplierSearch.toLowerCase())).length === 0 && (
+                                                <div style={{ padding: "8px 12px", fontSize: 12, color: "var(--a-muted)" }}>No suppliers found</div>
+                                              )}
                                             </div>
-                                            {appliedForm.via === "supplier" && (
-                                              <div>
-                                                <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Supplier Name</label>
-                                                <input value={appliedForm.supplier} onChange={e => setAppliedForm(f => ({ ...f, supplier: e.target.value }))}
-                                                  placeholder="e.g. Al-Falah Visa Services"
-                                                  style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, boxSizing: "border-box" }} />
-                                              </div>
-                                            )}
-                                            <div>
-                                              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", textTransform: "uppercase", display: "block", marginBottom: 3 }}>Internal Notes (optional)</label>
-                                              <textarea value={appliedForm.notes} onChange={e => setAppliedForm(f => ({ ...f, notes: e.target.value }))}
-                                                placeholder="Any submission details, reference numbers, instructions…"
-                                                rows={2} style={{ width: "100%", padding: "7px 10px", border: "1.5px solid var(--a-border)", borderRadius: 6, fontSize: 12, resize: "vertical", boxSizing: "border-box" }} />
-                                            </div>
-                                          </div>
-                                          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                                            <button disabled={acting || !appliedForm.via}
-                                              onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "applied"); }}
-                                              className="adp-btn adp-btn-s"
-                                              style={{ background: appliedForm.via ? "#2563EB" : "#9CA3AF", color: "#fff", opacity: acting ? 0.7 : 1 }}>
-                                              {acting ? "Saving…" : "✓ Confirm Applied"}
-                                            </button>
-                                            <button onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }} className="adp-btn adp-btn-s">Cancel</button>
-                                          </div>
-                                          {!appliedForm.via && <p style={{ fontSize: 10, color: "var(--a-red)", marginTop: 4 }}>Please select how the application was submitted.</p>}
-                                        </>
-                                      ) : (
-                                        <>
-                                          <div style={{ fontSize: 12, color: "#15803D", marginBottom: 6, fontWeight: 600 }}>✅ Approve this application?</div>
-                                          <div style={{ fontSize: 11, color: "#6B7280", marginBottom: 8 }}>The applicant will be notified of approval.</div>
-                                          <div style={{ display: "flex", gap: 6 }}>
-                                            <button disabled={acting} onClick={(e) => { e.stopPropagation(); updateStatus(app.id, "approved"); }}
-                                              className="adp-btn adp-btn-s" style={{ background: "var(--a-green)", color: "#fff" }}>Yes, Approve</button>
-                                            <button onClick={(e) => { e.stopPropagation(); setConfirmTarget(null); }} className="adp-btn adp-btn-s">Cancel</button>
-                                          </div>
-                                        </>
+                                          )}
+                                          {appliedSupplierId && (
+                                            <div style={{ fontSize: 11, color: "var(--a-green)", marginTop: 4 }}>✓ {supplierSearch}</div>
+                                          )}
+                                        </div>
                                       )}
+
+                                      {/* Internal notes */}
+                                      <div style={{ marginBottom: 10 }}>
+                                        <label style={{ fontSize: 11, fontWeight: 700, color: "var(--a-muted)", display: "block", marginBottom: 4 }}>INTERNAL NOTES (OPTIONAL)</label>
+                                        <textarea
+                                          rows={2}
+                                          value={appliedSupplierNote}
+                                          onChange={e => setAppliedSupplierNote(e.target.value)}
+                                          placeholder="Ref number, tracking code, instructions…"
+                                          style={{ width: "100%", padding: "7px 10px", border: "1px solid var(--a-border2)", borderRadius: 8, fontSize: 12, resize: "vertical", background: "var(--a-surface)", color: "var(--a-text)" }}
+                                        />
+                                      </div>
+
+                                      <div style={{ display: "flex", gap: 8 }}>
+                                        <button
+                                          disabled={acting}
+                                          onClick={(e) => { e.stopPropagation(); confirmApplied(app.id); }}
+                                          className="adp-btn adp-btn-s"
+                                          style={{ background: "var(--a-green)", color: "#fff" }}
+                                        >
+                                          ✓ Confirm Applied
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); setAppliedTarget(null); }}
+                                          className="adp-btn adp-btn-s"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
                                     </div>
                                   )}
                                 </>
@@ -548,17 +617,7 @@ function VisaApplicationsInner() {
                                   actually emails the applicant/agent — not a separate,
                                   easy-to-forget step. */}
                               {(app.status === "applied" || app.trackingLink || app.finalDocumentUrl) && (
-                                <>
-                                  {(app.appliedVia || app.supplierName || app.appliedNotes) && (
-                                    <div style={{ marginBottom: 10, padding: "10px 12px", borderRadius: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", fontSize: 12 }}>
-                                      <div style={{ fontWeight: 700, color: "#1D4ED8", marginBottom: 4 }}>📨 Submission Details</div>
-                                      {app.appliedVia && <div style={{ color: "#374151" }}>Via: <strong>{{ self: "Self (Direct)", supplier: "Supplier / Agent", embassy_direct: "Embassy Direct Walk-in", online_portal: "Online Portal (VFS/BLS)", other: "Other" }[app.appliedVia] ?? app.appliedVia}</strong></div>}
-                                      {app.supplierName && <div style={{ color: "#374151" }}>Supplier: <strong>{app.supplierName}</strong></div>}
-                                      {app.appliedNotes && <div style={{ color: "#6B7280", marginTop: 4 }}>📝 {app.appliedNotes}</div>}
-                                    </div>
-                                  )}
-                                  <TrackingPanel app={app} accessToken={accessToken} refresh={refresh} onDone={load} acting={acting} />
-                                </>
+                                <TrackingPanel app={app} accessToken={accessToken} refresh={refresh} onDone={load} acting={acting} />
                               )}
 
                               {/* Note editor — shared by the Reject / More Info Needed
@@ -637,44 +696,6 @@ function VisaApplicationsInner() {
           )}
         </div>
       </div>
-
-      {/* Delete confirmation modal */}
-      {deleteTarget && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-          onClick={() => { setDeleteTarget(null); setDeleteText(""); }}>
-          <div style={{ background: "#fff", borderRadius: 14, padding: 28, maxWidth: 420, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 22, marginBottom: 8 }}>🗑️ Delete Application</div>
-            <p style={{ fontSize: 14, color: "#374151", margin: "0 0 16px" }}>
-              This will permanently delete this visa application and all its documents. <strong>This cannot be undone.</strong>
-            </p>
-            <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 10px" }}>
-              Type <strong>delete this visa</strong> to confirm:
-            </p>
-            <input
-              autoFocus
-              value={deleteText}
-              onChange={e => setDeleteText(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && deleteText === "delete this visa" && deleteApp(deleteTarget)}
-              placeholder="delete this visa"
-              style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #FCA5A5", borderRadius: 8, fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 16 }}
-            />
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                disabled={deleteText !== "delete this visa" || acting}
-                onClick={() => deleteApp(deleteTarget)}
-                style={{ flex: 1, padding: "10px 0", background: deleteText === "delete this visa" ? "#DC2626" : "#F3F4F6", color: deleteText === "delete this visa" ? "#fff" : "#9CA3AF", border: "none", borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: deleteText === "delete this visa" ? "pointer" : "not-allowed" }}
-              >
-                {acting ? "Deleting…" : "Delete Permanently"}
-              </button>
-              <button onClick={() => { setDeleteTarget(null); setDeleteText(""); }}
-                style={{ padding: "10px 20px", background: "#F3F4F6", border: "none", borderRadius: 8, fontSize: 14, cursor: "pointer" }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
@@ -704,7 +725,6 @@ function TrackingPanel({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  const [isEarly, setIsEarly] = useState(false);
 
   async function saveTracking() {
     setSaving(true);
@@ -726,7 +746,6 @@ function TrackingPanel({
     setError(null);
     const form = new FormData();
     form.set("document", file);
-    form.set("isEarlyDelivery", String(isEarly));
     const res = await adminFetch(`/api/admin/visa-applications/${app.id}/document`, accessToken, refresh, { method: "POST", body: form });
     const data = await res.json().catch(() => ({}));
     setUploading(false);
@@ -767,10 +786,6 @@ function TrackingPanel({
         )}
       </div>
       <div style={{ borderTop: "1px dashed var(--a-border)", paddingTop: 10 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 8, cursor: "pointer", color: "#374151" }}>
-          <input type="checkbox" checked={isEarly} onChange={e => setIsEarly(e.target.checked)} style={{ width: 14, height: 14 }} />
-          🎉 Visa arrived <strong>early</strong> (send congratulations email)
-        </label>
         <label className="adp-btn adp-btn-g adp-btn-s" style={{ cursor: "pointer", display: "inline-block" }}>
           {uploading ? "Uploading…" : "📄 Upload Visa & Email Applicant"}
           <input
