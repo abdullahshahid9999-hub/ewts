@@ -312,6 +312,12 @@ model VisaApplication {
   // The actual issued visa document, uploaded by admin once it arrives.
   // Uploading this is what triggers the automatic email to the
   // applicant (and agent, if this was an agent submission).
+  // Set once admin formally lodges the application with the
+  // embassy/consulate (status="applied") — lets admin jump straight to
+  // the tracking portal instead of re-typing the URL every time.
+  trackingCountry String? @map("tracking_country")
+  trackingLink    String? @map("tracking_link")
+  trackingNumber  String? @map("tracking_number")
   finalDocumentUrl    String?   @map("final_document_url")
   finalDocumentSentAt DateTime? @map("final_document_sent_at")
   createdAt      DateTime @default(now()) @map("created_at")
