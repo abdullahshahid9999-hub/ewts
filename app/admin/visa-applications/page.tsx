@@ -151,9 +151,9 @@ function VisaApplicationsInner() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         status: "applied",
-        submittedVia: appliedVia,
-        supplierId: appliedVia === "supplier" && appliedSupplierId ? appliedSupplierId : null,
-        supplierNote: appliedSupplierNote.trim() || null,
+        appliedVia: appliedVia,
+        supplierName: appliedVia === "supplier" ? (supplierSearch.trim() || null) : null,
+        appliedNotes: appliedSupplierNote.trim() || null,
       }),
     });
     const data = await res.json().catch(() => ({}));

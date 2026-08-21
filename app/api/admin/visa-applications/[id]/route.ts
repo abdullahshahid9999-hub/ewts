@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json().catch(() => null) ?? {};
-  const { status, adminNote, supplierId, submittedVia, supplierNote } = body;
+  const { status, adminNote, appliedVia, supplierName, appliedNotes } = body;
 
   if (status && !VALID_STATUSES.includes(status)) {
     return NextResponse.json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` }, { status: 400 });
@@ -20,13 +20,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const existing = await prisma.visaApplication.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Application not found." }, { status: 404 });
 
-  // Same convention as AgentBooking issuance: debit the agent's balance
-  // and log an AgentTransaction the moment a decision moves an
-  // agent-submitted application into "approved" — never on direct/B2C
-  // applications (agentId null, commission null, nothing to charge).
-  // Known edge case (documented for bookings too, applies here as well):
-  // if a booking somehow goes approved → rejected → approved again this
-  // would fire a second time. Not currently guarded against.
   const isBeingApproved = status === "approved" && existing.status !== "approved" && existing.agentId && existing.commission !== null;
 
   const application = await prisma.$transaction(async (tx) => {
@@ -42,9 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         ...(status && { status }),
         ...(adminNote !== undefined && { adminNote: adminNote?.trim() || null }),
-        ...(submittedVia !== undefined && { submittedVia: submittedVia?.trim() || null }),
-        ...(supplierId !== undefined && { supplierId: supplierId || null }),
-        ...(supplierNote !== undefined && { supplierNote: supplierNote?.trim() || null }),
+        ...(appliedVia !== undefined && { appliedVia: appliedVia?.trim() || null }),
+        ...(supplierName !== undefined && { supplierName: supplierName?.trim() || null }),
+        ...(appliedNotes !== undefined && { appliedNotes: appliedNotes?.trim() || null }),
       },
     });
   });
