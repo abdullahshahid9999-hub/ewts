@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminGuard from "@/components/AdminGuard";
 import AdminShell from "@/components/AdminShell";
 import PackageRoomTypesManager from "@/components/PackageRoomTypesManager";
+import FlightSectorsEditor, { Sector, defaultSectors } from "@/components/FlightSectorsEditor";
 import { useAdminAuth, adminFetch } from "@/lib/adminAuthClient";
 import { compressImage } from "@/lib/imageCompression";
 
@@ -22,7 +23,8 @@ type RoomType = {
 };
 
 type ItineraryStep = { title: string; details: string; images: string };
-type FlightSector = { type: "Departure" | "Arrival" | "Sector"; city: string; date: string; time: string };
+// FlightSector = Sector from FlightSectorsEditor (imported above)
+type FlightSector = Sector;
 // Fixed 4 room types — Sharing & Quad optional (price blank = not offered)
 type FixedRoomKey = "quad" | "triple" | "double" | "sharing";
 type RoomPrices = { perPerson: string; perChild: string; perInfant: string };
@@ -125,13 +127,9 @@ const emptyForm = {
 // Legacy no-ops kept for zero TS refs below — safe to delete after full cleanup
 function _unusedLegacy() { void 0; }
 
-const defaultSectors: FlightSector[] = [
-  { type: "Departure", city: "", date: "", time: "" },
-  { type: "Arrival", city: "", date: "", time: "" },
-];
-
+// defaultSectors imported from FlightSectorsEditor
 function sectorsFromPackage(pkg: Package): FlightSector[] {
-  if (!Array.isArray(pkg.flightSectors) || pkg.flightSectors.length === 0) return defaultSectors;
+  if (!Array.isArray(pkg.flightSectors) || pkg.flightSectors.length === 0) return defaultSectors();
   return pkg.flightSectors as FlightSector[];
 }
 
@@ -165,7 +163,7 @@ function PackagesInner() {
   const [fixedRooms, setFixedRooms] = useState<FixedRooms>(emptyFixedRooms());
   const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([]); // legacy compat
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
-  const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
+  const [flightSectors, setFlightSectors] = useState<FlightSector[]>(() => defaultSectors());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -220,7 +218,7 @@ function PackagesInner() {
     setEditingId(null);
     setForm({ ...emptyForm, slug: genSlug() });
     setItinerary([]);
-    setFlightSectors(defaultSectors);
+    setFlightSectors(defaultSectors());
     setFixedRooms(emptyFixedRooms());
     setFile(null); setCoverImgMode("upload");
     setGalleryFiles([]);
@@ -242,10 +240,6 @@ function PackagesInner() {
     setItinerary((s) => s.filter((_, idx) => idx !== i));
   }
 
-  function addSector() {
-    setFlightSectors((s) => [...s, { type: "Sector", city: "", date: "", time: "" }]);
-  }
-
   function updateFixedRoom(key: FixedRoomKey, patch: Partial<RoomPrices>) {
     setFixedRooms((r) => ({ ...r, [key]: { ...r[key], ...patch } }));
   }
@@ -260,18 +254,6 @@ function PackagesInner() {
   }
 
   // (legacy draft room type functions removed — use fixedRooms + updateFixedRoom)
-
-  function updateSector(i: number, patch: Partial<FlightSector>) {
-    setFlightSectors((s) => s.map((sec, idx) => (idx === i ? { ...sec, ...patch } : sec)));
-  }
-
-  function removeSector(i: number) {
-    // Minimum 1 Departure + 1 Arrival required — "-" is disabled on those
-    // two rows (index 0 and 1 in the default layout), only rows added via
-    // "+" beyond that can be removed.
-    if (flightSectors[i]?.type === "Departure" || flightSectors[i]?.type === "Arrival") return;
-    setFlightSectors((s) => s.filter((_, idx) => idx !== i));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -335,7 +317,7 @@ function PackagesInner() {
       }));
     if (itineraryPayload.length > 0) body.set("itinerary", JSON.stringify(itineraryPayload));
 
-    const sectorsPayload = flightSectors.filter((sec) => sec.city.trim() && sec.date);
+    const sectorsPayload = flightSectors.filter((sec) => sec.fromIata || sec.toIata || sec.flightNo);
     if (sectorsPayload.length > 0) body.set("flightSectors", JSON.stringify(sectorsPayload));
 
     // Fixed room types (Quad/Triple/Double/Sharing) — only on create
@@ -654,53 +636,15 @@ function PackagesInner() {
               Hidden for Umrah packages: those use a fixed Makkah/Madinah itinerary rather
               than per-package flight sectors, and the owner asked for this field to not
               appear at all when adding an Umrah package (not just be optional). */}
-          {form.category !== "umrah" && (
+          {/* FLIGHT SECTORS — Umrah always shows (departure + arrival + optional via) */}
           <div style={{ gridColumn: "1 / -1" }}>
-            <label>Flight Sectors (city, date &amp; time)</label>
-            <div style={{ display: "grid", gap: "8px" }}>
-              {flightSectors.map((sec, i) => {
-                const locked = sec.type === "Departure" || sec.type === "Arrival";
-                return (
-                  <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                    <span style={{ width: "80px", fontSize: "11px", fontWeight: 700, color: "var(--a-muted)" }}>
-                      {sec.type}
-                    </span>
-                    <input
-                      placeholder="City (e.g. LYP)"
-                      value={sec.city}
-                      onChange={(e) => updateSector(i, { city: e.target.value })}
-                      style={{ flex: 1 }}
-                    />
-                    <input
-                      type="date"
-                      value={sec.date}
-                      onChange={(e) => updateSector(i, { date: e.target.value })}
-                      style={{ width: "150px" }}
-                    />
-                    <input
-                      type="time"
-                      value={sec.time}
-                      onChange={(e) => updateSector(i, { time: e.target.value })}
-                      style={{ width: "110px" }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSector(i)}
-                      disabled={locked}
-                      className="adp-btn adp-btn-r"
-                      style={{ opacity: locked ? 0.35 : 1, cursor: locked ? "not-allowed" : "pointer" }}
-                    >
-                      −
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <button type="button" onClick={addSector} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
-              + Add Sector
-            </button>
+            <label>✈ Flight Sectors</label>
+            <FlightSectorsEditor
+              sectors={flightSectors}
+              onChange={setFlightSectors}
+              accessToken={accessToken}
+            />
           </div>
-          )}
 
                     {/* ITINERARY EDITOR */}
           <div style={{ gridColumn: "1 / -1" }}>

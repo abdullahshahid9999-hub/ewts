@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import AgentPackageBookingWidget from "@/components/AgentPackageBookingWidget";
+import FlightStatusBadge from "@/components/FlightStatusBadge";
 
 export const revalidate = 60;
 
@@ -24,6 +25,12 @@ function parseList(text: string | null): string[] {
   return text.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
+type Sector = { type: string; flightNo?: string; airlineIata?: string; fromIata?: string; fromName?: string; toIata?: string; toName?: string; city?: string; date?: string; time?: string };
+function parseSectors(raw: unknown): Sector[] {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.filter((s): s is Sector => !!s && typeof s === "object");
+}
+
 export default async function AgentUmrahDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const pkg = await getPackage(slug);
@@ -31,6 +38,7 @@ export default async function AgentUmrahDetailPage({ params }: { params: Promise
 
   const includes = parseList(pkg.includes);
   const excludes = parseList(pkg.excludes);
+  const sectors = parseSectors(pkg.flightSectors);
 
   return (
     <AgentGuard>
@@ -54,6 +62,32 @@ export default async function AgentUmrahDetailPage({ params }: { params: Promise
             </div>
           )}
         </div>
+
+        {sectors.length > 0 && (
+          <div className="ap-card" style={{ marginBottom: 16 }}>
+            <div style={{ padding: "14px 18px" }}>
+              <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>✈ Flight Details</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {sectors.map((sec, i) => {
+                  const from = sec.fromIata || sec.city || "";
+                  const to = sec.toIata || "";
+                  return (
+                    <div key={i} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "8px 12px", border: "1px solid var(--border)", borderRadius: 8, background: "#f9fafb" }}>
+                      {sec.airlineIata && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={`https://images.kiwi.com/airlines/64/${sec.airlineIata}.png`} alt="" style={{ height: 20, objectFit: "contain" }} />
+                      )}
+                      <span style={{ fontSize: 11, fontWeight: 800, color: sec.type === "Departure" ? "#16a34a" : sec.type === "Arrival" ? "#dc2626" : "#7c3aed" }}>{sec.type}</span>
+                      {from && <span style={{ fontSize: 13, fontWeight: 600 }}>{from}{to ? ` → ${to}` : ""}</span>}
+                      {sec.date && <span style={{ fontSize: 11, color: "var(--muted)" }}>{sec.date}{sec.time ? ` · ${sec.time}` : ""}</span>}
+                      {sec.flightNo && <div style={{ marginLeft: "auto" }}><FlightStatusBadge flightIata={sec.flightNo} /></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {(includes.length > 0 || excludes.length > 0) && (
           <div className="ap-card">

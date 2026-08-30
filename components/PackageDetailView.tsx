@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PackageBookingWidget from "@/components/PackageBookingWidget";
 import ImageGallery from "@/components/ImageGallery";
+import FlightStatusBadge from "@/components/FlightStatusBadge";
 
 type ItineraryStep = { title: string; details: string[]; images?: string[] };
 
@@ -59,12 +60,12 @@ function parseList(text: string | null): string[] {
   return text.split("\n").map((l) => l.trim()).filter(Boolean);
 }
 
-type FlightSector = { type: string; city: string; date: string; time: string };
+type FlightSector = { type: string; flightNo?: string; airlineIata?: string; airlineName?: string; fromIata?: string; fromName?: string; toIata?: string; toName?: string; city?: string; date: string; time: string };
 
 function parseSectors(raw: unknown): FlightSector[] {
   if (!raw || !Array.isArray(raw)) return [];
   return raw.filter(
-    (s): s is FlightSector => s && typeof s === "object" && typeof (s as FlightSector).city === "string"
+    (s): s is FlightSector => s && typeof s === "object" && typeof (s as FlightSector).type === "string"
   );
 }
 
@@ -192,16 +193,40 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
         {sectors.length > 0 && (
           <div className="mb-12">
             <h2 className="font-display text-xl font-semibold mb-4">Flight Details</h2>
-            <div className="flex flex-wrap gap-3">
-              {sectors.map((sec, i) => (
-                <div key={i} className="bg-surface border border-border rounded-xl px-4 py-3 text-sm">
-                  <p className="text-xs font-semibold text-[var(--lp-brass)] uppercase mb-1">{sec.type}</p>
-                  <p className="font-semibold">{sec.city}</p>
-                  <p className="text-muted text-xs">
-                    {sec.date}{sec.time ? ` · ${sec.time}` : ""}
-                  </p>
-                </div>
-              ))}
+            <div className="flex flex-col gap-3">
+              {sectors.map((sec, i) => {
+                const from = sec.fromIata || sec.city || "";
+                const to = sec.toIata || "";
+                const fromLabel = sec.fromName || from;
+                const toLabel = sec.toName || to;
+                return (
+                  <div key={i} className="bg-surface border border-border rounded-xl px-5 py-4 flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2 min-w-[80px]">
+                      {sec.airlineIata && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={`https://images.kiwi.com/airlines/64/${sec.airlineIata}.png`} alt={sec.airlineName || sec.airlineIata}
+                          style={{ height: 24, objectFit: "contain" }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      )}
+                      <span className="text-xs font-bold uppercase" style={{ color: sec.type === "Departure" ? "#16a34a" : sec.type === "Arrival" ? "#dc2626" : "#7c3aed" }}>{sec.type}</span>
+                    </div>
+                    {from && (
+                      <div className="text-sm">
+                        <p className="font-bold text-base">{from}{to && ` → ${to}`}</p>
+                        {(fromLabel !== from || toLabel !== to) && <p className="text-muted text-xs">{fromLabel}{toLabel && toLabel !== to ? ` → ${toLabel}` : ""}</p>}
+                      </div>
+                    )}
+                    <div className="text-sm text-muted">
+                      {sec.date}{sec.time ? ` · ${sec.time}` : ""}
+                    </div>
+                    {sec.flightNo && (
+                      <div className="ml-auto">
+                        <FlightStatusBadge flightIata={sec.flightNo} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
