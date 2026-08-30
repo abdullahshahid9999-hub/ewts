@@ -363,3 +363,26 @@ ALTER TABLE visa_applications
 - Occupation categories expanded (Businessman, Self Employed, Housewife)
 - Merged remote applied_via supplier panel + email system
 
+
+---
+## Session — Umrah Listing Overhaul (commit b31c661)
+
+### What was built
+- **Slug**: 6-char random alphanumeric auto-generated on form open (same format as PNR). Regenerate button. Manually editable, max 12 chars. API also generates if blank.
+- **Room types — create mode**: Fixed 4 rows (Quad 4 pax / Triple 3 pax / Double 2 pax / Sharing 6+ pax). Leave price blank = room not offered, not saved to DB. Display price = lowest filled price, auto-computed.
+- **Room types — edit mode** (`PackageRoomTypesManager`): Same 4 canonical rows with per-row Save button. Blank price on an existing row = prompts delete. Custom/legacy room types shown in a separate table below.
+- **Image upload/URL toggle**: Cover image, Makkah hotel photo, Madinah hotel photo — all three have 📁 Upload / 🔗 URL toggle. Both POST and PATCH API routes handle `imageUrl`, `makkahHotelImgUrl`, `madinahHotelImgUrl` as URL fallbacks when no file is uploaded.
+
+### No SQL needed
+All changes are frontend/API only — no schema changes.
+
+---
+## Session — Umrah Listing Overhaul (commit b31c661)
+
+### What was built
+- **Slug**: 6-char random alphanumeric auto-generated on form open (PNR-style). Regenerate button. Manually editable, max 12 chars. API generates if blank.
+- **Room types — create mode**: Fixed 4 rows (Quad / Triple / Double / Sharing). Blank price = not offered, not saved. Display price = lowest filled, auto-computed.
+- **Room types — edit mode** (PackageRoomTypesManager): Same 4 canonical rows, per-row Save. Blank price on existing row = delete. Custom/legacy rows in separate table.
+- **Images Upload+URL**: Cover, Makkah hotel, Madinah hotel — all have Upload/URL toggle. POST + PATCH APIs handle imageUrl / makkahHotelImgUrl / madinahHotelImgUrl as URL fallbacks.
+
+### No SQL needed — no schema changes.
