@@ -402,3 +402,26 @@ All changes are frontend/API only — no schema changes.
 AVIATIONSTACK_API_KEY=11af670c1dcde301c3c1135b34c30740
 
 ### No SQL needed.
+
+---
+## Session — Umrah Step Library (commit 8f0464a)
+
+### What was built
+- **Umrah Step Library** `/admin/umrah-steps` — list page, drag-to-reorder, show/hide, delete
+- **New/Edit step** — title, description, image (upload or URL), tag (makkah/madinah/transit/activity/flight/hotel), sort order
+- **Package itinerary editor** — datalist dropdown suggestions from library, ↓ button auto-fills description
+- AdminSidebar: "📋 Umrah Steps" link added under Packages
+
+### SQL to run on Render (PostgreSQL → Connect):
+```sql
+CREATE TABLE IF NOT EXISTS umrah_steps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  tag TEXT NOT NULL DEFAULT 'activity',
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
