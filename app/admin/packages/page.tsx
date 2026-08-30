@@ -23,43 +23,45 @@ type RoomType = {
 
 type ItineraryStep = { title: string; details: string; images: string };
 type FlightSector = { type: "Departure" | "Arrival" | "Sector"; city: string; date: string; time: string };
-type DraftRoomType = {
-  roomType: string;
-  pricePerPersonPkr: string;
-  pricePerInfantPkr: string;
-  pricePerChildPkr: string;
-  pricePerChildWithBedPkr: string;
-  pricePerChildWithoutBedPkr: string;
-  maxAdults: string;
-  maxInfants: string;
-  minAdultsRequired: string;
+// Fixed 4 room types — Sharing & Quad optional (price blank = not offered)
+type FixedRoomKey = "quad" | "triple" | "double" | "sharing";
+type RoomPrices = { perPerson: string; perChild: string; perInfant: string };
+type FixedRooms = Record<FixedRoomKey, RoomPrices>;
+
+const FIXED_ROOM_META: Record<FixedRoomKey, { label: string; maxAdults: number; maxInfants: number; optional: boolean }> = {
+  quad:    { label: "Quad Room (4 pax)",     maxAdults: 4, maxInfants: 1, optional: true },
+  triple:  { label: "Triple Room (3 pax)",   maxAdults: 3, maxInfants: 1, optional: false },
+  double:  { label: "Double Room (2 pax)",   maxAdults: 2, maxInfants: 1, optional: false },
+  sharing: { label: "Sharing (6+ pax)",      maxAdults: 6, maxInfants: 0, optional: true },
 };
 
-const emptyDraftRoomType: DraftRoomType = {
-  roomType: "", pricePerPersonPkr: "", pricePerInfantPkr: "0", pricePerChildPkr: "0",
-  pricePerChildWithBedPkr: "0", pricePerChildWithoutBedPkr: "0",
-  maxAdults: "2", maxInfants: "0", minAdultsRequired: "",
-};
+const emptyRoomPrices = (): RoomPrices => ({ perPerson: "", perChild: "0", perInfant: "0" });
+const emptyFixedRooms = (): FixedRooms => ({
+  quad: emptyRoomPrices(), triple: emptyRoomPrices(),
+  double: emptyRoomPrices(), sharing: emptyRoomPrices(),
+});
 
-// Common basis names offered as one-click presets — Quadruple is normally
-// the cheapest per-head, which is why it ends up the display price.
-const ROOM_BASIS_PRESETS = ["Quadruple Room", "Triple Room", "Double Room", "Single Room"];
+// Legacy — keep for type compat with old draftRoomTypes refs removed below
+type DraftRoomType = { roomType: string; pricePerPersonPkr: string; pricePerInfantPkr: string; pricePerChildPkr: string; pricePerChildWithBedPkr: string; pricePerChildWithoutBedPkr: string; maxAdults: string; maxInfants: string; minAdultsRequired: string };
+const ROOM_BASIS_PRESETS: string[] = [];
 
 function formatPkr(n: number) {
   return `PKR ${n.toLocaleString("en-PK")}`;
 }
 
+function genSlug() {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+// For image fields that support Upload OR URL
+type ImgMode = "upload" | "url";
+
 // Mirrors lib/packagePrice.ts's computeDisplayPrice on the server — the
 // listing-card price is always the lowest per-person room price, shown
 // live here as the admin fills in the room basis rows so there's no
 // surprise about what will actually be saved.
-function computeDisplayPriceFromDrafts(rows: DraftRoomType[]): string | null {
-  const prices = rows
-    .map((r) => Number(r.pricePerPersonPkr))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  if (prices.length === 0) return null;
-  return formatPkr(Math.min(...prices));
-}
+// (removed computeDisplayPriceFromDrafts — replaced by computeDisplayPriceFromFixed)
 
 type Package = {
   id: string;
@@ -106,7 +108,7 @@ type Package = {
 };
 
 const emptyForm = {
-  category: "umrah", name: "", slug: "", duration: "", depDate: "", retDate: "",
+  category: "umrah", name: "", slug: genSlug(), duration: "", depDate: "", retDate: "",
   airline: "", route: "", hotels: "",
   price: "", destination: "",
   departureCity: "", tier: "", includes: "", excludes: "", featured: false, status: "active",
@@ -116,11 +118,12 @@ const emptyForm = {
   makkahHotel: "", makkahHotelDistance: "", makkahHotelNights: "",
   madinahHotel: "", madinahHotelDistance: "", madinahHotelNights: "",
   flightType: "", luggage: "", transportType: "", totalSeats: "",
+  // URL-based image alternatives
+  coverImgUrl: "", makkahHotelImgUrl: "", madinahHotelImgUrl: "",
 };
 
-function slugify(text: string) {
-  return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
+// Legacy no-ops kept for zero TS refs below — safe to delete after full cleanup
+function _unusedLegacy() { void 0; }
 
 const defaultSectors: FlightSector[] = [
   { type: "Departure", city: "", date: "", time: "" },
@@ -147,14 +150,22 @@ function PackagesInner() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  // Cover image
   const [file, setFile] = useState<File | null>(null);
+  const [coverImgMode, setCoverImgMode] = useState<ImgMode>("upload");
+  // Gallery
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [makkahHotelFile, setMakkahHotelFile] = useState<File | null>(null);
-  const [madinahHotelFile, setMadinahHotelFile] = useState<File | null>(null);
   const [removeGalleryUrls, setRemoveGalleryUrls] = useState<string[]>([]);
+  // Hotel images
+  const [makkahHotelFile, setMakkahHotelFile] = useState<File | null>(null);
+  const [makkahImgMode, setMakkahImgMode] = useState<ImgMode>("upload");
+  const [madinahHotelFile, setMadinahHotelFile] = useState<File | null>(null);
+  const [madinahImgMode, setMadinahImgMode] = useState<ImgMode>("upload");
+  // Fixed room types (create mode)
+  const [fixedRooms, setFixedRooms] = useState<FixedRooms>(emptyFixedRooms());
+  const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([]); // legacy compat
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
   const [flightSectors, setFlightSectors] = useState<FlightSector[]>(defaultSectors);
-  const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([{ ...emptyDraftRoomType }]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -193,28 +204,29 @@ function PackagesInner() {
       flightType: pkg.flightType ?? "", luggage: pkg.luggage ?? "",
       transportType: pkg.transportType ?? "",
       totalSeats: pkg.totalSeats != null ? String(pkg.totalSeats) : "",
+      coverImgUrl: "", makkahHotelImgUrl: "", madinahHotelImgUrl: "",
     });
     setItinerary(itineraryFromPackage(pkg));
     setFlightSectors(sectorsFromPackage(pkg));
-    setDraftRoomTypes([{ ...emptyDraftRoomType }]);
-    setFile(null);
+    setFixedRooms(emptyFixedRooms());
+    setFile(null); setCoverImgMode("upload");
     setGalleryFiles([]);
     setRemoveGalleryUrls([]);
-    setMakkahHotelFile(null);
-    setMadinahHotelFile(null);
+    setMakkahHotelFile(null); setMakkahImgMode("upload");
+    setMadinahHotelFile(null); setMadinahImgMode("upload");
   }
 
   function resetForm() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, slug: genSlug() });
     setItinerary([]);
     setFlightSectors(defaultSectors);
-    setDraftRoomTypes([{ ...emptyDraftRoomType }]);
-    setFile(null);
+    setFixedRooms(emptyFixedRooms());
+    setFile(null); setCoverImgMode("upload");
     setGalleryFiles([]);
     setRemoveGalleryUrls([]);
-    setMakkahHotelFile(null);
-    setMadinahHotelFile(null);
+    setMakkahHotelFile(null); setMakkahImgMode("upload");
+    setMadinahHotelFile(null); setMadinahImgMode("upload");
     setError(null);
   }
 
@@ -234,17 +246,20 @@ function PackagesInner() {
     setFlightSectors((s) => [...s, { type: "Sector", city: "", date: "", time: "" }]);
   }
 
-  function addDraftRoomType() {
-    setDraftRoomTypes((rows) => [...rows, { ...emptyDraftRoomType }]);
+  function updateFixedRoom(key: FixedRoomKey, patch: Partial<RoomPrices>) {
+    setFixedRooms((r) => ({ ...r, [key]: { ...r[key], ...patch } }));
   }
 
-  function updateDraftRoomType(i: number, patch: Partial<DraftRoomType>) {
-    setDraftRoomTypes((rows) => rows.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
+  // For legacy price display calculation
+  function computeDisplayPriceFromFixed(rooms: FixedRooms): string | null {
+    const prices = (Object.keys(FIXED_ROOM_META) as FixedRoomKey[])
+      .map((k) => Number(rooms[k].perPerson))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (prices.length === 0) return null;
+    return formatPkr(Math.min(...prices));
   }
 
-  function removeDraftRoomType(i: number) {
-    setDraftRoomTypes((rows) => (rows.length <= 1 ? rows : rows.filter((_, idx) => idx !== i)));
-  }
+  // (legacy draft room type functions removed — use fixedRooms + updateFixedRoom)
 
   function updateSector(i: number, patch: Partial<FlightSector>) {
     setFlightSectors((s) => s.map((sec, idx) => (idx === i ? { ...sec, ...patch } : sec)));
@@ -267,17 +282,14 @@ function PackagesInner() {
     const body = new FormData();
     body.set("category", form.category);
     body.set("name", form.name);
-    if (form.slug) body.set("slug", form.slug);
+    body.set("slug", form.slug || genSlug());
     body.set("duration", form.duration);
     if (form.depDate) body.set("depDate", form.depDate);
     if (form.retDate) body.set("retDate", form.retDate);
     if (form.airline) body.set("airline", form.airline);
     if (form.route) body.set("route", form.route);
     if (form.hotels) body.set("hotels", form.hotels);
-    // Price is derived from room basis pricing, not typed by hand — see
-    // computeDisplayPriceFromDrafts above (create) / lib/packagePrice.ts
-    // (server, and what keeps it in sync after every room-type edit).
-    const derivedPrice = !editingId ? computeDisplayPriceFromDrafts(draftRoomTypes) : null;
+    const derivedPrice = !editingId ? computeDisplayPriceFromFixed(fixedRooms) : null;
     body.set("price", derivedPrice ?? form.price);
     body.set("destination", form.destination);
     body.set("departureCity", form.departureCity);
@@ -289,7 +301,6 @@ function PackagesInner() {
     body.set("copyEnabled", String(form.copyEnabled));
     body.set("groupTicketEnabled", String(form.groupTicketEnabled));
     body.set("visaEnabled", String(form.visaEnabled));
-    // V2 fields
     body.set("cardVersion", form.cardVersion);
     if (form.makkahHotel) body.set("makkahHotel", form.makkahHotel);
     if (form.makkahHotelDistance) body.set("makkahHotelDistance", form.makkahHotelDistance);
@@ -301,13 +312,19 @@ function PackagesInner() {
     if (form.luggage) body.set("luggage", form.luggage);
     if (form.transportType) body.set("transportType", form.transportType);
     if (form.totalSeats) body.set("totalSeats", form.totalSeats);
-    if (makkahHotelFile) body.set("makkahHotelImg", await compressImage(makkahHotelFile));
-    if (madinahHotelFile) body.set("madinahHotelImg", await compressImage(madinahHotelFile));
-    if (file) body.set("image", await compressImage(file));
+    // Cover image: upload OR URL
+    if (coverImgMode === "upload" && file) body.set("image", await compressImage(file));
+    else if (coverImgMode === "url" && form.coverImgUrl.trim()) body.set("imageUrl", form.coverImgUrl.trim());
+    // Gallery
     for (let i = 0; i < galleryFiles.length; i++) {
       body.set(`gallery_${i}`, await compressImage(galleryFiles[i]));
     }
     if (removeGalleryUrls.length > 0) body.set("removeGalleryUrls", JSON.stringify(removeGalleryUrls));
+    // Hotel images: upload OR URL
+    if (makkahImgMode === "upload" && makkahHotelFile) body.set("makkahHotelImg", await compressImage(makkahHotelFile));
+    else if (makkahImgMode === "url" && form.makkahHotelImgUrl.trim()) body.set("makkahHotelImgUrl", form.makkahHotelImgUrl.trim());
+    if (madinahImgMode === "upload" && madinahHotelFile) body.set("madinahHotelImg", await compressImage(madinahHotelFile));
+    else if (madinahImgMode === "url" && form.madinahHotelImgUrl.trim()) body.set("madinahHotelImgUrl", form.madinahHotelImgUrl.trim());
 
     const itineraryPayload = itinerary
       .filter((s) => s.title.trim())
@@ -321,23 +338,20 @@ function PackagesInner() {
     const sectorsPayload = flightSectors.filter((sec) => sec.city.trim() && sec.date);
     if (sectorsPayload.length > 0) body.set("flightSectors", JSON.stringify(sectorsPayload));
 
-    // Room basis division (Quad/Triple/Double/...) submitted inline with
-    // package creation, instead of requiring a save-then-add-room-types
-    // round trip. Only relevant on create — once a package exists, room
-    // types are managed below via Room Types & Pricing (PackageRoomTypesManager).
+    // Fixed room types (Quad/Triple/Double/Sharing) — only on create
     if (!editingId) {
-      const roomTypesPayload = draftRoomTypes
-        .filter((r) => r.roomType.trim() && Number(r.pricePerPersonPkr) > 0 && Number(r.maxAdults) >= 1)
-        .map((r) => ({
-          roomType: r.roomType.trim(),
-          pricePerPersonPkr: Number(r.pricePerPersonPkr),
-          pricePerInfantPkr: Number(r.pricePerInfantPkr || 0),
-          pricePerChildPkr: Number(r.pricePerChildPkr || 0),
-          pricePerChildWithBedPkr: Number(r.pricePerChildWithBedPkr || 0),
-          pricePerChildWithoutBedPkr: Number(r.pricePerChildWithoutBedPkr || 0),
-          maxAdults: Number(r.maxAdults),
-          maxInfants: Number(r.maxInfants || 0),
-          minAdultsRequired: r.minAdultsRequired ? Number(r.minAdultsRequired) : null,
+      const roomTypesPayload = (Object.keys(FIXED_ROOM_META) as FixedRoomKey[])
+        .filter((k) => Number(fixedRooms[k].perPerson) > 0)
+        .map((k) => ({
+          roomType: FIXED_ROOM_META[k].label,
+          pricePerPersonPkr: Number(fixedRooms[k].perPerson),
+          pricePerInfantPkr: Number(fixedRooms[k].perInfant || 0),
+          pricePerChildPkr: Number(fixedRooms[k].perChild || 0),
+          pricePerChildWithBedPkr: Number(fixedRooms[k].perChild || 0),
+          pricePerChildWithoutBedPkr: 0,
+          maxAdults: FIXED_ROOM_META[k].maxAdults,
+          maxInfants: FIXED_ROOM_META[k].maxInfants,
+          minAdultsRequired: null,
         }));
       if (roomTypesPayload.length > 0) body.set("roomTypes", JSON.stringify(roomTypesPayload));
     }
@@ -352,7 +366,7 @@ function PackagesInner() {
       // be added/edited immediately — the ones just submitted are already
       // saved, this just switches to the "existing package" management view.
       setEditingId(data.package.id);
-      setDraftRoomTypes([{ ...emptyDraftRoomType }]);
+      setFixedRooms(emptyFixedRooms());
     }
     load();
   }
@@ -394,21 +408,16 @@ function PackagesInner() {
             <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label>Slug (URL — /{form.category}/…)</label>
+            <label>Slug (URL — /{form.category}/…) <span style={{ fontSize: 10, color: "var(--a-dim)", fontWeight: 400 }}>Auto-generated · customer sees only UI, not this code</span></label>
             <div style={{ display: "flex", gap: "8px" }}>
               <input
-                placeholder="auto-generated-from-name"
                 value={form.slug}
-                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                style={{ flex: 1 }}
+                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "") }))}
+                style={{ flex: 1, fontFamily: "monospace" }}
+                maxLength={12}
               />
-              <button
-                type="button"
-                className="adp-btn adp-btn-t"
-                onClick={() => setForm((f) => ({ ...f, slug: slugify(f.name) }))}
-                disabled={!form.name.trim()}
-              >
-                Generate from name
+              <button type="button" className="adp-btn adp-btn-t" onClick={() => setForm((f) => ({ ...f, slug: genSlug() }))}>
+                Regenerate
               </button>
             </div>
           </div>
@@ -444,7 +453,7 @@ function PackagesInner() {
               value={
                 editingId
                   ? (form.price || "— set by adding room types below —")
-                  : (computeDisplayPriceFromDrafts(draftRoomTypes) ?? "— add a room type below to set this —")
+                  : (computeDisplayPriceFromFixed(fixedRooms) ?? "— fill at least one room price above —")
               }
               style={{ color: "var(--a-muted)", background: "rgba(0,0,0,0.03)", cursor: "not-allowed" }}
             />
@@ -492,11 +501,23 @@ function PackagesInner() {
           </div>
           <div>
             <label>Cover Image</label>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+              {(["upload", "url"] as ImgMode[]).map((m) => (
+                <button key={m} type="button" onClick={() => setCoverImgMode(m)}
+                  style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 6, border: "1.5px solid", cursor: "pointer",
+                    background: coverImgMode === m ? "var(--a-blue)" : "transparent",
+                    color: coverImgMode === m ? "#fff" : "var(--a-muted)",
+                    borderColor: coverImgMode === m ? "var(--a-blue)" : "var(--a-border)" }}>
+                  {m === "upload" ? "📁 Upload" : "🔗 URL"}
+                </button>
+              ))}
+            </div>
+            {coverImgMode === "upload"
+              ? <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              : <input placeholder="https://…" value={form.coverImgUrl} onChange={(e) => setForm((f) => ({ ...f, coverImgUrl: e.target.value }))} />}
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <label>Gallery Images (multiple, shown as carousel on detail page)</label>
-            {/* Existing gallery for edit mode */}
+            <label>Gallery Images (multiple, carousel on detail page)</label>
             {editingId && packages.find(p => p.id === editingId)?.galleryUrls && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
                 {(packages.find(p => p.id === editingId)?.galleryUrls ?? []).map((url) => (
@@ -563,7 +584,20 @@ function PackagesInner() {
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600 }}>Makkah Hotel Photo</label>
-                  <input type="file" accept="image/*" onChange={(e) => setMakkahHotelFile(e.target.files?.[0] ?? null)} />
+                  <div style={{ display: "flex", gap: "5px", marginBottom: "5px" }}>
+                    {(["upload", "url"] as ImgMode[]).map((m) => (
+                      <button key={m} type="button" onClick={() => setMakkahImgMode(m)}
+                        style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, border: "1.5px solid", cursor: "pointer",
+                          background: makkahImgMode === m ? "#0ea5e9" : "transparent",
+                          color: makkahImgMode === m ? "#fff" : "var(--a-muted)",
+                          borderColor: makkahImgMode === m ? "#0ea5e9" : "var(--a-border)" }}>
+                        {m === "upload" ? "📁 Upload" : "🔗 URL"}
+                      </button>
+                    ))}
+                  </div>
+                  {makkahImgMode === "upload"
+                    ? <input type="file" accept="image/*" onChange={(e) => setMakkahHotelFile(e.target.files?.[0] ?? null)} />
+                    : <input placeholder="https://…" value={form.makkahHotelImgUrl} onChange={(e) => setForm((f) => ({ ...f, makkahHotelImgUrl: e.target.value }))} />}
                 </div>
                 {/* Madinah Hotel */}
                 <div>
@@ -580,7 +614,20 @@ function PackagesInner() {
                 </div>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 600 }}>Madinah Hotel Photo</label>
-                  <input type="file" accept="image/*" onChange={(e) => setMadinahHotelFile(e.target.files?.[0] ?? null)} />
+                  <div style={{ display: "flex", gap: "5px", marginBottom: "5px" }}>
+                    {(["upload", "url"] as ImgMode[]).map((m) => (
+                      <button key={m} type="button" onClick={() => setMadinahImgMode(m)}
+                        style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 5, border: "1.5px solid", cursor: "pointer",
+                          background: madinahImgMode === m ? "#0ea5e9" : "transparent",
+                          color: madinahImgMode === m ? "#fff" : "var(--a-muted)",
+                          borderColor: madinahImgMode === m ? "#0ea5e9" : "var(--a-border)" }}>
+                        {m === "upload" ? "📁 Upload" : "🔗 URL"}
+                      </button>
+                    ))}
+                  </div>
+                  {madinahImgMode === "upload"
+                    ? <input type="file" accept="image/*" onChange={(e) => setMadinahHotelFile(e.target.files?.[0] ?? null)} />
+                    : <input placeholder="https://…" value={form.madinahHotelImgUrl} onChange={(e) => setForm((f) => ({ ...f, madinahHotelImgUrl: e.target.value }))} />}
                 </div>
                 {/* Flight / transport specs */}
                 <div>
@@ -690,94 +737,47 @@ function PackagesInner() {
             </button>
           </div>
 
-          {/* Room basis division — only shown while creating a new package.
-              Once saved, this becomes the Room Types & Pricing manager below
-              (which supports edit/delete individually). The lowest price
-              entered here becomes the Price field above automatically. */}
+          {/* Room types (create mode) — fixed 4 rows. Empty price = not offered, won't be saved. */}
           {!editingId && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label>Room Basis Division (Quad / Triple / Double / Single…)</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "6px" }}>
-                {draftRoomTypes.map((rt, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.3fr 1fr 1fr 1fr 0.8fr 0.8fr 1fr auto",
-                      gap: "8px",
-                      alignItems: "end",
-                      padding: "10px",
-                      border: "1px solid var(--a-border)",
-                      borderRadius: "6px",
-                    }}
-                  >
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Room Type</label>
-                      <input
-                        list="room-basis-presets"
-                        placeholder="e.g. Quadruple Room"
-                        value={rt.roomType}
-                        onChange={(e) => updateDraftRoomType(i, { roomType: e.target.value })}
-                      />
+            <div style={{ gridColumn: "1 / -1", background: "#f8fafc", border: "1.5px solid var(--a-border)", borderRadius: 10, padding: "16px 18px" }}>
+              <label style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, display: "block" }}>
+                🛏️ Room Type Pricing — leave price blank if this room is not offered
+              </label>
+              <div style={{ display: "grid", gap: 10 }}>
+                {(Object.keys(FIXED_ROOM_META) as FixedRoomKey[]).map((k) => {
+                  const meta = FIXED_ROOM_META[k];
+                  const prices = fixedRooms[k];
+                  const hasPrice = Number(prices.perPerson) > 0;
+                  return (
+                    <div key={k} style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 8, alignItems: "end",
+                      padding: "10px 12px", border: "1px solid var(--a-border)", borderRadius: 8,
+                      background: hasPrice ? "#fff" : "#f1f5f9", opacity: hasPrice ? 1 : 0.7 }}>
+                      <div>
+                        <label style={{ fontSize: 10, fontWeight: 700 }}>{meta.label}</label>
+                        {meta.optional && <span style={{ fontSize: 9, color: "var(--a-dim)", display: "block" }}>optional</span>}
+                        {!hasPrice && <span style={{ fontSize: 9, color: "#94a3b8" }}>not offered</span>}
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 9 }}>Price / Person (PKR) *</label>
+                        <input type="number" placeholder="e.g. 150000" value={prices.perPerson}
+                          onChange={(e) => updateFixedRoom(k, { perPerson: e.target.value })} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 9 }}>Price / Child (PKR)</label>
+                        <input type="number" placeholder="0" value={prices.perChild}
+                          onChange={(e) => updateFixedRoom(k, { perChild: e.target.value })} disabled={!hasPrice} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 9 }}>Price / Infant (PKR)</label>
+                        <input type="number" placeholder="0" value={prices.perInfant}
+                          onChange={(e) => updateFixedRoom(k, { perInfant: e.target.value })} disabled={!hasPrice} />
+                      </div>
                     </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Price / Person (PKR)</label>
-                      <input type="number" value={rt.pricePerPersonPkr} onChange={(e) => updateDraftRoomType(i, { pricePerPersonPkr: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Price / Infant</label>
-                      <input type="number" value={rt.pricePerInfantPkr} onChange={(e) => updateDraftRoomType(i, { pricePerInfantPkr: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Price / Child</label>
-                      <input type="number" value={rt.pricePerChildPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildPkr: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Price / Child (With Bed)</label>
-                      <input type="number" value={rt.pricePerChildWithBedPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildWithBedPkr: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Price / Child (No Bed)</label>
-                      <input type="number" value={rt.pricePerChildWithoutBedPkr} onChange={(e) => updateDraftRoomType(i, { pricePerChildWithoutBedPkr: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Max Adults</label>
-                      <input type="number" value={rt.maxAdults} onChange={(e) => updateDraftRoomType(i, { maxAdults: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Max Infants</label>
-                      <input type="number" value={rt.maxInfants} onChange={(e) => updateDraftRoomType(i, { maxInfants: e.target.value })} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "9px" }}>Min Adults Req.</label>
-                      <input
-                        type="number"
-                        placeholder="optional"
-                        value={rt.minAdultsRequired}
-                        onChange={(e) => updateDraftRoomType(i, { minAdultsRequired: e.target.value })}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeDraftRoomType(i)}
-                      disabled={draftRoomTypes.length <= 1}
-                      className="adp-btn adp-btn-r"
-                      style={{ height: "34px" }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              <datalist id="room-basis-presets">
-                {ROOM_BASIS_PRESETS.map((p) => <option key={p} value={p} />)}
-              </datalist>
-              <button type="button" onClick={addDraftRoomType} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
-                + Add Another Room Basis
-              </button>
-              <p style={{ fontSize: "10.5px", color: "var(--a-dim)", marginTop: "6px" }}>
-                Rows with no room type name or price are ignored on save. The display Price above
-                always tracks whichever row here is lowest.
+              <p style={{ fontSize: 10, color: "var(--a-dim)", marginTop: 8 }}>
+                Display price on card = lowest per-person price entered above. After saving, edit individual room types below.
               </p>
             </div>
           )}

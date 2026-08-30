@@ -30,6 +30,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         { status: 500 }
       );
     }
+  } else {
+    const urlVal = form.get("imageUrl");
+    if (typeof urlVal === "string" && urlVal.startsWith("http")) imageUrl = urlVal;
   }
 
   // Gallery images: gallery_0, gallery_1, ... — appended to existing gallery
@@ -62,6 +65,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const buf = Buffer.from(await makkahImgFile.arrayBuffer());
       makkahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: makkahImgFile.type, folder: "packages/hotels" });
     } catch (e) { console.error("Makkah hotel image upload failed:", e); }
+  } else {
+    const u = form.get("makkahHotelImgUrl");
+    if (typeof u === "string" && u.startsWith("http")) makkahHotelImgUrl = u;
   }
   let madinahHotelImgUrl: string | undefined;
   const madinahImgFile = form.get("madinahHotelImg");
@@ -70,6 +76,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const buf = Buffer.from(await madinahImgFile.arrayBuffer());
       madinahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: madinahImgFile.type, folder: "packages/hotels" });
     } catch (e) { console.error("Madinah hotel image upload failed:", e); }
+  } else {
+    const u = form.get("madinahHotelImgUrl");
+    if (typeof u === "string" && u.startsWith("http")) madinahHotelImgUrl = u;
   }
 
   let itinerary: unknown;

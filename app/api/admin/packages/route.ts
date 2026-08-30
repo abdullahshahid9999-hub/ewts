@@ -71,6 +71,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+  } else {
+    // URL-based image
+    const urlVal = form.get("imageUrl");
+    if (typeof urlVal === "string" && urlVal.startsWith("http")) imageUrl = urlVal;
   }
 
   // Gallery: multiple additional images uploaded as gallery_0, gallery_1, ...
@@ -95,6 +99,9 @@ export async function POST(req: NextRequest) {
       const buf = Buffer.from(await makkahImgFile.arrayBuffer());
       makkahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: makkahImgFile.type, folder: "packages/hotels" });
     } catch (e) { console.error("Makkah hotel image upload failed:", e); }
+  } else {
+    const u = form.get("makkahHotelImgUrl");
+    if (typeof u === "string" && u.startsWith("http")) makkahHotelImgUrl = u;
   }
   let madinahHotelImgUrl: string | undefined;
   const madinahImgFile = form.get("madinahHotelImg");
@@ -103,6 +110,9 @@ export async function POST(req: NextRequest) {
       const buf = Buffer.from(await madinahImgFile.arrayBuffer());
       madinahHotelImgUrl = await uploadToR2({ buffer: buf, contentType: madinahImgFile.type, folder: "packages/hotels" });
     } catch (e) { console.error("Madinah hotel image upload failed:", e); }
+  } else {
+    const u = form.get("madinahHotelImgUrl");
+    if (typeof u === "string" && u.startsWith("http")) madinahHotelImgUrl = u;
   }
 
   const str = (key: string) => {
