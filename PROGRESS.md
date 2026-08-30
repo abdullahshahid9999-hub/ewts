@@ -386,3 +386,19 @@ All changes are frontend/API only — no schema changes.
 - **Images Upload+URL**: Cover, Makkah hotel, Madinah hotel — all have Upload/URL toggle. POST + PATCH APIs handle imageUrl / makkahHotelImgUrl / madinahHotelImgUrl as URL fallbacks.
 
 ### No SQL needed — no schema changes.
+
+---
+## Session — Flight System (commit ce80ad6)
+
+### What was built
+- **Airport autocomplete** — 7000+ airports offline (OpenFlights dataset), instant search by IATA/city/name
+- **Airline logos** — Kiwi CDN, auto-detect from flight number prefix (PK→PIA, EK→Emirates etc.)
+- **FlightSectorsEditor** — Departure/Via/Arrival rows, + button for via flights, flight no → airline logo, 🔍 lookup button calls AviationStack → auto-fills time + airports
+- **FlightStatusBadge** — live status badge on B2C + B2B detail pages (Scheduled/In Air/Landed/Cancelled)
+- **AviationStack multi-key rotation** — add AVIATIONSTACK_API_KEY_2, _3 etc. for more quota
+- Admin packages form now shows flight sectors for ALL categories (was hidden for umrah)
+
+### Render env var to add
+AVIATIONSTACK_API_KEY=11af670c1dcde301c3c1135b34c30740
+
+### No SQL needed.
