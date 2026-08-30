@@ -13,6 +13,7 @@ const NAV = [
     section: "Services",
     items: [
       { href: "/admin/packages", icon: "🌙", label: "Packages" },
+      { href: "/admin/umrah-steps", icon: "📋", label: "Umrah Steps" },
       { href: "/admin/direct-bookings", icon: "🧳", label: "Direct Bookings" },
       { href: "/admin/visa-services", icon: "🛂", label: "Visa Services" },
       { href: "/admin/visa-applications", icon: "📥", label: "Visa Applications" },

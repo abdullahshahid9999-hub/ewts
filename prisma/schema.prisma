@@ -845,3 +845,18 @@ model VisaStory {
 
   @@map("visa_stories")
 }
+
+// Reusable Umrah itinerary step library.
+// Admin creates steps once; package itinerary references them by id (or free-text).
+model UmrahStep {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String?  @map("image_url")
+  tag         String   @default("activity") // makkah | madinah | transit | activity | flight | hotel
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("umrah_steps")
+}

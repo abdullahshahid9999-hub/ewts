@@ -23,6 +23,7 @@ type RoomType = {
 };
 
 type ItineraryStep = { title: string; details: string; images: string };
+type LibraryStep = { id: string; title: string; description: string | null; imageUrl: string | null; tag: string };
 // FlightSector = Sector from FlightSectorsEditor (imported above)
 type FlightSector = Sector;
 // Fixed 4 room types — Sharing & Quad optional (price blank = not offered)
@@ -163,6 +164,7 @@ function PackagesInner() {
   const [fixedRooms, setFixedRooms] = useState<FixedRooms>(emptyFixedRooms());
   const [draftRoomTypes, setDraftRoomTypes] = useState<DraftRoomType[]>([]); // legacy compat
   const [itinerary, setItinerary] = useState<ItineraryStep[]>([]);
+  const [librarySteps, setLibrarySteps] = useState<LibraryStep[]>([]);
   const [flightSectors, setFlightSectors] = useState<FlightSector[]>(() => defaultSectors());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -179,6 +181,8 @@ function PackagesInner() {
     }
     setPackages(data.packages ?? []);
     setLoading(false);
+    // Load step library
+    adminFetch("/api/admin/umrah-steps", accessToken, refresh).then(r => r.json()).then(d => setLibrarySteps(d.steps ?? [])).catch(() => {});
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -654,31 +658,36 @@ function PackagesInner() {
                 <div key={i} style={{ border: "1px solid var(--a-border2)", borderRadius: "8px", padding: "10px" }}>
                   <div style={{ display: "flex", gap: "8px", marginBottom: "6px" }}>
                     <input
-                      placeholder={`Step ${i + 1} title (e.g. Outbound Flight)`}
+                      placeholder={`Step ${i + 1} — type or pick from library`}
                       value={step.title}
                       onChange={(e) => updateItineraryStep(i, { title: e.target.value })}
+                      list={`step-lib-${i}`}
                       style={{ flex: 1 }}
                     />
+                    <datalist id={`step-lib-${i}`}>
+                      {librarySteps.map(s => <option key={s.id} value={s.title} />)}
+                    </datalist>
+                    <button type="button" onClick={() => {
+                      const match = librarySteps.find(s => s.title === step.title);
+                      if (match?.description) updateItineraryStep(i, { details: match.description });
+                    }} className="adp-btn adp-btn-t" style={{ fontSize: 11 }} title="Auto-fill description from library">↓</button>
                     <button type="button" onClick={() => removeItineraryStep(i)} className="adp-btn adp-btn-r">Remove</button>
                   </div>
-                  <textarea
-                    placeholder="Details, one bullet per line"
-                    rows={3}
-                    value={step.details}
-                    onChange={(e) => updateItineraryStep(i, { details: e.target.value })}
-                    style={{ marginBottom: "6px" }}
-                  />
-                  <input
-                    placeholder="Image URLs, comma-separated (optional)"
-                    value={step.images}
-                    onChange={(e) => updateItineraryStep(i, { images: e.target.value })}
-                  />
+                  <textarea placeholder="Details, one bullet per line" rows={3} value={step.details}
+                    onChange={(e) => updateItineraryStep(i, { details: e.target.value })} style={{ marginBottom: "6px" }} />
+                  <input placeholder="Image URLs, comma-separated (optional)" value={step.images}
+                    onChange={(e) => updateItineraryStep(i, { images: e.target.value })} />
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addItineraryStep} className="adp-btn adp-btn-t" style={{ marginTop: "8px" }}>
-              + Add Itinerary Step
-            </button>
+            <div style={{ display: "flex", gap: 8, marginTop: "8px", alignItems: "center" }}>
+              <button type="button" onClick={addItineraryStep} className="adp-btn adp-btn-t">+ Add Itinerary Step</button>
+              {librarySteps.length === 0 && (
+                <span style={{ fontSize: 11, color: "var(--a-dim)" }}>
+                  💡 <a href="/admin/umrah-steps" target="_blank" style={{ color: "var(--a-blue)" }}>Build Step Library</a> for autocomplete
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Room types (create mode) — fixed 4 rows. Empty price = not offered, won't be saved. */}
