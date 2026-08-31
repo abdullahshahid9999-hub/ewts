@@ -59,8 +59,6 @@ export default function FlightSectorsEditor({ sectors, onChange, accessToken }: 
         return;
       }
       const f = data.flight;
-      const depTime = f.departure.scheduled ? new Date(f.departure.scheduled) : null;
-      const arrTime = f.arrival.scheduled ? new Date(f.arrival.scheduled) : null;
       const updated = [...sectors];
       updated[i] = { ...updated[i],
         airlineIata: f.airline.iata || updated[i].airlineIata,
@@ -69,16 +67,15 @@ export default function FlightSectorsEditor({ sectors, onChange, accessToken }: 
         fromName: f.departure.airport || updated[i].fromName,
         toIata: f.arrival.iata || updated[i].toIata,
         toName: f.arrival.airport || updated[i].toName,
-        date: depTime ? depTime.toISOString().slice(0, 10) : updated[i].date,
-        time: depTime ? depTime.toTimeString().slice(0, 5) : updated[i].time,
+        date: f.departure.date || updated[i].date,
+        time: f.departure.time || updated[i].time,
       };
-      // Auto-fill arrival row too
-      if (sectors[i].type === "Departure" && sectors[i + 1]?.type === "Arrival" && arrTime) {
+      if (sectors[i].type === "Departure" && sectors[i + 1]?.type === "Arrival" && f.arrival.date) {
         updated[i + 1] = { ...updated[i + 1],
           fromIata: f.arrival.iata || updated[i + 1].fromIata,
           fromName: f.arrival.airport || updated[i + 1].fromName,
-          date: arrTime.toISOString().slice(0, 10),
-          time: arrTime.toTimeString().slice(0, 5),
+          date: f.arrival.date,
+          time: f.arrival.time || updated[i + 1].time,
         };
       }
       onChange(updated);
