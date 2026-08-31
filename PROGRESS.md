@@ -442,3 +442,46 @@ CREATE TABLE IF NOT EXISTS umrah_steps (
 - **Umrah Steps page** — tag filter chips, emoji icon fallbacks, better empty state
 
 ### No new SQL needed.
+
+---
+## Session — 2026-08-31
+
+### Fix: Hotel images lost on edit + Child with/without bed split pricing (commit 9aa7ad8)
+
+**Bug 1 — Hotel images not showing in V2 card**
+
+Root cause: `PackageForm.tsx` initialized `makkahHotelImgUrl` and `madinahHotelImgUrl` as `""` 
+(hardcoded blank) regardless of whether editing an existing package. On any edit save without 
+re-uploading the photo, nothing was sent to the API, and `makkahHotelImg: undefined ?? undefined` 
+caused Prisma to skip the field — image URL wiped from DB.
+
+Fixes:
+- Pre-populate `makkahHotelImgUrl`/`madinahHotelImgUrl` from `existing?.makkahHotelImg` on load
+- Send logic simplified: always send URL if present (new file upload takes priority), 
+  regardless of upload/url mode toggle — preserves existing R2 URL on edit
+
+**Bug 2 — Child with/without bed prices not captured**
+
+Root cause: Admin form had single "Price/Child" field → always saved as:
+  `pricePerChildWithBedPkr = perChild, pricePerChildWithoutBedPkr = 0 (hardcoded)`
+Users booking a child without bed always saw price Rs. 0 — misleading or wrong.
+
+Fixes in `PackageForm.tsx` + `PackageRoomTypesManager.tsx`:
+- `RoomPrices` / `RowState` types: replaced `perChild` with `perChildWithBed` + `perChildWithoutBed`
+- Room pricing UI: 5 columns now (Person / Child WITH Bed / Child WITHOUT Bed / Infant / Slots)
+- Grid template updated in both components
+- Payload assembly maps both values to `pricePerChildWithBedPkr` and `pricePerChildWithoutBedPkr`
+- API routes (`room-types/route.ts`, `room-types/[roomTypeId]/route.ts`) already handled both 
+  fields correctly — no API changes needed
+
+**No schema changes. No SQL needed.**
+
+**Action for owner:**
+- Go to Admin → Packages → edit any V2 package → re-save room types with correct 
+  Child WITH Bed and Child WITHOUT Bed prices
+- Hotel images: if they went missing, re-upload once — will persist on all future edits
+
+**Other bugs noted (not crashes, deferred):**
+- `package.seatsBooked` (V2 card badge) only incremented by agent bookings, not B2C bookings.
+  B2C uses `packageRoomType.availableSlots` instead. Seat display may be under-counted.
+  Low priority — can align later if needed.
