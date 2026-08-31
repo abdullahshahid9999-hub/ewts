@@ -1,19 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import AirportAutocomplete from "./AirportAutocomplete";
 import { airlineFromFlightNo, airlineLogoUrl } from "@/lib/airlinesData";
 
 export type Sector = {
   type: "Departure" | "Arrival" | "Via";
-  flightNo: string;
-  airlineIata: string;
-  airlineName: string;
-  fromIata: string;
-  fromName: string;
-  toIata: string;
-  toName: string;
-  date: string;
-  time: string;
+  flightNo: string; airlineIata: string; airlineName: string;
+  fromIata: string; fromName: string; toIata: string; toName: string;
+  date: string; time: string;
 };
 
 export const defaultSectors = (): Sector[] => [
@@ -21,27 +15,32 @@ export const defaultSectors = (): Sector[] => [
   { type: "Arrival",   flightNo: "", airlineIata: "", airlineName: "", fromIata: "", fromName: "", toIata: "", toName: "", date: "", time: "" },
 ];
 
-export default function FlightSectorsEditor({
-  sectors, onChange, accessToken,
-}: {
-  sectors: Sector[];
-  onChange: (s: Sector[]) => void;
-  accessToken?: string | null;
+const TYPE_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  Departure: { color: "#15803d", bg: "#dcfce7", label: "🛫 Departure" },
+  Arrival:   { color: "#dc2626", bg: "#fee2e2", label: "🛬 Arrival" },
+  Via:       { color: "#7c3aed", bg: "#ede9fe", label: "🔄 Via / Connecting" },
+};
+
+export default function FlightSectorsEditor({ sectors, onChange, accessToken }: {
+  sectors: Sector[]; onChange: (s: Sector[]) => void; accessToken?: string | null;
 }) {
   const [lookingUp, setLookingUp] = useState<Record<number, boolean>>({});
   const [lookupError, setLookupError] = useState<Record<number, string>>({});
+  // Keep a ref to latest accessToken to avoid stale closure
+  const tokenRef = useRef(accessToken);
+  tokenRef.current = accessToken;
 
   function update(i: number, patch: Partial<Sector>) {
-    const next = sectors.map((s, idx) => idx === i ? { ...s, ...patch } : s);
-    onChange(next);
+    onChange(sectors.map((s, idx) => idx === i ? { ...s, ...patch } : s));
   }
 
   function handleFlightNoChange(i: number, val: string) {
-    const airline = airlineFromFlightNo(val);
+    const airline = val.trim().length >= 2 ? airlineFromFlightNo(val) : null;
     update(i, {
       flightNo: val,
-      airlineIata: airline?.iata ?? sectors[i].airlineIata,
-      airlineName: airline?.name ?? sectors[i].airlineName,
+      // Clear airline if val empty, set if matched, keep existing if no match
+      airlineIata: airline ? airline.iata : val.trim() ? sectors[i].airlineIata : "",
+      airlineName: airline ? airline.name : val.trim() ? sectors[i].airlineName : "",
     });
   }
 
@@ -51,9 +50,9 @@ export default function FlightSectorsEditor({
     setLookingUp(l => ({ ...l, [i]: true }));
     setLookupError(e => ({ ...e, [i]: "" }));
     try {
-      const res = await fetch(`/api/admin/flight-lookup?flight=${encodeURIComponent(flightNo)}`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-      });
+      const token = tokenRef.current;
+      const res = await fetch(`/api/admin/flight-lookup?flight=${encodeURIComponent(flightNo)}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const data = await res.json();
       if (!res.ok || !data.flight) {
         setLookupError(e => ({ ...e, [i]: data.error ?? "Flight not found." }));
@@ -62,107 +61,123 @@ export default function FlightSectorsEditor({
       const f = data.flight;
       const depTime = f.departure.scheduled ? new Date(f.departure.scheduled) : null;
       const arrTime = f.arrival.scheduled ? new Date(f.arrival.scheduled) : null;
-      update(i, {
-        airlineIata: f.airline.iata,
-        airlineName: f.airline.name,
-        fromIata: f.departure.iata,
-        fromName: f.departure.airport,
-        toIata: f.arrival.iata,
-        toName: f.arrival.airport,
-        date: depTime ? depTime.toISOString().slice(0, 10) : sectors[i].date,
-        time: depTime ? depTime.toTimeString().slice(0, 5) : sectors[i].time,
-      });
-      // If arrival row follows, fill its time too
+      const updated = [...sectors];
+      updated[i] = { ...updated[i],
+        airlineIata: f.airline.iata || updated[i].airlineIata,
+        airlineName: f.airline.name || updated[i].airlineName,
+        fromIata: f.departure.iata || updated[i].fromIata,
+        fromName: f.departure.airport || updated[i].fromName,
+        toIata: f.arrival.iata || updated[i].toIata,
+        toName: f.arrival.airport || updated[i].toName,
+        date: depTime ? depTime.toISOString().slice(0, 10) : updated[i].date,
+        time: depTime ? depTime.toTimeString().slice(0, 5) : updated[i].time,
+      };
+      // Auto-fill arrival row too
       if (sectors[i].type === "Departure" && sectors[i + 1]?.type === "Arrival" && arrTime) {
-        const next = [...sectors];
-        next[i + 1] = { ...next[i + 1],
-          fromIata: f.arrival.iata, fromName: f.arrival.airport,
+        updated[i + 1] = { ...updated[i + 1],
+          fromIata: f.arrival.iata || updated[i + 1].fromIata,
+          fromName: f.arrival.airport || updated[i + 1].fromName,
           date: arrTime.toISOString().slice(0, 10),
           time: arrTime.toTimeString().slice(0, 5),
         };
-        onChange(next);
       }
+      onChange(updated);
     } catch {
-      setLookupError(e => ({ ...e, [i]: "Lookup failed." }));
+      setLookupError(e => ({ ...e, [i]: "Lookup failed. Check flight number." }));
     } finally {
       setLookingUp(l => ({ ...l, [i]: false }));
     }
   }
 
   function addVia() {
-    const arr = sectors.findIndex(s => s.type === "Arrival");
+    const arrIdx = sectors.findIndex(s => s.type === "Arrival");
     const via: Sector = { type: "Via", flightNo: "", airlineIata: "", airlineName: "", fromIata: "", fromName: "", toIata: "", toName: "", date: "", time: "" };
     const next = [...sectors];
-    next.splice(arr, 0, via);
+    next.splice(arrIdx < 0 ? next.length : arrIdx, 0, via);
     onChange(next);
   }
 
-  function removeVia(i: number) {
-    onChange(sectors.filter((_, idx) => idx !== i));
-  }
-
-  const LABEL_COLOR: Record<string, string> = { Departure: "#16a34a", Arrival: "#dc2626", Via: "#7c3aed" };
-
   return (
-    <div style={{ display: "grid", gap: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       {sectors.map((sec, i) => {
-        const locked = sec.type !== "Via";
-        const airline = sec.airlineIata ? { iata: sec.airlineIata, name: sec.airlineName, logo: airlineLogoUrl(sec.airlineIata) } : null;
+        const ts = TYPE_STYLE[sec.type] ?? TYPE_STYLE.Via;
+        const hasAirline = !!sec.airlineIata;
         return (
-          <div key={i} style={{ border: "1.5px solid var(--a-border)", borderRadius: 10, padding: "12px 14px", background: "#fff" }}>
-            {/* Row header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontWeight: 800, fontSize: 12, color: LABEL_COLOR[sec.type] ?? "#000", minWidth: 70 }}>{sec.type}</span>
-              {airline && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={airline.logo} alt={airline.name} style={{ height: 22, objectFit: "contain" }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <div key={i} style={{ borderRadius: 12, border: `1.5px solid ${ts.color}33`, overflow: "hidden", background: "#fff" }}>
+            {/* Header bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", background: ts.bg }}>
+              <span style={{ fontWeight: 800, fontSize: 12, color: ts.color }}>{ts.label}</span>
+              {hasAirline && (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={airlineLogoUrl(sec.airlineIata)} alt={sec.airlineName}
+                    style={{ height: 20, objectFit: "contain", background: "#fff", borderRadius: 4, padding: "1px 4px" }}
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: ts.color }}>{sec.airlineName || sec.airlineIata}</span>
+                  {sec.flightNo && <span style={{ fontSize: 11, color: ts.color, opacity: 0.7 }}>· {sec.flightNo.toUpperCase()}</span>}
+                </>
               )}
-              {airline && <span style={{ fontSize: 11, color: "var(--a-muted)" }}>{airline.name}</span>}
-              {!locked && (
-                <button type="button" onClick={() => removeVia(i)} style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px", borderRadius: 5, border: "1px solid #ef4444", color: "#ef4444", background: "none", cursor: "pointer" }}>− Remove</button>
+              {sec.type === "Via" && (
+                <button type="button" onClick={() => onChange(sectors.filter((_, idx) => idx !== i))}
+                  style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px", borderRadius: 5, border: `1px solid ${ts.color}`, color: ts.color, background: "transparent", cursor: "pointer" }}>
+                  Remove
+                </button>
               )}
             </div>
-            {/* Flight number + lookup */}
-            <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 120px 100px", gap: 8, alignItems: "end" }}>
-              <div>
-                <label style={{ fontSize: 9 }}>Flight No (e.g. PK741)</label>
-                <div style={{ display: "flex", gap: 4 }}>
+
+            {/* Fields */}
+            <div style={{ padding: "12px 14px", display: "grid", gap: 10 }}>
+              {/* Row 1: Flight no + lookup */}
+              <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                <div style={{ width: 160 }}>
+                  <label style={{ fontSize: 10, fontWeight: 600, display: "block", marginBottom: 4 }}>Flight No</label>
                   <input value={sec.flightNo} onChange={e => handleFlightNoChange(i, e.target.value)}
-                    placeholder="PK741" style={{ flex: 1 }} />
-                  <button type="button" onClick={() => lookupFlight(i)} disabled={lookingUp[i] || !sec.flightNo.trim()}
-                    style={{ fontSize: 10, padding: "4px 7px", borderRadius: 5, border: "1px solid var(--a-blue)", background: "var(--a-blue)", color: "#fff", cursor: "pointer", whiteSpace: "nowrap", opacity: !sec.flightNo.trim() ? 0.4 : 1 }}>
-                    {lookingUp[i] ? "…" : "🔍"}
-                  </button>
+                    placeholder="e.g. PK741" style={{ width: "100%", textTransform: "uppercase", fontFamily: "monospace" }} />
                 </div>
-                {lookupError[i] && <p style={{ fontSize: 9, color: "#ef4444", marginTop: 2 }}>{lookupError[i]}</p>}
+                <button type="button" onClick={() => lookupFlight(i)}
+                  disabled={lookingUp[i] || !sec.flightNo.trim()}
+                  style={{
+                    padding: "8px 16px", borderRadius: 7, border: "none", fontWeight: 700, fontSize: 12,
+                    background: sec.flightNo.trim() ? ts.color : "#e2e8f0",
+                    color: sec.flightNo.trim() ? "#fff" : "#94a3b8",
+                    cursor: sec.flightNo.trim() ? "pointer" : "not-allowed",
+                    whiteSpace: "nowrap", transition: "all 0.15s",
+                  }}>
+                  {lookingUp[i] ? "Looking up…" : "🔍 Auto-fill from live data"}
+                </button>
+                {lookupError[i] && <span style={{ fontSize: 11, color: "#dc2626" }}>{lookupError[i]}</span>}
               </div>
-              <div>
-                <label style={{ fontSize: 9 }}>From Airport</label>
-                <AirportAutocomplete value={sec.fromName || sec.fromIata}
-                  onChange={(val, airport) => update(i, { fromName: airport ? `${airport.iata} — ${airport.name}, ${airport.city}` : val, fromIata: airport?.iata ?? sec.fromIata })}
-                  placeholder="Search departure airport" />
-              </div>
-              <div>
-                <label style={{ fontSize: 9 }}>To Airport</label>
-                <AirportAutocomplete value={sec.toName || sec.toIata}
-                  onChange={(val, airport) => update(i, { toName: airport ? `${airport.iata} — ${airport.name}, ${airport.city}` : val, toIata: airport?.iata ?? sec.toIata })}
-                  placeholder="Search arrival airport" />
-              </div>
-              <div>
-                <label style={{ fontSize: 9 }}>Date</label>
-                <input type="date" value={sec.date} onChange={e => update(i, { date: e.target.value })} />
-              </div>
-              <div>
-                <label style={{ fontSize: 9 }}>Time</label>
-                <input type="time" value={sec.time} onChange={e => update(i, { time: e.target.value })} />
+
+              {/* Row 2: From → To, Date, Time */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 130px 100px", gap: 8, alignItems: "end" }}>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, display: "block", marginBottom: 4 }}>From Airport</label>
+                  <AirportAutocomplete value={sec.fromName || sec.fromIata}
+                    onChange={(val, a) => update(i, { fromName: a ? `${a.iata} — ${a.name}, ${a.city}` : val, fromIata: a?.iata ?? sec.fromIata })}
+                    placeholder="Search city or IATA…" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, display: "block", marginBottom: 4 }}>To Airport</label>
+                  <AirportAutocomplete value={sec.toName || sec.toIata}
+                    onChange={(val, a) => update(i, { toName: a ? `${a.iata} — ${a.name}, ${a.city}` : val, toIata: a?.iata ?? sec.toIata })}
+                    placeholder="Search city or IATA…" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, display: "block", marginBottom: 4 }}>Date</label>
+                  <input type="date" value={sec.date} onChange={e => update(i, { date: e.target.value })} style={{ width: "100%" }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 600, display: "block", marginBottom: 4 }}>Time</label>
+                  <input type="time" value={sec.time} onChange={e => update(i, { time: e.target.value })} style={{ width: "100%" }} />
+                </div>
               </div>
             </div>
           </div>
         );
       })}
+
       <button type="button" onClick={addVia}
-        style={{ fontSize: 12, padding: "7px 14px", borderRadius: 7, border: "1.5px dashed #7c3aed", color: "#7c3aed", background: "none", cursor: "pointer", width: "fit-content" }}>
+        style={{ alignSelf: "flex-start", padding: "8px 18px", borderRadius: 8, border: "2px dashed #7c3aed", color: "#7c3aed", background: "transparent", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
         + Add Via / Connecting Flight
       </button>
     </div>
