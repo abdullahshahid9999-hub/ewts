@@ -425,3 +425,20 @@ CREATE TABLE IF NOT EXISTS umrah_steps (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+---
+## Session — Packages Form Overhaul (commit ce6894d)
+
+### What was built
+- **packages/page.tsx** — list only, "New Package" button top-right, inline Rooms manager toggle
+- **packages/new** — step 1: category (Umrah/Tours/Custom) + card style (V1 Classic/V2 Detail Hotel) selector, then form
+- **packages/[id]/edit** — edit page using shared PackageForm
+- **PackageForm component** — clean sectioned form:
+  - Flight sectors auto-derive duration/dates/airline/route/destination/departureCity
+  - V1: text hotels + includes/excludes; V2: hotel name/pic/distance/nights per city, no includes/excludes
+  - Room pricing in create mode only (edit = use Rooms button on list page)
+  - Itinerary with library autocomplete datalist
+  - Images: upload + URL toggle everywhere
+- **Umrah Steps page** — tag filter chips, emoji icon fallbacks, better empty state
+
+### No new SQL needed.
