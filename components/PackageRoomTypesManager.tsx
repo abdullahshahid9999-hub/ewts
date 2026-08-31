@@ -39,7 +39,8 @@ function matchCanonical(rt: RoomType): CanonicalKey | null {
 type RowState = {
   id: string | null;       // null = not yet saved
   perPerson: string;
-  perChild: string;
+  perChildWithBed: string;
+  perChildWithoutBed: string;
   perInfant: string;
   slots: string;
   dirty: boolean;
@@ -47,14 +48,15 @@ type RowState = {
 };
 
 function emptyRow(): RowState {
-  return { id: null, perPerson: "", perChild: "0", perInfant: "0", slots: "", dirty: false, saving: false };
+  return { id: null, perPerson: "", perChildWithBed: "0", perChildWithoutBed: "0", perInfant: "0", slots: "", dirty: false, saving: false };
 }
 
 function rowFromRt(rt: RoomType): RowState {
   return {
     id: rt.id,
     perPerson: String(rt.pricePerPersonPkr),
-    perChild: String(rt.pricePerChildWithBedPkr ?? rt.pricePerChildPkr ?? 0),
+    perChildWithBed: String(rt.pricePerChildWithBedPkr ?? rt.pricePerChildPkr ?? 0),
+    perChildWithoutBed: String(rt.pricePerChildWithoutBedPkr ?? 0),
     perInfant: String(rt.pricePerInfantPkr ?? 0),
     slots: rt.availableSlots != null ? String(rt.availableSlots) : "",
     dirty: false, saving: false,
@@ -110,9 +112,9 @@ export default function PackageRoomTypesManager({
     const payload = {
       roomType: c.label,
       pricePerPersonPkr: price,
-      pricePerChildPkr: Number(row.perChild || 0),
-      pricePerChildWithBedPkr: Number(row.perChild || 0),
-      pricePerChildWithoutBedPkr: 0,
+      pricePerChildPkr: Number(row.perChildWithBed || 0),
+      pricePerChildWithBedPkr: Number(row.perChildWithBed || 0),
+      pricePerChildWithoutBedPkr: Number(row.perChildWithoutBed || 0),
       pricePerInfantPkr: Number(row.perInfant || 0),
       maxAdults: c.maxAdults,
       maxInfants: c.maxInfants,
@@ -162,7 +164,7 @@ export default function PackageRoomTypesManager({
             const hasPrice = Number(row.perPerson) > 0;
             return (
               <div key={c.key} style={{
-                display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr 100px auto",
+                display: "grid", gridTemplateColumns: "150px 1fr 1fr 1fr 1fr 100px auto",
                 gap: 8, alignItems: "end", padding: "10px 12px",
                 border: "1px solid var(--a-border)", borderRadius: 8,
                 background: hasPrice ? "#fff" : "#f8fafc",
@@ -179,9 +181,14 @@ export default function PackageRoomTypesManager({
                     onChange={(e) => updateRow(c.key, { perPerson: e.target.value })} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 9 }}>Price / Child</label>
-                  <input type="number" placeholder="0" value={row.perChild}
-                    onChange={(e) => updateRow(c.key, { perChild: e.target.value })} />
+                  <label style={{ fontSize: 9 }}>Child WITH Bed</label>
+                  <input type="number" placeholder="0" value={row.perChildWithBed}
+                    onChange={(e) => updateRow(c.key, { perChildWithBed: e.target.value })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 9 }}>Child WITHOUT Bed</label>
+                  <input type="number" placeholder="0" value={row.perChildWithoutBed}
+                    onChange={(e) => updateRow(c.key, { perChildWithoutBed: e.target.value })} />
                 </div>
                 <div>
                   <label style={{ fontSize: 9 }}>Price / Infant</label>

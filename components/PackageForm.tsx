@@ -14,7 +14,7 @@ type ItineraryStep = { title: string; details: string; images: string };
 type LibraryStep = { id: string; title: string; description: string | null; tag: string };
 
 type FixedRoomKey = "quad" | "triple" | "double" | "sharing";
-type RoomPrices = { perPerson: string; perChild: string; perInfant: string };
+type RoomPrices = { perPerson: string; perChildWithBed: string; perChildWithoutBed: string; perInfant: string };
 type FixedRooms = Record<FixedRoomKey, RoomPrices>;
 const FIXED_ROOM_META: Record<FixedRoomKey, { label: string; maxAdults: number; maxInfants: number }> = {
   quad:    { label: "Quad Room (4 pax)",   maxAdults: 4, maxInfants: 1 },
@@ -22,7 +22,7 @@ const FIXED_ROOM_META: Record<FixedRoomKey, { label: string; maxAdults: number; 
   double:  { label: "Double Room (2 pax)", maxAdults: 2, maxInfants: 1 },
   sharing: { label: "Sharing (6+ pax)",    maxAdults: 6, maxInfants: 0 },
 };
-const emptyRoomPrices = (): RoomPrices => ({ perPerson: "", perChild: "0", perInfant: "0" });
+const emptyRoomPrices = (): RoomPrices => ({ perPerson: "", perChildWithBed: "0", perChildWithoutBed: "0", perInfant: "0" });
 const emptyFixedRooms = (): FixedRooms => ({
   quad: emptyRoomPrices(), triple: emptyRoomPrices(),
   double: emptyRoomPrices(), sharing: emptyRoomPrices(),
@@ -121,7 +121,7 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
     transportType: existing?.transportType ?? "",
     totalSeats: existing?.totalSeats != null ? String(existing.totalSeats) : "",
     // URL images
-    coverImgUrl: "", makkahHotelImgUrl: "", madinahHotelImgUrl: "",
+    coverImgUrl: "", makkahHotelImgUrl: existing?.makkahHotelImg ?? "", madinahHotelImgUrl: existing?.madinahHotelImg ?? "",
     // Auto-derived (shown read-only)
     depDate: existing?.depDate ?? "", retDate: existing?.retDate ?? "",
     airline: existing?.airline ?? "", route: existing?.route ?? "",
@@ -232,9 +232,9 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
     for (let i = 0; i < galleryFiles.length; i++) body.set(`gallery_${i}`, await compressImage(galleryFiles[i]));
     if (removeGalleryUrls.length > 0) body.set("removeGalleryUrls", JSON.stringify(removeGalleryUrls));
     if (makkahImgMode === "upload" && makkahHotelFile) body.set("makkahHotelImg", await compressImage(makkahHotelFile));
-    else if (makkahImgMode === "url" && form.makkahHotelImgUrl) body.set("makkahHotelImgUrl", form.makkahHotelImgUrl);
+    else if (form.makkahHotelImgUrl) body.set("makkahHotelImgUrl", form.makkahHotelImgUrl);
     if (madinahImgMode === "upload" && madinahHotelFile) body.set("madinahHotelImg", await compressImage(madinahHotelFile));
-    else if (madinahImgMode === "url" && form.madinahHotelImgUrl) body.set("madinahHotelImgUrl", form.madinahHotelImgUrl);
+    else if (form.madinahHotelImgUrl) body.set("madinahHotelImgUrl", form.madinahHotelImgUrl);
 
     // Itinerary
     const itinPayload = itinerary.filter(s => s.title.trim()).map(s => ({
@@ -256,9 +256,9 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
           roomType: FIXED_ROOM_META[k].label,
           pricePerPersonPkr: Number(fixedRooms[k].perPerson),
           pricePerInfantPkr: Number(fixedRooms[k].perInfant || 0),
-          pricePerChildPkr: Number(fixedRooms[k].perChild || 0),
-          pricePerChildWithBedPkr: Number(fixedRooms[k].perChild || 0),
-          pricePerChildWithoutBedPkr: 0,
+          pricePerChildPkr: Number(fixedRooms[k].perChildWithBed || 0),
+          pricePerChildWithBedPkr: Number(fixedRooms[k].perChildWithBed || 0),
+          pricePerChildWithoutBedPkr: Number(fixedRooms[k].perChildWithoutBed || 0),
           maxAdults: FIXED_ROOM_META[k].maxAdults,
           maxInfants: FIXED_ROOM_META[k].maxInfants,
           minAdultsRequired: null,
@@ -440,7 +440,7 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
                     const prices = fixedRooms[k];
                     const has = Number(prices.perPerson) > 0;
                     return (
-                      <div key={k} style={{ display: "grid", gridTemplateColumns: "160px 1fr 1fr 1fr", gap: 8, alignItems: "end",
+                      <div key={k} style={{ display: "grid", gridTemplateColumns: "150px 1fr 1fr 1fr 1fr", gap: 8, alignItems: "end",
                         padding: "10px 12px", border: "1px solid var(--a-border)", borderRadius: 8,
                         background: has ? "#fff" : "#f1f5f9", opacity: has ? 1 : 0.75 }}>
                         <div>
@@ -449,8 +449,10 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
                         </div>
                         <div><label style={{ fontSize: 9 }}>Price/Person *</label>
                           <input type="number" placeholder="e.g. 150000" value={prices.perPerson} onChange={e => updateFixedRoom(k, { perPerson: e.target.value })} /></div>
-                        <div><label style={{ fontSize: 9 }}>Price/Child</label>
-                          <input type="number" placeholder="0" value={prices.perChild} onChange={e => updateFixedRoom(k, { perChild: e.target.value })} disabled={!has} /></div>
+                        <div><label style={{ fontSize: 9 }}>Child WITH Bed</label>
+                          <input type="number" placeholder="0" value={prices.perChildWithBed} onChange={e => updateFixedRoom(k, { perChildWithBed: e.target.value })} disabled={!has} /></div>
+                        <div><label style={{ fontSize: 9 }}>Child WITHOUT Bed</label>
+                          <input type="number" placeholder="0" value={prices.perChildWithoutBed} onChange={e => updateFixedRoom(k, { perChildWithoutBed: e.target.value })} disabled={!has} /></div>
                         <div><label style={{ fontSize: 9 }}>Price/Infant</label>
                           <input type="number" placeholder="0" value={prices.perInfant} onChange={e => updateFixedRoom(k, { perInfant: e.target.value })} disabled={!has} /></div>
                       </div>
