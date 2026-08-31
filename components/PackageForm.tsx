@@ -62,15 +62,17 @@ function deriveFromSectors(sectors: Sector[]) {
   const vias = sectors.filter(s => s.type === "Via");
   const airlines = [...new Set(sectors.map(s => s.airlineName || s.airlineIata).filter(Boolean))];
   const route = [dep?.fromIata, ...vias.map(v => v.toIata || v.fromIata), arr?.toIata || arr?.fromIata].filter(Boolean).join("–");
+  // Use arrDate (landing date) for duration calc if available
+  const retDate = arr?.arrDate || arr?.date || "";
   let duration = "";
-  if (dep?.date && arr?.date) {
-    const d1 = new Date(dep.date), d2 = new Date(arr.date);
+  if (dep?.date && retDate) {
+    const d1 = new Date(dep.date), d2 = new Date(retDate);
     const days = Math.round((d2.getTime() - d1.getTime()) / 86400000);
     if (days > 0) duration = `${days} Day${days !== 1 ? "s" : ""} / ${days - 1} Night${days - 1 !== 1 ? "s" : ""}`;
   }
   return {
     depDate: dep?.date ?? "",
-    retDate: arr?.date ?? "",
+    retDate,
     airline: airlines.join(", "),
     route,
     destination: arr?.toIata || arr?.fromIata || dep?.toIata || "",
