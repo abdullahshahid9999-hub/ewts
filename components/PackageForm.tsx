@@ -14,7 +14,7 @@ type ItineraryStep = { title: string; details: string; images: string };
 type LibraryStep = { id: string; title: string; description: string | null; tag: string };
 
 type FixedRoomKey = "quad" | "triple" | "double" | "sharing";
-type RoomPrices = { perPerson: string; perChildWithBed: string; perChildWithoutBed: string; perInfant: string };
+type RoomPrices = { perPerson: string; perChildWithBed: string };
 type FixedRooms = Record<FixedRoomKey, RoomPrices>;
 const FIXED_ROOM_META: Record<FixedRoomKey, { label: string; maxAdults: number; maxInfants: number }> = {
   quad:    { label: "Quad Room (4 pax)",   maxAdults: 4, maxInfants: 1 },
@@ -22,7 +22,7 @@ const FIXED_ROOM_META: Record<FixedRoomKey, { label: string; maxAdults: number; 
   double:  { label: "Double Room (2 pax)", maxAdults: 2, maxInfants: 1 },
   sharing: { label: "Sharing (6+ pax)",    maxAdults: 6, maxInfants: 0 },
 };
-const emptyRoomPrices = (): RoomPrices => ({ perPerson: "", perChildWithBed: "0", perChildWithoutBed: "0", perInfant: "0" });
+const emptyRoomPrices = (): RoomPrices => ({ perPerson: "", perChildWithBed: "0" });
 const emptyFixedRooms = (): FixedRooms => ({
   quad: emptyRoomPrices(), triple: emptyRoomPrices(),
   double: emptyRoomPrices(), sharing: emptyRoomPrices(),
@@ -156,6 +156,9 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
 
   // Room pricing (create only)
   const [fixedRooms, setFixedRooms] = useState<FixedRooms>(emptyFixedRooms());
+  // Global prices — same across all room types
+  const [globalChildWithoutBed, setGlobalChildWithoutBed] = useState("0");
+  const [globalInfant, setGlobalInfant] = useState("0");
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -255,10 +258,10 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
         .map(k => ({
           roomType: FIXED_ROOM_META[k].label,
           pricePerPersonPkr: Number(fixedRooms[k].perPerson),
-          pricePerInfantPkr: Number(fixedRooms[k].perInfant || 0),
+          pricePerInfantPkr: Number(globalInfant || 0),
           pricePerChildPkr: Number(fixedRooms[k].perChildWithBed || 0),
           pricePerChildWithBedPkr: Number(fixedRooms[k].perChildWithBed || 0),
-          pricePerChildWithoutBedPkr: Number(fixedRooms[k].perChildWithoutBed || 0),
+          pricePerChildWithoutBedPkr: Number(globalChildWithoutBed || 0),
           maxAdults: FIXED_ROOM_META[k].maxAdults,
           maxInfants: FIXED_ROOM_META[k].maxInfants,
           minAdultsRequired: null,
@@ -433,28 +436,59 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
             {!isEdit && (
               <section style={{ border: "1.5px solid var(--a-border)", borderRadius: 12, padding: "18px 20px", background: "#f8fafc" }}>
                 <p style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: "var(--a-blue)" }}>🛏 Room Pricing</p>
-                <p style={{ fontSize: 11, color: "var(--a-dim)", marginBottom: 14 }}>Leave price blank if this room type is not offered.</p>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {(Object.keys(FIXED_ROOM_META) as FixedRoomKey[]).map(k => {
+                <p style={{ fontSize: 11, color: "var(--a-dim)", marginBottom: 14 }}>Leave price blank if this room type is not offered. Child Without Bed &amp; Infant are the same for all room types.</p>
+
+                {/* Global prices — same across all rooms */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14, padding: "12px 14px", background: "#f0f7ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+                  <div>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: "#1d4ed8", display: "block", marginBottom: 4 }}>👶 Child WITHOUT Bed (all rooms)</label>
+                    <input type="number" placeholder="0" value={globalChildWithoutBed} onChange={e => setGlobalChildWithoutBed(e.target.value)} style={{ width: "100%" }} />
+                    <span style={{ fontSize: 9, color: "#64748b" }}>Sleeps with parents — same price regardless of room type</span>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, fontWeight: 700, color: "#1d4ed8", display: "block", marginBottom: 4 }}>🍼 Infant (all rooms)</label>
+                    <input type="number" placeholder="0" value={globalInfant} onChange={e => setGlobalInfant(e.target.value)} style={{ width: "100%" }} />
+                    <span style={{ fontSize: 9, color: "#64748b" }}>Lap infant — same price regardless of room type</span>
+                  </div>
+                </div>
+
+                {/* Per-room table */}
+                <div style={{ border: "1px solid var(--a-border)", borderRadius: 8, overflow: "hidden" }}>
+                  {/* Header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "160px 1fr 1fr", gap: 0, background: "#f8fafc", borderBottom: "1px solid var(--a-border)", padding: "7px 12px" }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--a-dim)" }}>Room Type</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--a-dim)" }}>Price / Adult</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--a-dim)" }}>Child WITH Bed</span>
+                  </div>
+                  {(Object.keys(FIXED_ROOM_META) as FixedRoomKey[]).map((k, i) => {
                     const meta = FIXED_ROOM_META[k];
                     const prices = fixedRooms[k];
                     const has = Number(prices.perPerson) > 0;
+                    const isLast = i === Object.keys(FIXED_ROOM_META).length - 1;
                     return (
-                      <div key={k} style={{ display: "grid", gridTemplateColumns: "150px 1fr 1fr 1fr 1fr", gap: 8, alignItems: "end",
-                        padding: "10px 12px", border: "1px solid var(--a-border)", borderRadius: 8,
-                        background: has ? "#fff" : "#f1f5f9", opacity: has ? 1 : 0.75 }}>
+                      <div key={k} style={{
+                        display: "grid", gridTemplateColumns: "160px 1fr 1fr",
+                        gap: 0, alignItems: "center",
+                        padding: "8px 12px",
+                        borderBottom: isLast ? "none" : "1px solid var(--a-border)",
+                        background: has ? "#fff" : "#f8fafc",
+                      }}>
                         <div>
-                          <label style={{ fontSize: 10, fontWeight: 700 }}>{meta.label}</label>
+                          <span style={{ fontSize: 11, fontWeight: 700 }}>{meta.label}</span>
                           {!has && <span style={{ fontSize: 9, color: "#94a3b8", display: "block" }}>not offered</span>}
+                          {has && <span style={{ fontSize: 9, color: "var(--a-green)", display: "block" }}>✓ active</span>}
                         </div>
-                        <div><label style={{ fontSize: 9 }}>Price/Person *</label>
-                          <input type="number" placeholder="e.g. 150000" value={prices.perPerson} onChange={e => updateFixedRoom(k, { perPerson: e.target.value })} /></div>
-                        <div><label style={{ fontSize: 9 }}>Child WITH Bed</label>
-                          <input type="number" placeholder="0" value={prices.perChildWithBed} onChange={e => updateFixedRoom(k, { perChildWithBed: e.target.value })} disabled={!has} /></div>
-                        <div><label style={{ fontSize: 9 }}>Child WITHOUT Bed</label>
-                          <input type="number" placeholder="0" value={prices.perChildWithoutBed} onChange={e => updateFixedRoom(k, { perChildWithoutBed: e.target.value })} disabled={!has} /></div>
-                        <div><label style={{ fontSize: 9 }}>Price/Infant</label>
-                          <input type="number" placeholder="0" value={prices.perInfant} onChange={e => updateFixedRoom(k, { perInfant: e.target.value })} disabled={!has} /></div>
+                        <div style={{ paddingRight: 8 }}>
+                          <input type="number" placeholder="e.g. 150000" value={prices.perPerson}
+                            onChange={e => updateFixedRoom(k, { perPerson: e.target.value })}
+                            style={{ width: "100%" }} />
+                        </div>
+                        <div>
+                          <input type="number" placeholder="0 = same as adult" value={prices.perChildWithBed}
+                            onChange={e => updateFixedRoom(k, { perChildWithBed: e.target.value })}
+                            disabled={!has}
+                            style={{ width: "100%", opacity: has ? 1 : 0.4 }} />
+                        </div>
                       </div>
                     );
                   })}

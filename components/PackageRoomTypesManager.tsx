@@ -17,7 +17,6 @@ type RoomType = {
   availableSlots: number | null;
 };
 
-// The 4 canonical room types — matched by label prefix (case-insensitive)
 const CANONICAL = [
   { key: "quad",    label: "Quad Room (4 pax)",   maxAdults: 4, maxInfants: 1 },
   { key: "triple",  label: "Triple Room (3 pax)",  maxAdults: 3, maxInfants: 1 },
@@ -36,19 +35,18 @@ function matchCanonical(rt: RoomType): CanonicalKey | null {
   return null;
 }
 
+// Per-room state: only the fields that vary per room
 type RowState = {
-  id: string | null;       // null = not yet saved
+  id: string | null;
   perPerson: string;
   perChildWithBed: string;
-  perChildWithoutBed: string;
-  perInfant: string;
   slots: string;
   dirty: boolean;
   saving: boolean;
 };
 
 function emptyRow(): RowState {
-  return { id: null, perPerson: "", perChildWithBed: "0", perChildWithoutBed: "0", perInfant: "0", slots: "", dirty: false, saving: false };
+  return { id: null, perPerson: "", perChildWithBed: "0", slots: "", dirty: false, saving: false };
 }
 
 function rowFromRt(rt: RoomType): RowState {
@@ -56,10 +54,9 @@ function rowFromRt(rt: RoomType): RowState {
     id: rt.id,
     perPerson: String(rt.pricePerPersonPkr),
     perChildWithBed: String(rt.pricePerChildWithBedPkr ?? rt.pricePerChildPkr ?? 0),
-    perChildWithoutBed: String(rt.pricePerChildWithoutBedPkr ?? 0),
-    perInfant: String(rt.pricePerInfantPkr ?? 0),
     slots: rt.availableSlots != null ? String(rt.availableSlots) : "",
-    dirty: false, saving: false,
+    dirty: false,
+    saving: false,
   };
 }
 
@@ -72,7 +69,6 @@ export default function PackageRoomTypesManager({
   refresh: () => Promise<string | null>;
   onChange: () => void;
 }) {
-  // Build initial row state: 4 canonical rows, pre-filled if matching RT exists
   function buildRows(): Record<CanonicalKey, RowState> {
     const result = {} as Record<CanonicalKey, RowState>;
     for (const c of CANONICAL) {
@@ -82,10 +78,20 @@ export default function PackageRoomTypesManager({
     return result;
   }
 
-  const [rows, setRows] = useState<Record<CanonicalKey, RowState>>(buildRows);
-  const [globalError, setGlobalError] = useState<string | null>(null);
+  // Derive initial global values from the first saved room type that has them
+  function initGlobal(field: "pricePerChildWithoutBedPkr" | "pricePerInfantPkr"): string {
+    const first = roomTypes.find((rt) => matchCanonical(rt) !== null);
+    return first ? String(first[field] ?? 0) : "0";
+  }
 
-  // Unrecognized room types (custom, not matching any canonical key)
+  const [rows, setRows] = useState<Record<CanonicalKey, RowState>>(buildRows);
+  const [globalChildWithoutBed, setGlobalChildWithoutBed] = useState(() => initGlobal("pricePerChildWithoutBedPkr"));
+  const [globalInfant, setGlobalInfant] = useState(() => initGlobal("pricePerInfantPkr"));
+  const [globalDirty, setGlobalDirty] = useState(false);
+  const [globalSaving, setGlobalSaving] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalSuccess, setGlobalSuccess] = useState(false);
+
   const customRts = roomTypes.filter((rt) => !matchCanonical(rt));
 
   function updateRow(key: CanonicalKey, patch: Partial<RowState>) {
@@ -96,8 +102,8 @@ export default function PackageRoomTypesManager({
     const c = CANONICAL.find((x) => x.key === key)!;
     const row = rows[key];
     const price = Number(row.perPerson);
+
     if (!price || price <= 0) {
-      // No price = delete if exists, else skip
       if (row.id) {
         if (!confirm(`Remove ${c.label} from this package?`)) return;
         setRows((r) => ({ ...r, [key]: { ...r[key], saving: true } }));
@@ -114,8 +120,8 @@ export default function PackageRoomTypesManager({
       pricePerPersonPkr: price,
       pricePerChildPkr: Number(row.perChildWithBed || 0),
       pricePerChildWithBedPkr: Number(row.perChildWithBed || 0),
-      pricePerChildWithoutBedPkr: Number(row.perChildWithoutBed || 0),
-      pricePerInfantPkr: Number(row.perInfant || 0),
+      pricePerChildWithoutBedPkr: Number(globalChildWithoutBed || 0),
+      pricePerInfantPkr: Number(globalInfant || 0),
       maxAdults: c.maxAdults,
       maxInfants: c.maxInfants,
       minAdultsRequired: null,
@@ -142,6 +148,40 @@ export default function PackageRoomTypesManager({
     onChange();
   }
 
+  // Save global prices across all existing room types at once
+  async function saveGlobalPrices() {
+    setGlobalSaving(true);
+    setGlobalError(null);
+    setGlobalSuccess(false);
+    const savedIds = CANONICAL.map((c) => rows[c.key].id).filter(Boolean) as string[];
+    if (savedIds.length === 0) {
+      setGlobalError("No room types saved yet — add at least one room type first.");
+      setGlobalSaving(false);
+      return;
+    }
+    try {
+      await Promise.all(
+        savedIds.map((id) =>
+          adminFetch(`/api/admin/packages/${packageId}/room-types/${id}`, accessToken, refresh, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pricePerChildWithoutBedPkr: Number(globalChildWithoutBed || 0),
+              pricePerInfantPkr: Number(globalInfant || 0),
+            }),
+          })
+        )
+      );
+      setGlobalDirty(false);
+      setGlobalSuccess(true);
+      setTimeout(() => setGlobalSuccess(false), 3000);
+      onChange();
+    } catch {
+      setGlobalError("Failed to update global prices.");
+    }
+    setGlobalSaving(false);
+  }
+
   async function handleDeleteCustom(id: string) {
     if (!confirm("Delete this room type?")) return;
     await adminFetch(`/api/admin/packages/${packageId}/room-types/${id}`, accessToken, refresh, { method: "DELETE" });
@@ -153,59 +193,126 @@ export default function PackageRoomTypesManager({
       <div className="adp-ch"><h3>Room Types &amp; Pricing</h3></div>
 
       <div style={{ padding: "16px 18px" }}>
-        <p style={{ fontSize: 11, color: "var(--a-dim)", marginBottom: 12 }}>
-          Leave price blank to remove a room type. Changes save per-row — click <strong>Save</strong> on each row.
+
+        {/* ── GLOBAL PRICES ── */}
+        <div style={{
+          background: "#f0f7ff", border: "1px solid #bfdbfe", borderRadius: 10,
+          padding: "14px 16px", marginBottom: 18,
+        }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8", marginBottom: 10 }}>
+            🌐 Global Prices — same for ALL room types
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end" }}>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, display: "block", marginBottom: 4 }}>
+                👶 Child WITHOUT Bed
+              </label>
+              <input
+                type="number" placeholder="0"
+                value={globalChildWithoutBed}
+                onChange={e => { setGlobalChildWithoutBed(e.target.value); setGlobalDirty(true); setGlobalSuccess(false); }}
+                style={{ width: "100%" }}
+              />
+              <span style={{ fontSize: 9, color: "#64748b" }}>Sleeps with parents, no extra bed</span>
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, display: "block", marginBottom: 4 }}>
+                🍼 Infant (lap child)
+              </label>
+              <input
+                type="number" placeholder="0"
+                value={globalInfant}
+                onChange={e => { setGlobalInfant(e.target.value); setGlobalDirty(true); setGlobalSuccess(false); }}
+                style={{ width: "100%" }}
+              />
+              <span style={{ fontSize: 9, color: "#64748b" }}>Under 2 years, no seat</span>
+            </div>
+            <button
+              type="button"
+              onClick={saveGlobalPrices}
+              disabled={globalSaving || !globalDirty}
+              className="adp-btn adp-btn-b"
+              style={{ fontSize: 11, padding: "8px 16px", opacity: (!globalDirty && !globalSaving) ? 0.4 : 1, whiteSpace: "nowrap" }}
+            >
+              {globalSaving ? "Saving…" : globalSuccess ? "✓ Saved" : "Save Global"}
+            </button>
+          </div>
+          {globalError && <p style={{ color: "var(--a-red)", fontSize: 11, marginTop: 8 }}>{globalError}</p>}
+        </div>
+
+        {/* ── PER-ROOM TABLE ── */}
+        <p style={{ fontSize: 11, color: "var(--a-dim)", marginBottom: 10 }}>
+          Per-room prices — Adult &amp; Child With Bed vary by room. Leave Adult price blank to remove that room type.
         </p>
 
-        {/* Fixed 4 rows */}
-        <div style={{ display: "grid", gap: 10 }}>
-          {CANONICAL.map((c) => {
+        <div style={{ border: "1px solid var(--a-border)", borderRadius: 8, overflow: "hidden" }}>
+          {/* Header */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "160px 1fr 1fr 90px 70px",
+            background: "#f8fafc", borderBottom: "1px solid var(--a-border)",
+            padding: "8px 14px", gap: 8,
+          }}>
+            {["Room Type", "Price / Adult ★", "Child WITH Bed", "Slots", ""].map((h) => (
+              <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "var(--a-dim)" }}>{h}</span>
+            ))}
+          </div>
+
+          {CANONICAL.map((c, i) => {
             const row = rows[c.key];
             const hasPrice = Number(row.perPerson) > 0;
+            const isLast = i === CANONICAL.length - 1;
             return (
               <div key={c.key} style={{
-                display: "grid", gridTemplateColumns: "150px 1fr 1fr 1fr 1fr 100px auto",
-                gap: 8, alignItems: "end", padding: "10px 12px",
-                border: "1px solid var(--a-border)", borderRadius: 8,
-                background: hasPrice ? "#fff" : "#f8fafc",
-                opacity: hasPrice ? 1 : 0.75,
+                display: "grid", gridTemplateColumns: "160px 1fr 1fr 90px 70px",
+                gap: 8, alignItems: "center",
+                padding: "10px 14px",
+                borderBottom: isLast ? "none" : "1px solid var(--a-border)",
+                background: hasPrice ? "#fff" : "#fafafa",
               }}>
+                {/* Label */}
                 <div>
-                  <label style={{ fontSize: 10, fontWeight: 700 }}>{c.label}</label>
-                  {row.id && <span style={{ fontSize: 9, color: "var(--a-green)", display: "block" }}>✓ saved</span>}
-                  {!row.id && <span style={{ fontSize: 9, color: "var(--a-dim)", display: "block" }}>not offered</span>}
+                  <span style={{ fontSize: 11, fontWeight: 700 }}>{c.label}</span>
+                  <span style={{
+                    fontSize: 9, display: "block",
+                    color: row.id ? "var(--a-green)" : "#94a3b8",
+                  }}>
+                    {row.id ? "✓ saved" : "not offered"}
+                  </span>
                 </div>
-                <div>
-                  <label style={{ fontSize: 9 }}>Price / Person *</label>
-                  <input type="number" placeholder="e.g. 150000" value={row.perPerson}
-                    onChange={(e) => updateRow(c.key, { perPerson: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 9 }}>Child WITH Bed</label>
-                  <input type="number" placeholder="0" value={row.perChildWithBed}
-                    onChange={(e) => updateRow(c.key, { perChildWithBed: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 9 }}>Child WITHOUT Bed</label>
-                  <input type="number" placeholder="0" value={row.perChildWithoutBed}
-                    onChange={(e) => updateRow(c.key, { perChildWithoutBed: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 9 }}>Price / Infant</label>
-                  <input type="number" placeholder="0" value={row.perInfant}
-                    onChange={(e) => updateRow(c.key, { perInfant: e.target.value })} />
-                </div>
-                <div>
-                  <label style={{ fontSize: 9 }}>Slots (blank=∞)</label>
-                  <input type="number" placeholder="∞" value={row.slots}
-                    onChange={(e) => updateRow(c.key, { slots: e.target.value })} />
-                </div>
+
+                {/* Adult price */}
+                <input
+                  type="number" placeholder="e.g. 150000"
+                  value={row.perPerson}
+                  onChange={e => updateRow(c.key, { perPerson: e.target.value })}
+                  style={{ width: "100%" }}
+                />
+
+                {/* Child with bed */}
+                <input
+                  type="number" placeholder="0"
+                  value={row.perChildWithBed}
+                  onChange={e => updateRow(c.key, { perChildWithBed: e.target.value })}
+                  disabled={!hasPrice}
+                  style={{ width: "100%", opacity: hasPrice ? 1 : 0.35 }}
+                />
+
+                {/* Slots */}
+                <input
+                  type="number" placeholder="∞"
+                  value={row.slots}
+                  onChange={e => updateRow(c.key, { slots: e.target.value })}
+                  disabled={!hasPrice}
+                  style={{ width: "100%", opacity: hasPrice ? 1 : 0.35 }}
+                />
+
+                {/* Save button */}
                 <button
                   type="button"
                   onClick={() => saveRow(c.key)}
                   disabled={row.saving || !row.dirty}
                   className="adp-btn adp-btn-g"
-                  style={{ fontSize: 11, padding: "6px 12px", opacity: (!row.dirty && !row.saving) ? 0.4 : 1 }}
+                  style={{ fontSize: 11, padding: "6px 10px", opacity: (!row.dirty && !row.saving) ? 0.35 : 1, whiteSpace: "nowrap" }}
                 >
                   {row.saving ? "…" : row.id && !Number(row.perPerson) ? "Remove" : "Save"}
                 </button>
@@ -214,22 +321,34 @@ export default function PackageRoomTypesManager({
           })}
         </div>
 
-        {/* Custom / legacy room types not matching canonical keys */}
+        {/* ── CUSTOM ROOM TYPES ── */}
         {customRts.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--a-dim)", marginBottom: 8 }}>Custom room types (not in standard set)</p>
+          <div style={{ marginTop: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--a-dim)", marginBottom: 8 }}>
+              Custom room types (non-standard)
+            </p>
             <table className="adp-table" style={{ fontSize: 12 }}>
-              <thead><tr><th>Name</th><th>Price/Person</th><th>Child</th><th>Infant</th><th>Max</th><th>Slots</th><th></th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Adult</th><th>Child w/ Bed</th><th>Child w/o Bed</th>
+                  <th>Infant</th><th>Max</th><th>Slots</th><th></th>
+                </tr>
+              </thead>
               <tbody>
                 {customRts.map((rt) => (
                   <tr key={rt.id}>
                     <td><strong>{rt.roomType}</strong></td>
                     <td>Rs. {rt.pricePerPersonPkr.toLocaleString()}</td>
                     <td>Rs. {(rt.pricePerChildWithBedPkr ?? rt.pricePerChildPkr ?? 0).toLocaleString()}</td>
+                    <td>Rs. {(rt.pricePerChildWithoutBedPkr ?? 0).toLocaleString()}</td>
                     <td>Rs. {rt.pricePerInfantPkr.toLocaleString()}</td>
                     <td>{rt.maxAdults}</td>
                     <td>{rt.availableSlots ?? "∞"}</td>
-                    <td><button onClick={() => handleDeleteCustom(rt.id)} className="adp-btn adp-btn-r" style={{ fontSize: 11 }}>Delete</button></td>
+                    <td>
+                      <button onClick={() => handleDeleteCustom(rt.id)} className="adp-btn adp-btn-r" style={{ fontSize: 11 }}>
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -237,7 +356,6 @@ export default function PackageRoomTypesManager({
           </div>
         )}
 
-        {globalError && <p style={{ color: "var(--a-red)", fontSize: 12, marginTop: 10 }}>{globalError}</p>}
       </div>
     </div>
   );
