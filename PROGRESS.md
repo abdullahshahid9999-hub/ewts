@@ -485,3 +485,45 @@ Fixes in `PackageForm.tsx` + `PackageRoomTypesManager.tsx`:
 - `package.seatsBooked` (V2 card badge) only incremented by agent bookings, not B2C bookings.
   B2C uses `packageRoomType.availableSlots` instead. Seat display may be under-counted.
   Low priority — can align later if needed.
+
+---
+## Session — 2026-09-01
+
+### 6 features shipped (commits fcbcf06, d78c6b2)
+
+**1. V2 hotel details on detail page** (`components/PackageDetailView.tsx`)
+- Added all V2 fields to `PackageWithRoomTypes` type: makkahHotel/Distance/Nights/Img, madinahHotel/Distance/Nights/Img, flightType, luggage, transportType, totalSeats, seatsBooked, cardVersion
+- `HotelCard` sub-component: hotel image with dark overlay gradient, city badge, distance badge, nights count
+- Hotel section renders side-by-side cards when `cardVersion === "v2"` and hotel names exist
+- V2 Specs grid (2-col): Airline, Flight Type, Route, Luggage, Transport, Duration, Seats Left
+- Gallery now includes hotel photos (makkahHotelImg + madinahHotelImg appended to allImgs array)
+
+**2. V2 card max-width** (`app/umrah/page.tsx`, `app/agent/umrah/page.tsx`)
+- Wrapped `UmrahCardV2` in `max-w-3xl mx-auto` on both listing pages
+- Prevents excessive width on 1400px+ screens while remaining full-bleed on smaller
+
+**3. Room selector** — already existed in `PackageBookingWidget` (Quad/Triple/Double/Sharing toggle with live price). Confirmed functional; no change needed.
+
+**4. Gallery carousel** — `ImageGallery` already had swipeable carousel with dots, prev/next, lightbox. Fixed by including hotel images in gallery array (feature 1).
+
+**5. Agent portal package search/filter** (`components/AgentPackageFilter.tsx`)
+- Client component wraps agent umrah listing
+- Search input: matches name, tier, duration, destination, departureCity, airline, hotel names
+- Tier filter chips (auto-derived from data, only shown if >1 tier exists)
+- Sort: Featured / Price Low→High / Price High→Low / Name A–Z
+- Live result count label
+- V1 cards now show tier badge in agent view
+
+**6. One-click itinerary IMG download** (`components/ItineraryImageDownload.tsx`)
+- Pure client-side Canvas 2D API — no server needed, works offline
+- 1080×1920px portrait (WhatsApp/Instagram story size)
+- Design: dark navy gradient bg + gold accents, decorative arc, IATA member badge
+- Renders hotel photos fetched with CORS (`crossOrigin=anonymous` from R2) + overlay gradients
+- Sections: Logo bar → Tier + Package name → Hotel side-by-side cards → Specs grid → Pricing table → Includes list → Footer (address, phone, web)
+- Download button on agent detail page (`app/agent/umrah/[slug]/page.tsx`)
+- Outputs as JPEG 0.92 quality, filename: `{package-name}-itinerary.jpg`
+
+### No SQL needed — no schema changes.
+
+### Pending (owner action)
+- If hotel images fail to load in the canvas (CORS), add `R2_PUBLIC_URL` domain to Cloudflare R2 CORS policy with `GET` allowed from `*` or `b2b.eastwestpk.com`
