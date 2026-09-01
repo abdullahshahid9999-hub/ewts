@@ -131,12 +131,13 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   // V2 card — admin-controlled, user cannot switch
                   if (pkg.cardVersion === "v2") {
                     return (
-                      <UmrahCardV2
-                        key={pkg.id}
-                        pkg={pkg as unknown as UmrahCardV2Package}
-                        detailHref={detailHref}
-                        paxQS={paxQS}
-                      />
+                      <div key={pkg.id} className="col-span-1 sm:col-span-2 xl:col-span-3">
+                        <UmrahCardV2
+                          pkg={pkg as unknown as UmrahCardV2Package}
+                          detailHref={detailHref}
+                          paxQS={paxQS}
+                        />
+                      </div>
                     );
                   }
 

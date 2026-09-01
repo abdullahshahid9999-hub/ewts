@@ -28,12 +28,6 @@ export type UmrahCardV2Package = {
   roomTypes: { pricePerPersonPkr: number; availableSlots: number | null }[];
 };
 
-function seatsDisplay(pkg: UmrahCardV2Package) {
-  if (!pkg.totalSeats) return null;
-  const remaining = pkg.totalSeats - pkg.seatsBooked;
-  return { remaining: Math.max(0, remaining), total: pkg.totalSeats };
-}
-
 export default function UmrahCardV2({
   pkg,
   detailHref,
@@ -45,7 +39,8 @@ export default function UmrahCardV2({
   paxQS?: string;
   isAgent?: boolean;
 }) {
-  const seats = seatsDisplay(pkg);
+  const remaining = pkg.totalSeats != null ? Math.max(0, pkg.totalSeats - pkg.seatsBooked) : null;
+
   const href = detailHref
     ? isAgent
       ? detailHref
@@ -55,230 +50,173 @@ export default function UmrahCardV2({
   const lowestPrice = pkg.roomTypes.length
     ? Math.min(...pkg.roomTypes.map((r) => r.pricePerPersonPkr))
     : null;
-  const displayPrice = lowestPrice
-    ? `PKR ${lowestPrice.toLocaleString("en-PK")}`
-    : pkg.price;
 
-  const includesList = pkg.includes
-    ? pkg.includes
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .join(", ")
-    : null;
+  const displayPrice = lowestPrice != null
+    ? lowestPrice.toLocaleString("en-PK")
+    : pkg.price ?? null;
+
+  // Specs rows — only render if value exists
+  const specs: { icon: string; label: string; value: string }[] = [
+    pkg.airline      && { icon: "✈️", label: "Airline",    value: pkg.airline },
+    pkg.flightType   && { icon: "🔀", label: "Flight",     value: pkg.flightType },
+    pkg.route        && { icon: "📍", label: "Route",      value: pkg.route },
+    pkg.luggage      && { icon: "🧳", label: "Luggage",    value: pkg.luggage },
+    pkg.transportType && { icon: "🚌", label: "Transport", value: pkg.transportType },
+    pkg.makkahHotel  && {
+      icon: "🏨", label: "Makkah",
+      value: [pkg.makkahHotel, pkg.makkahHotelNights && `${pkg.makkahHotelNights}N`, pkg.makkahHotelDistance].filter(Boolean).join(" • "),
+    },
+    pkg.madinahHotel && {
+      icon: "🕌", label: "Madinah",
+      value: [pkg.madinahHotel, pkg.madinahHotelNights && `${pkg.madinahHotelNights}N`, pkg.madinahHotelDistance].filter(Boolean).join(" • "),
+    },
+    { icon: "📋", label: "Visa", value: "Saudi Tourist / Umrah Visa" },
+  ].filter(Boolean) as { icon: string; label: string; value: string }[];
 
   return (
-    <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
-      {/* ── TOP BAR ── */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-1">
-        {/* Category badge */}
-        <span className="text-[10px] font-bold tracking-wider uppercase bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">
-          Umrah Package
-        </span>
-        {/* Seats remaining badge */}
-        {seats && (
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
-            🎟️ {seats.remaining} / {seats.total} Seats Remaining
+    <div className="bg-white border border-[var(--lp-border)] rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+
+      {/* ── HEADER BAR ── */}
+      <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-3 border-b border-[var(--lp-border)]">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-bold tracking-widest uppercase bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">
+            Umrah Package
           </span>
-        )}
-        {pkg.tier && !seats && (
-          <span className="text-[10px] font-bold tracking-wider uppercase bg-[var(--lp-brass)]/10 text-[var(--lp-brass)] px-2.5 py-1 rounded-full">
-            {pkg.tier}
+          {pkg.tier && (
+            <span className="text-[10px] font-bold tracking-widest uppercase bg-[var(--lp-brass)]/10 text-[var(--lp-brass)] px-2.5 py-1 rounded-full">
+              {pkg.tier}
+            </span>
+          )}
+          {pkg.duration && (
+            <span className="text-[10px] font-semibold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
+              ⏱ {pkg.duration}
+            </span>
+          )}
+        </div>
+        {remaining != null && pkg.totalSeats && (
+          <span className={`shrink-0 text-[11px] font-bold px-3 py-1 rounded-full border ${
+            remaining <= 3
+              ? "bg-red-50 text-red-600 border-red-200"
+              : "bg-green-50 text-green-700 border-green-200"
+          }`}>
+            🎟 {remaining}/{pkg.totalSeats} seats left
           </span>
         )}
       </div>
 
-      {/* ── TITLE ── */}
-      <div className="px-5 pt-2 pb-3 border-b border-border/50">
-        <h3 className="font-display text-[22px] font-bold uppercase tracking-tight text-[var(--lp-ink)] leading-tight">
+      {/* ── PACKAGE NAME ── */}
+      <div className="px-5 pt-3 pb-2">
+        <h3 className="font-display text-xl font-bold uppercase tracking-tight text-[var(--lp-ink)] leading-snug">
           {pkg.name}
         </h3>
-        {includesList && (
-          <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mt-0.5 line-clamp-1">
-            {includesList}
+        {pkg.airline && pkg.route && (
+          <p className="text-xs text-[var(--lp-muted)] mt-0.5 font-medium">
+            {pkg.airline} · {pkg.route}
           </p>
         )}
-      </div>
-
-      {/* ── DETAIL PILLS ROW ── */}
-      <div className="px-5 py-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {/* Duration */}
-        <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted mb-0.5">Duration</p>
-          <p className="font-bold text-sm text-[var(--lp-ink)]">{pkg.duration ?? "—"}</p>
-        </div>
-        {/* Makkah Hotel */}
-        <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted mb-0.5">Makkah Hotel</p>
-          <p className="font-bold text-xs text-[var(--lp-ink)] uppercase leading-tight line-clamp-2">
-            {pkg.makkahHotel ?? pkg.airline ?? "—"}
-          </p>
-          {pkg.makkahHotelDistance && (
-            <p className="text-[9px] text-green-600 font-semibold mt-0.5">({pkg.makkahHotelDistance})</p>
-          )}
-        </div>
-        {/* Madinah Hotel */}
-        <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted mb-0.5">Madinah Hotel</p>
-          <p className="font-bold text-xs text-[var(--lp-ink)] uppercase leading-tight line-clamp-2">
-            {pkg.madinahHotel ?? "—"}
-          </p>
-          {pkg.madinahHotelDistance && (
-            <p className="text-[9px] text-green-600 font-semibold mt-0.5">({pkg.madinahHotelDistance})</p>
-          )}
-        </div>
-        {/* Airline */}
-        <div className="bg-gray-50 rounded-xl p-2.5 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-muted mb-0.5">Airline Partner</p>
-          <p className="font-bold text-xs text-[var(--lp-ink)] uppercase">{pkg.airline ?? "—"}</p>
-          {pkg.route && (
-            <p className="text-[9px] text-[var(--lp-brass)] font-bold mt-0.5">{pkg.route}</p>
-          )}
-        </div>
       </div>
 
       {/* ── HOTEL PHOTO CARDS ── */}
       {(pkg.makkahHotelImg || pkg.madinahHotelImg) && (
-        <div className="px-5 pb-3 grid grid-cols-2 gap-3">
+        <div className="px-5 pb-4 grid grid-cols-2 gap-3">
           {/* Makkah */}
-          <div className="rounded-xl overflow-hidden border border-border/50 relative">
-            <div className="flex items-center gap-1.5 px-2.5 py-2">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                🏨 Makkah Hotel
-              </span>
-              {pkg.makkahHotelDistance && (
-                <span className="text-[9px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  📍 {pkg.makkahHotelDistance}
+          <div className="rounded-xl overflow-hidden border border-[var(--lp-border)]">
+            {pkg.makkahHotelImg ? (
+              <div className="relative h-32 w-full">
+                <Image
+                  src={pkg.makkahHotelImg}
+                  alt={pkg.makkahHotel ?? "Makkah Hotel"}
+                  fill
+                  className="object-cover"
+                />
+                {/* Overlay label */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 py-2">
+                  <p className="text-white text-[10px] font-bold uppercase leading-tight line-clamp-1">
+                    {pkg.makkahHotel ?? "Makkah Hotel"}
+                  </p>
+                  {pkg.makkahHotelDistance && (
+                    <p className="text-white/80 text-[9px]">📍 {pkg.makkahHotelDistance}</p>
+                  )}
+                </div>
+                <span className="absolute top-2 left-2 text-[9px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
+                  Makkah {pkg.makkahHotelNights ? `· ${pkg.makkahHotelNights}N` : ""}
                 </span>
-              )}
-            </div>
-            <div className="px-2.5 pb-1">
-              <p className="font-bold text-sm uppercase">{pkg.makkahHotel ?? "—"}</p>
-              <p className="text-[10px] text-muted">Accommodation near Al-Masjid Al-Haram</p>
-            </div>
-            {pkg.makkahHotelImg && (
-              <div className="relative h-28 mx-2.5 mb-2.5 rounded-lg overflow-hidden">
-                <Image src={pkg.makkahHotelImg} alt={pkg.makkahHotel ?? "Makkah Hotel"} fill className="object-cover" />
+              </div>
+            ) : (
+              <div className="bg-orange-50 px-3 py-3">
+                <span className="text-[9px] font-bold uppercase text-orange-600 block mb-1">🏨 Makkah</span>
+                <p className="font-bold text-xs text-[var(--lp-ink)] uppercase leading-tight">{pkg.makkahHotel}</p>
+                {pkg.makkahHotelDistance && <p className="text-[9px] text-green-700 mt-0.5">📍 {pkg.makkahHotelDistance}</p>}
               </div>
             )}
           </div>
           {/* Madinah */}
-          <div className="rounded-xl overflow-hidden border border-border/50">
-            <div className="flex items-center gap-1.5 px-2.5 py-2">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                🕌 Madinah Hotel
-              </span>
-              {pkg.madinahHotelDistance && (
-                <span className="text-[9px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  📍 {pkg.madinahHotelDistance}
+          <div className="rounded-xl overflow-hidden border border-[var(--lp-border)]">
+            {pkg.madinahHotelImg ? (
+              <div className="relative h-32 w-full">
+                <Image
+                  src={pkg.madinahHotelImg}
+                  alt={pkg.madinahHotel ?? "Madinah Hotel"}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2.5 py-2">
+                  <p className="text-white text-[10px] font-bold uppercase leading-tight line-clamp-1">
+                    {pkg.madinahHotel ?? "Madinah Hotel"}
+                  </p>
+                  {pkg.madinahHotelDistance && (
+                    <p className="text-white/80 text-[9px]">📍 {pkg.madinahHotelDistance}</p>
+                  )}
+                </div>
+                <span className="absolute top-2 left-2 text-[9px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wide">
+                  Madinah {pkg.madinahHotelNights ? `· ${pkg.madinahHotelNights}N` : ""}
                 </span>
-              )}
-            </div>
-            <div className="px-2.5 pb-1">
-              <p className="font-bold text-sm uppercase">{pkg.madinahHotel ?? "—"}</p>
-              <p className="text-[10px] text-muted">Peaceful stay near Al-Masjid An-Nabawi</p>
-            </div>
-            {pkg.madinahHotelImg && (
-              <div className="relative h-28 mx-2.5 mb-2.5 rounded-lg overflow-hidden">
-                <Image src={pkg.madinahHotelImg} alt={pkg.madinahHotel ?? "Madinah Hotel"} fill className="object-cover" />
+              </div>
+            ) : (
+              <div className="bg-blue-50 px-3 py-3">
+                <span className="text-[9px] font-bold uppercase text-blue-600 block mb-1">🕌 Madinah</span>
+                <p className="font-bold text-xs text-[var(--lp-ink)] uppercase leading-tight">{pkg.madinahHotel}</p>
+                {pkg.madinahHotelDistance && <p className="text-[9px] text-green-700 mt-0.5">📍 {pkg.madinahHotelDistance}</p>}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* ── SPECS BLOCK ── */}
-      <div className="mx-5 mb-4 rounded-xl border border-border/50 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-border/50">
-          <span className="font-bold text-xs uppercase tracking-wide">What&apos;s Included &amp; Specifications</span>
-          {pkg.airline && (
-            <span className="text-xs font-bold text-[var(--lp-brass)]">{pkg.airline}</span>
-          )}
+      {/* ── SPECS ── */}
+      <div className="mx-5 mb-4 rounded-xl border border-[var(--lp-border)] overflow-hidden">
+        <div className="bg-[var(--lp-ink)] px-4 py-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">What&apos;s Included</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 px-4 py-3 text-xs">
-          {pkg.airline && (
-            <div className="flex items-center gap-2">
-              <span>✈️</span>
-              <span className="text-muted">Airline:</span>
-              <span className="font-bold">{pkg.airline}</span>
+        <div className="divide-y divide-[var(--lp-border)]">
+          {specs.map((s) => (
+            <div key={s.label} className="flex items-baseline gap-2 px-4 py-2">
+              <span className="text-sm shrink-0 w-5">{s.icon}</span>
+              <span className="text-[10px] font-semibold text-[var(--lp-muted)] uppercase tracking-wide w-16 shrink-0">{s.label}</span>
+              <span className="text-xs font-semibold text-[var(--lp-ink)] leading-snug">{s.value}</span>
             </div>
-          )}
-          {pkg.flightType && (
-            <div className="flex items-center gap-2">
-              <span>🔀</span>
-              <span className="text-muted">Flight Type:</span>
-              <span className="font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full text-[10px]">
-                ✈ {pkg.flightType}
-              </span>
-            </div>
-          )}
-          {pkg.route && (
-            <div className="flex items-center gap-2">
-              <span>📍</span>
-              <span className="text-muted">Route:</span>
-              <span className="font-bold">{pkg.route}</span>
-            </div>
-          )}
-          {pkg.luggage && (
-            <div className="flex items-center gap-2">
-              <span>🧳</span>
-              <span className="text-muted">Luggage:</span>
-              <span className="font-bold">{pkg.luggage}</span>
-            </div>
-          )}
-          {pkg.transportType && (
-            <div className="flex items-center gap-2">
-              <span>🚌</span>
-              <span className="text-muted">Transport:</span>
-              <span className="font-bold">{pkg.transportType}</span>
-            </div>
-          )}
-          {pkg.makkahHotel && (
-            <div className="flex items-start gap-2 sm:col-span-1">
-              <span>🏨</span>
-              <span className="text-muted">Makkah Hotel:</span>
-              <span className="font-bold">
-                {pkg.makkahHotel}
-                {pkg.makkahHotelNights && ` (${pkg.makkahHotelNights} Nights`}
-                {pkg.makkahHotelDistance && ` • ${pkg.makkahHotelDistance}`}
-                {pkg.makkahHotelNights && ")"}
-              </span>
-            </div>
-          )}
-          {pkg.madinahHotel && (
-            <div className="flex items-start gap-2 sm:col-span-1">
-              <span>🕌</span>
-              <span className="text-muted">Madinah Hotel:</span>
-              <span className="font-bold">
-                {pkg.madinahHotel}
-                {pkg.madinahHotelNights && ` (${pkg.madinahHotelNights} Nights`}
-                {pkg.madinahHotelDistance && ` • ${pkg.madinahHotelDistance}`}
-                {pkg.madinahHotelNights && ")"}
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <span>📋</span>
-            <span className="text-muted font-medium">Saudi Tourist / Umrah Visa Processing</span>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* ── PRICE + CTA ── */}
-      <div className="px-5 pb-5 pt-1 border-t border-border/50 flex items-center justify-between gap-3">
+      <div className="px-5 pb-5 flex items-center justify-between gap-4">
         <div>
-          <p className="text-[9px] uppercase tracking-widest text-muted font-semibold">Starting From</p>
-          <span className="font-display text-2xl font-bold text-[var(--lp-brass)]">{displayPrice ?? "—"}</span>
-          {displayPrice && !displayPrice.includes("PKR") && !displayPrice.includes("Rs") && (
-            <span className="text-muted text-xs ml-1">PKR</span>
-          )}
+          <p className="text-[9px] uppercase tracking-widest text-[var(--lp-muted)] font-semibold mb-0.5">Starting From</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-[11px] font-bold text-[var(--lp-muted)]">PKR</span>
+            <span className="font-display text-2xl font-bold text-[var(--lp-brass)]">
+              {displayPrice ?? "—"}
+            </span>
+          </div>
+          <p className="text-[9px] text-[var(--lp-muted)]">per person</p>
         </div>
         {href ? (
           <Link
             href={href}
-            className="shrink-0 text-xs font-bold text-white bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] px-5 py-3 rounded-xl transition-colors"
+            className="shrink-0 text-xs font-bold text-white bg-[var(--lp-brass)] hover:bg-[var(--lp-brass-light)] px-5 py-3 rounded-xl transition-colors text-center"
           >
-            View Details &amp; Reserve →
+            View Details →
           </Link>
         ) : (
           <a
@@ -287,7 +225,7 @@ export default function UmrahCardV2({
             rel="noopener noreferrer"
             className="shrink-0 text-xs font-bold text-white bg-[#25D366] hover:bg-[#20bd5a] px-5 py-3 rounded-xl transition-colors"
           >
-            📲 Book Now
+            📲 Enquire
           </a>
         )}
       </div>

@@ -39,12 +39,13 @@ export default async function AgentUmrahPage() {
               // V2 card — admin-controlled
               if (pkg.cardVersion === "v2") {
                 return (
-                  <UmrahCardV2
-                    key={pkg.id}
-                    pkg={pkg as unknown as UmrahCardV2Package}
-                    detailHref={detailHref}
-                    isAgent={true}
-                  />
+                  <div key={pkg.id} className="col-span-1 sm:col-span-2 lg:col-span-3">
+                    <UmrahCardV2
+                      pkg={pkg as unknown as UmrahCardV2Package}
+                      detailHref={detailHref}
+                      isAgent={true}
+                    />
+                  </div>
                 );
               }
 
