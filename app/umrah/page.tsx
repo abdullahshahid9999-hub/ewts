@@ -132,11 +132,13 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   if (pkg.cardVersion === "v2") {
                     return (
                       <div key={pkg.id} className="col-span-1 sm:col-span-2 xl:col-span-3">
+                        <div className="max-w-3xl mx-auto">
                         <UmrahCardV2
                           pkg={pkg as unknown as UmrahCardV2Package}
                           detailHref={detailHref}
                           paxQS={paxQS}
                         />
+                        </div>
                       </div>
                     );
                   }
