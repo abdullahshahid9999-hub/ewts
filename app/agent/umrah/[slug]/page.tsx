@@ -6,6 +6,7 @@ import AgentGuard from "@/components/AgentGuard";
 import AgentShell from "@/components/AgentShell";
 import AgentPackageBookingWidget from "@/components/AgentPackageBookingWidget";
 import FlightStatusBadge from "@/components/FlightStatusBadge";
+import ItineraryImageDownload from "@/components/ItineraryImageDownload";
 
 export const revalidate = 60;
 
@@ -111,6 +112,32 @@ export default async function AgentUmrahDetailPage({ params }: { params: Promise
             </div>
           </div>
         )}
+
+        <div style={{ padding: "0 16px 16px" }}>
+          <ItineraryImageDownload
+            packageName={pkg.name}
+            tier={pkg.tier}
+            duration={pkg.duration}
+            airline={pkg.airline}
+            route={pkg.route}
+            depDate={pkg.depDate}
+            retDate={pkg.retDate}
+            departureCity={pkg.departureCity}
+            flightType={pkg.flightType}
+            luggage={pkg.luggage}
+            transportType={pkg.transportType}
+            makkahHotel={pkg.makkahHotel}
+            makkahHotelDistance={pkg.makkahHotelDistance}
+            makkahHotelNights={pkg.makkahHotelNights}
+            makkahHotelImg={pkg.makkahHotelImg}
+            madinahHotel={pkg.madinahHotel}
+            madinahHotelDistance={pkg.madinahHotelDistance}
+            madinahHotelNights={pkg.madinahHotelNights}
+            madinahHotelImg={pkg.madinahHotelImg}
+            roomTypes={pkg.roomTypes.map(r => ({ roomType: r.roomType, pricePerPersonPkr: r.pricePerPersonPkr, pricePerChildWithBedPkr: r.pricePerChildWithBedPkr, pricePerInfantPkr: r.pricePerInfantPkr }))}
+            includes={pkg.includes}
+          />
+        </div>
 
         <AgentPackageBookingWidget packageId={pkg.id} roomTypes={pkg.roomTypes} category="umrah" />
       </AgentShell>
