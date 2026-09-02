@@ -151,6 +151,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
+  await prisma.adminAuditLog.create({
+    data: {
+      adminEmail: admin.email,
+      action: "package.edited",
+      target: `package:${id}`,
+      meta: JSON.stringify({ name: pkg.name }),
+      ip: req.headers.get("x-forwarded-for") ?? undefined,
+    },
+  });
+
   return NextResponse.json({ package: pkg });
 }
 
@@ -159,6 +169,18 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!admin) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const { id } = await params;
+  const pkg = await prisma.package.findUnique({ where: { id }, select: { name: true } });
   await prisma.package.delete({ where: { id } }).catch(() => null);
+
+  await prisma.adminAuditLog.create({
+    data: {
+      adminEmail: admin.email,
+      action: "package.deleted",
+      target: `package:${id}`,
+      meta: JSON.stringify({ name: pkg?.name }),
+      ip: req.headers.get("x-forwarded-for") ?? undefined,
+    },
+  }).catch(() => null); // don't fail if package was already gone
+
   return NextResponse.json({ ok: true });
 }

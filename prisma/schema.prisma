@@ -860,3 +860,16 @@ model UmrahStep {
 
   @@map("umrah_steps")
 }
+
+// Admin action audit trail — every create/edit/delete/duplicate is logged.
+model AdminAuditLog {
+  id          String   @id @default(uuid())
+  adminEmail  String   @map("admin_email")
+  action      String   // e.g. "package.created", "package.edited", "agent.suspended"
+  target      String   // e.g. "package:uuid", "agent:uuid"
+  meta        String?  // JSON blob with before/after or extra context
+  ip          String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("admin_audit_logs")
+}

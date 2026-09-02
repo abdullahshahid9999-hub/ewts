@@ -43,6 +43,13 @@ const NAV = [
       { href: "/admin/bank-accounts", icon: "🏦", label: "Bank Accounts" },
     ],
   },
+  {
+    section: "Security",
+    items: [
+      { href: "/admin/audit-log", icon: "🔍", label: "Audit Log" },
+      { href: "/admin/invite-admins", icon: "👤", label: "Admin Users" },
+    ],
+  },
 ];
 
 export default function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {

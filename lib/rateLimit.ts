@@ -64,3 +64,8 @@ export function getIdempotencyResult(key: string): IdempotencyEntry | null {
 export function setIdempotencyResult(key: string, body: string, status: number): void {
   idempotencyStore.set(key, { body, status, expiresAt: Date.now() + IDEMPOTENCY_TTL_MS });
 }
+
+export function getClientIp(req: { headers: { get(k: string): string | null } }): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  return fwd?.split(",")[0]?.trim() ?? "unknown";
+}

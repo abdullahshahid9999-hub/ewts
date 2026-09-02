@@ -262,5 +262,16 @@ export async function POST(req: NextRequest) {
     });
   });
 
+  // Audit log
+  await prisma.adminAuditLog.create({
+    data: {
+      adminEmail: admin.email,
+      action: "package.created",
+      target: `package:${pkg!.id}`,
+      meta: JSON.stringify({ name: pkg!.name, category: pkg!.category }),
+      ip: req.headers.get("x-forwarded-for") ?? undefined,
+    },
+  });
+
   return NextResponse.json({ package: pkg }, { status: 201 });
 }

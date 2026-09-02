@@ -35,6 +35,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const agent = await prisma.agent.update({ where: { id }, data }).catch(() => null);
   if (!agent) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
+  // Audit log — always record agent edits, flag status changes prominently
+  const action = data.status
+    ? `agent.status_changed:${data.status}`
+    : "agent.edited";
+  await prisma.adminAuditLog.create({
+    data: {
+      adminEmail: admin.email,
+      action,
+      target: `agent:${id}`,
+      meta: JSON.stringify({ changedFields: Object.keys(data), agentCode: agent.agentCode }),
+      ip: req.headers.get("x-forwarded-for") ?? undefined,
+    },
+  }).catch(() => null);
+
   const { passwordHash: _hash, ...safeAgent } = agent;
   return NextResponse.json({ agent: safeAgent });
 }

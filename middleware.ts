@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 
+function addSecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
+  res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  res.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      `img-src 'self' data: blob: https://*.r2.cloudflarestorage.com ${process.env.R2_PUBLIC_URL ?? ""} https://lh3.googleusercontent.com`,
+      "font-src 'self' data:",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+    ].join("; ")
+  );
+  return res;
+}
+
 export function middleware(req: NextRequest) {
   const forwardedHost = req.headers.get("x-forwarded-host") ?? "";
   const host = forwardedHost || req.headers.get("host") || "";
@@ -19,12 +40,10 @@ export function middleware(req: NextRequest) {
     let newPath = pathname;
     if (pathname === "/") newPath = "/admin/login";
     else if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/")) newPath = `/admin${pathname}`;
-    if (newPath !== pathname) {
-      const url = req.nextUrl.clone();
-      url.pathname = newPath;
-      return NextResponse.rewrite(url);
-    }
-    return NextResponse.next();
+    const res = newPath !== pathname
+      ? (() => { const url = req.nextUrl.clone(); url.pathname = newPath; return NextResponse.rewrite(url); })()
+      : NextResponse.next();
+    return addSecurityHeaders(res);
   }
 
   // b2b.eastwestpk.com → /agent/*
@@ -32,15 +51,13 @@ export function middleware(req: NextRequest) {
     let newPath = pathname;
     if (pathname === "/") newPath = "/agent/login";
     else if (!pathname.startsWith("/agent") && !pathname.startsWith("/api/")) newPath = `/agent${pathname}`;
-    if (newPath !== pathname) {
-      const url = req.nextUrl.clone();
-      url.pathname = newPath;
-      return NextResponse.rewrite(url);
-    }
-    return NextResponse.next();
+    const res = newPath !== pathname
+      ? (() => { const url = req.nextUrl.clone(); url.pathname = newPath; return NextResponse.rewrite(url); })()
+      : NextResponse.next();
+    return addSecurityHeaders(res);
   }
 
-  return NextResponse.next();
+  return addSecurityHeaders(NextResponse.next());
 }
 
 export const config = {
