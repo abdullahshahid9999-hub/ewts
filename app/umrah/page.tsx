@@ -96,24 +96,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <SearchResultsNotice q={q} basePath="/umrah" />
-        {/* Mobile: filter btn + result count row */}
-        <div className="flex items-center justify-between gap-3 mb-4 lg:hidden">
-          <Suspense fallback={null}>
-            <FilterSidebar
-              groups={[
-                { key: "tier", label: "Package Type", options: facets.tiers },
-                { key: "airline", label: "Airline", options: facets.airlines },
-                { key: "duration", label: "Duration", options: facets.durations },
-              ]}
-              booleanToggle={{ key: "featured", label: "Featured Only ⭐" }}
-            />
-          </Suspense>
-          <p className="text-xs text-[var(--lp-muted)] font-medium">
-            {packages.length} package{packages.length !== 1 ? "s" : ""} found
-          </p>
-        </div>
         <div className="flex gap-8 items-start">
-          {/* Desktop sidebar */}
           <Suspense fallback={null}>
             <FilterSidebar
               groups={[
@@ -122,6 +105,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                 { key: "duration", label: "Duration", options: facets.durations },
               ]}
               booleanToggle={{ key: "featured", label: "Featured Only ⭐" }}
+              resultCount={packages.length}
             />
           </Suspense>
 
