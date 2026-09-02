@@ -563,3 +563,47 @@ Fixes in `PackageForm.tsx` + `PackageRoomTypesManager.tsx`:
 **Action for owner:** None — just deploy (Render auto-deploys on push).
 
 **Reminder:** Revoke GitHub token `[REVOKED]` after this session.
+
+---
+## Session — 2026-09-02 (Flight cards, mobile fix, journey steps)
+
+### What was built (commit f6da127)
+
+**1. Flight sector cards redesigned** (`components/PackageDetailView.tsx`)
+- Old: flat gray row with tiny type badge + route text
+- New: boarding-pass style card — colored border (green=dep, red=arr), large IATA codes (3xl bold),
+  full airport city names below, date + time in footer with icons, flight number in monospace badge,
+  FlightStatusBadge inline. Actually readable now.
+
+**2. Journey Steps section** (`components/PackageDetailView.tsx`)
+- New section between action buttons and hotel cards
+- 5 steps: Booking → Visa → Ticket → Hotels → Departure
+- Each step shows icon, label, short desc
+- Visa step: shows "assistance included" if `visaEnabled`, else "arrange independently"
+- Ticket step: shows "group flight included" if `groupTicketEnabled`, else "via group flight"
+- Inactive steps show "Not Included" badge in muted gray
+- Desktop: horizontal row with connecting gradient line; Mobile: vertical stack
+
+**3. Sharing room min = 1** (`components/PackageBookingWidget.tsx`)
+- Added `isSharing` check: if roomType contains "sharing" (case-insensitive), effectiveMin = 1
+- Overrides `minAdultsRequired` — sharing basis means you share with other pilgrims, not that you
+  need a full group
+- Adults counter now uses `effectiveMin`; room description shows "Shared room · 1 person minimum"
+- minInvalid warning also disabled for sharing rooms
+
+**4. Mobile packages visible** (`app/umrah/page.tsx`)
+- `flex gap-8 items-start` → `flex flex-col lg:flex-row gap-6 lg:gap-8 items-start`
+- On mobile, filter bar stacks above card grid — no more invisible/zero-width card grid
+
+**5. Mobile filter bottom sheet** (`components/FilterSidebar.tsx`)
+- Filter button: dark navy bg (lp-ink) instead of white border — more visible
+- Popup changed from full-screen overlay to slide-up bottom sheet (rounded-t-3xl)
+- Backdrop blur behind sheet — feels native
+- Drag handle bar at top
+- CTA changed from "Update Now" to "Show Results · N filters active"
+
+### No SQL needed. No schema changes.
+
+### Pending action for owner
+- None — Render auto-deploys on push
+- **Revoke GitHub token after session**
