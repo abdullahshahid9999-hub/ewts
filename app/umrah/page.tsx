@@ -12,6 +12,7 @@ import FilterSidebar from "@/components/FilterSidebar";
 import UmrahSearchBar from "@/components/UmrahSearchBar";
 import CopyBtn from "@/components/CopyBtn";
 import UmrahCardV2, { type UmrahCardV2Package } from "@/components/UmrahCardV2";
+import UmrahCardCompact from "@/components/UmrahCardCompact";
 
 export const metadata = {
   title: "Umrah & Hajj Packages | East & West Travel Services",
@@ -95,7 +96,24 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <SearchResultsNotice q={q} basePath="/umrah" />
+        {/* Mobile: filter btn + result count row */}
+        <div className="flex items-center justify-between gap-3 mb-4 lg:hidden">
+          <Suspense fallback={null}>
+            <FilterSidebar
+              groups={[
+                { key: "tier", label: "Package Type", options: facets.tiers },
+                { key: "airline", label: "Airline", options: facets.airlines },
+                { key: "duration", label: "Duration", options: facets.durations },
+              ]}
+              booleanToggle={{ key: "featured", label: "Featured Only ⭐" }}
+            />
+          </Suspense>
+          <p className="text-xs text-[var(--lp-muted)] font-medium">
+            {packages.length} package{packages.length !== 1 ? "s" : ""} found
+          </p>
+        </div>
         <div className="flex gap-8 items-start">
+          {/* Desktop sidebar */}
           <Suspense fallback={null}>
             <FilterSidebar
               groups={[
@@ -128,17 +146,15 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
                   const allImgs = [pkg.imageUrl, ...gallery].filter(Boolean) as string[];
                   const detailHref = pkg.slug ? `/umrah/${pkg.slug}` : null;
 
-                  // V2 card — admin-controlled, user cannot switch
+                  // V2 card — compact alpha-journeys style
                   if (pkg.cardVersion === "v2") {
                     return (
-                      <div key={pkg.id} className="col-span-1 sm:col-span-2 xl:col-span-3">
-                        <div className="max-w-3xl mx-auto">
-                        <UmrahCardV2
+                      <div key={pkg.id} className="col-span-1">
+                        <UmrahCardCompact
                           pkg={pkg as unknown as UmrahCardV2Package}
                           detailHref={detailHref}
                           paxQS={paxQS}
                         />
-                        </div>
                       </div>
                     );
                   }

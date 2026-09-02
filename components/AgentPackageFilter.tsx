@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import UmrahCardV2, { type UmrahCardV2Package } from "@/components/UmrahCardV2";
+import UmrahCardCompact from "@/components/UmrahCardCompact";
 
 type PkgRow = {
   id: string;
@@ -132,14 +133,12 @@ export default function AgentPackageFilter({ packages }: { packages: PkgRow[] })
 
             if (pkg.cardVersion === "v2") {
               return (
-                <div key={pkg.id} className="col-span-1 sm:col-span-2 lg:col-span-3">
-                  <div className="max-w-3xl mx-auto">
-                    <UmrahCardV2
-                      pkg={pkg as unknown as UmrahCardV2Package}
-                      detailHref={detailHref}
-                      isAgent={true}
-                    />
-                  </div>
+                <div key={pkg.id} className="col-span-1">
+                  <UmrahCardCompact
+                    pkg={pkg as unknown as UmrahCardV2Package}
+                    detailHref={detailHref}
+                    isAgent={true}
+                  />
                 </div>
               );
             }
