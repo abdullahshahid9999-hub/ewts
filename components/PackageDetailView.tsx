@@ -224,6 +224,73 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
           )}
         </div>
 
+        {/* JOURNEY STEPS — Visa + Ticket flow */}
+        <div className="mb-12">
+          <h2 className="font-display text-xl font-semibold mb-2">🗺️ Your Journey</h2>
+          <p className="text-muted text-sm mb-5">Here&apos;s what&apos;s covered and how the process works</p>
+          <div className="relative">
+            {/* Connecting line on desktop */}
+            <div className="hidden sm:block absolute top-6 left-[calc(10%+12px)] right-[calc(10%+12px)] h-0.5 bg-gradient-to-r from-[var(--lp-brass)] via-[var(--lp-brass)]/40 to-gray-200 z-0" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 relative z-10">
+              {[
+                {
+                  icon: "📝",
+                  label: "Booking",
+                  desc: "Select room & confirm travellers",
+                  active: true,
+                  always: true,
+                },
+                {
+                  icon: "🛂",
+                  label: "Visa",
+                  desc: pkg.visaEnabled ? "Visa assistance included" : "Arrange independently",
+                  active: pkg.visaEnabled,
+                  always: true,
+                },
+                {
+                  icon: "✈️",
+                  label: "Ticket",
+                  desc: pkg.groupTicketEnabled ? "Group flight ticket included" : "Ticket via group flight",
+                  active: pkg.groupTicketEnabled,
+                  always: true,
+                },
+                {
+                  icon: "🏨",
+                  label: "Hotels",
+                  desc: isV2 ? `${pkg.makkahHotel ?? "Makkah"} + ${pkg.madinahHotel ?? "Madinah"}` : "Accommodation included",
+                  active: true,
+                  always: true,
+                },
+                {
+                  icon: "🕋",
+                  label: "Departure",
+                  desc: pkg.departureCity ? `From ${pkg.departureCity}` : "Ready to travel",
+                  active: true,
+                  always: true,
+                },
+              ].map((step, idx) => (
+                <div key={idx} className="flex sm:flex-col items-center sm:items-center gap-3 sm:gap-2 flex-1 sm:text-center">
+                  {/* Circle */}
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shrink-0 border-2 transition-all ${
+                    step.active
+                      ? "bg-[var(--lp-brass)] border-[var(--lp-brass)] shadow-md"
+                      : "bg-white border-gray-200"
+                  }`}>
+                    {step.icon}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`text-sm font-bold leading-tight ${step.active ? "text-[var(--lp-ink)]" : "text-gray-400"}`}>{step.label}</p>
+                    <p className={`text-[11px] mt-0.5 leading-snug ${step.active ? "text-muted" : "text-gray-300"}`}>{step.desc}</p>
+                    {!step.active && (
+                      <span className="text-[10px] font-bold text-gray-300 bg-gray-100 px-1.5 py-0.5 rounded mt-1 inline-block">Not Included</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* V2 — HOTEL SECTION */}
         {hasHotelSection && (
           <div className="mb-12">
@@ -304,38 +371,78 @@ export default function PackageDetailView({ pkg, initialAdults, initialChildren,
         {/* FLIGHT SECTORS */}
         {sectors.length > 0 && (
           <div className="mb-12">
-            <h2 className="font-display text-xl font-semibold mb-4">Flight Details</h2>
-            <div className="flex flex-col gap-3">
+            <h2 className="font-display text-xl font-semibold mb-4">✈️ Flight Details</h2>
+            <div className="flex flex-col gap-4">
               {sectors.map((sec, i) => {
-                const from = sec.fromIata || sec.city || "";
-                const to = sec.toIata || "";
-                const fromLabel = sec.fromName || from;
-                const toLabel = sec.toName || to;
+                const fromIata = sec.fromIata || sec.city || "—";
+                const toIata = sec.toIata || "—";
+                const fromCity = sec.fromName || fromIata;
+                const toCity = sec.toName || toIata;
+                const isDep = sec.type === "Departure";
+                const isArr = sec.type === "Arrival";
+                const typeColor = isDep ? "#16a34a" : isArr ? "#dc2626" : "#7c3aed";
+                const typeBg = isDep ? "bg-green-50 border-green-200" : isArr ? "bg-red-50 border-red-200" : "bg-purple-50 border-purple-200";
+
                 return (
-                  <div key={i} className="bg-surface border border-border rounded-xl px-5 py-4 flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2 min-w-[80px]">
-                      {sec.airlineIata && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={`https://images.kiwi.com/airlines/64/${sec.airlineIata}.png`} alt={sec.airlineName || sec.airlineIata}
-                          style={{ height: 24, objectFit: "contain" }}
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <div key={i} className={`rounded-2xl border-2 ${typeBg} overflow-hidden`}>
+                    {/* Top bar: type label + flight number + badge */}
+                    <div className="flex items-center justify-between px-5 py-2.5 border-b border-current/10 bg-white/60">
+                      <div className="flex items-center gap-3">
+                        {sec.airlineIata && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={`https://images.kiwi.com/airlines/64/${sec.airlineIata}.png`} alt={sec.airlineName || sec.airlineIata}
+                            style={{ height: 20, objectFit: "contain" }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        )}
+                        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: typeColor }}>{sec.type}</span>
+                        {sec.airlineName && <span className="text-xs text-muted hidden sm:inline">· {sec.airlineName}</span>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {sec.flightNo && (
+                          <span className="text-xs font-mono font-bold bg-white border border-gray-200 px-2.5 py-1 rounded-lg text-gray-700">{sec.flightNo}</span>
+                        )}
+                        {sec.flightNo && <FlightStatusBadge flightIata={sec.flightNo} />}
+                      </div>
+                    </div>
+
+                    {/* Main content: IATA → IATA with full names */}
+                    <div className="px-5 py-4 flex items-center gap-4">
+                      {/* FROM */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-3xl font-black text-[var(--lp-ink)] leading-none tracking-tight">{fromIata}</p>
+                        <p className="text-xs text-muted mt-1 leading-snug line-clamp-2">{fromCity}</p>
+                      </div>
+
+                      {/* Arrow */}
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <div className="w-16 sm:w-24 h-px bg-gray-300 relative">
+                          <span className="absolute -right-1 top-1/2 -translate-y-1/2 text-gray-400 text-base leading-none">›</span>
+                        </div>
+                        <span className="text-[10px] text-muted font-medium">✈</span>
+                      </div>
+
+                      {/* TO */}
+                      <div className="flex-1 min-w-0 text-right">
+                        <p className="text-3xl font-black text-[var(--lp-ink)] leading-none tracking-tight">{toIata}</p>
+                        <p className="text-xs text-muted mt-1 leading-snug line-clamp-2">{toCity}</p>
+                      </div>
+                    </div>
+
+                    {/* Footer: date + time */}
+                    <div className="px-5 pb-4 flex items-center gap-4 text-sm">
+                      {sec.date && (
+                        <div className="flex items-center gap-1.5 text-muted">
+                          <span>📅</span>
+                          <span className="font-semibold text-[var(--lp-ink)]">{sec.date}</span>
+                        </div>
                       )}
-                      <span className="text-xs font-bold uppercase" style={{ color: sec.type === "Departure" ? "#16a34a" : sec.type === "Arrival" ? "#dc2626" : "#7c3aed" }}>{sec.type}</span>
+                      {sec.time && (
+                        <div className="flex items-center gap-1.5 text-muted">
+                          <span>🕐</span>
+                          <span className="font-semibold text-[var(--lp-ink)]">{sec.time}</span>
+                        </div>
+                      )}
                     </div>
-                    {from && (
-                      <div className="text-sm">
-                        <p className="font-bold text-base">{from}{to && ` → ${to}`}</p>
-                        {(fromLabel !== from || toLabel !== to) && <p className="text-muted text-xs">{fromLabel}{toLabel && toLabel !== to ? ` → ${toLabel}` : ""}</p>}
-                      </div>
-                    )}
-                    <div className="text-sm text-muted">
-                      {sec.date}{sec.time ? ` · ${sec.time}` : ""}
-                    </div>
-                    {sec.flightNo && (
-                      <div className="ml-auto">
-                        <FlightStatusBadge flightIata={sec.flightNo} />
-                      </div>
-                    )}
                   </div>
                 );
               })}

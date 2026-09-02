@@ -96,7 +96,7 @@ export default async function UmrahPage({ searchParams }: { searchParams: Promis
 
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         <SearchResultsNotice q={q} basePath="/umrah" />
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           <Suspense fallback={null}>
             <FilterSidebar
               groups={[

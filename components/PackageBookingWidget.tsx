@@ -53,12 +53,16 @@ function BookingModal({ roomTypes, packageId, packageName, onClose }: { roomType
   // - child with bed: occupies adult slot (counted in bed occupancy)
   // - max 2 infants per booking
   // - max 2 child without bed per booking (per spec)
+  // - Sharing rooms: always allow 1+ person (sharing basis means you share with others — no min group size)
   const MAX_INFANTS = 2;
   const MAX_CWO_BED = 2;
   const bedOccupancy = adults + childrenWithBed;
   const maxBeds = selected?.maxAdults ?? 1;
   const overCapacity = bedOccupancy > maxBeds;
-  const minInvalid = !!(selected?.minAdultsRequired && adults < selected.minAdultsRequired);
+  // Sharing rooms: min is always 1 (you share the room with strangers — no group requirement)
+  const isSharing = selected?.roomType?.toLowerCase().includes("sharing");
+  const effectiveMin = isSharing ? 1 : (selected?.minAdultsRequired ?? 1);
+  const minInvalid = !!(selected?.minAdultsRequired && !isSharing && adults < selected.minAdultsRequired);
 
   // clamp when room changes
   function pickRoom(rt: RoomType) {
@@ -108,7 +112,7 @@ function BookingModal({ roomTypes, packageId, packageName, onClose }: { roomType
                     <div className="flex items-center justify-between">
                       <div>
                         <p className={`font-semibold ${isSel ? "text-base" : "text-sm text-muted"}`}>{rt.roomType}</p>
-                        <p className="text-xs text-muted mt-0.5">Up to {rt.maxAdults} bed{rt.maxAdults !== 1 ? "s" : ""}{rt.maxInfants > 0 ? ` · ${rt.maxInfants} infant` : ""}</p>
+                        <p className="text-xs text-muted mt-0.5">{rt.roomType?.toLowerCase().includes("sharing") ? "Shared room · 1 person minimum" : `Up to ${rt.maxAdults} bed${rt.maxAdults !== 1 ? "s" : ""}${rt.maxInfants > 0 ? ` · ${rt.maxInfants} infant` : ""}`}</p>
                       </div>
                       <div className="text-right">
                         <p className={`font-display font-bold ${isSel ? "text-xl text-gold" : "text-base text-muted"}`}>
@@ -143,7 +147,7 @@ function BookingModal({ roomTypes, packageId, packageName, onClose }: { roomType
                 </div>
               )}
 
-              <Counter label="Adults" value={adults} min={selected?.minAdultsRequired ?? 1} max={maxBeds} onChange={a => { setAdults(a); if (childrenWithBed > maxBeds - a) setChildrenWithBed(Math.max(0, maxBeds - a)); }} />
+              <Counter label="Adults" value={adults} min={effectiveMin} max={maxBeds} onChange={a => { setAdults(a); if (childrenWithBed > maxBeds - a) setChildrenWithBed(Math.max(0, maxBeds - a)); }} />
               <Counter label="Children With Bed" sub={`Uses adult bed slot (${bedOccupancy}/${maxBeds} used)`} value={childrenWithBed} min={0} max={Math.min(maxBeds - adults, maxBeds)} onChange={setChildrenWithBed} />
               <Counter label="Children Without Bed" sub="Max 2 · sleeps with parents" value={childrenWithoutBed} min={0} max={MAX_CWO_BED} onChange={setChildrenWithoutBed} />
               <Counter label={`Infants${selected && selected.pricePerInfantPkr > 0 ? ` (Rs. ${selected.pricePerInfantPkr.toLocaleString()} each)` : " (free)"}`} sub="Max 2 per booking · lap infant" value={infants} min={0} max={MAX_INFANTS} onChange={setInfants} />
