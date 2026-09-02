@@ -631,3 +631,55 @@ Also: `coverImgUrl` now pre-populated from `existing?.imageUrl`.
 **No SQL needed. No schema changes.**
 
 **Reminder:** Revoke GitHub token after session.
+
+---
+## Session — 2026-09-02 (part 3)
+
+### Auto-expire + Security hardening (commit 43d4177)
+
+**⚠️ SQL TO RUN ON RENDER (required before deploy works fully):**
+```sql
+CREATE TABLE IF NOT EXISTS admin_audit_logs (
+  id           TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  admin_email  TEXT        NOT NULL,
+  action       TEXT        NOT NULL,
+  target       TEXT        NOT NULL,
+  meta         TEXT,
+  ip           TEXT,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON admin_audit_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action  ON admin_audit_logs (action);
+```
+
+**⚠️ ENV VARS TO ADD ON RENDER:**
+- `CRON_SECRET` = any long random string (e.g. openssl rand -hex 32)
+
+**⚠️ UPTIME ROBOT SETUP (free, for daily auto-expire):**
+1. Go to uptimerobot.com → Add Monitor → Keyword Monitor
+2. URL: `https://eastwestpk.com/api/cron/expire-packages`
+3. HTTP Method: GET, Header: `x-cron-secret: <your CRON_SECRET>`
+4. Interval: 1440 min (daily)
+
+**Features shipped:**
+
+1. **Auto-expire packages** (`app/api/cron/expire-packages/route.ts`)
+   - Marks packages inactive when retDate < today
+   - Protected by `x-cron-secret` header
+   - Logs each expiry to AdminAuditLog
+
+2. **Admin Audit Log** (`app/admin/audit-log/page.tsx`)
+   - Records: package created/edited/deleted/duplicated/auto_expired, agent status changes
+   - Filterable by category, paginated (50/page), shows relative time + IP
+   - Accessible via Sidebar → Security → Audit Log
+
+3. **Security Headers** (`middleware.ts`)
+   - HSTS, CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy
+   - Applied to all non-static responses
+
+4. **Refresh Token Rotation** (`app/api/agent/refresh`, `app/api/admin/refresh`)
+   - New refresh token issued on every use → stolen token can't be replayed
+
+5. **lib/rateLimit.ts** — restored + added `getClientIp` export
+
+**Reminder:** Revoke GitHub token after this session.
