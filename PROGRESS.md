@@ -527,3 +527,39 @@ Fixes in `PackageForm.tsx` + `PackageRoomTypesManager.tsx`:
 
 ### Pending (owner action)
 - If hotel images fail to load in the canvas (CORS), add `R2_PUBLIC_URL` domain to Cloudflare R2 CORS policy with `GET` allowed from `*` or `b2b.eastwestpk.com`
+
+---
+## Session — 2026-09-02
+
+### Compact card + full-screen mobile filter (commit 8fc3180)
+
+**1. UmrahCardCompact** (`components/UmrahCardCompact.tsx`) — new alpha-journeys-inspired card:
+- Dark navy header bar: route (LHE-JED-LHE) + airline + seats-left pill (red/green)
+- Badge row: duration, tier, "Sharing Basis"
+- 3-pill info row: Depart / Duration / Basis (gray bg rounded)
+- Hotel side-by-side photos at 72px height with overlay labels, distance, city badge
+- Transport badge pill
+- Bottom price row: Shared + Double prices, View Details → CTA
+- V2 packages now render as compact cards (col-span-1 in grid) — fits 3-per-row on desktop
+
+**2. FilterSidebar rewrite** (`components/FilterSidebar.tsx`):
+- Desktop: unchanged sticky aside (hidden lg:block)
+- Mobile button: compact, inline with result count (no wasted space)
+- Mobile popup: `fixed inset-0` full-screen white panel (not a slide-in drawer)
+  - Header: "Filter Packages" title + × close button top-right
+  - Body: scrollable, draft-state checkboxes (changes don't hit URL immediately)
+  - Auto-saves: each checkbox toggle updates draft state live
+  - Footer: "Update Now · N filters active" button — applies draft to URL + closes
+  - "Clear all filters" link inside body clears draft
+- Prevents accidental URL updates when user just browsing filters
+
+**3. Public umrah page** (`app/umrah/page.tsx`):
+- Mobile-only row above grid: filter button + "N packages found" count
+- Desktop: sidebar still in flex row as before
+- V2 cards now col-span-1 (not full-width span) — same grid as V1
+
+**No SQL needed. No schema changes.**
+
+**Action for owner:** None — just deploy (Render auto-deploys on push).
+
+**Reminder:** Revoke GitHub token `[REVOKED]` after this session.
