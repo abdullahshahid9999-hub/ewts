@@ -607,3 +607,27 @@ Fixes in `PackageForm.tsx` + `PackageRoomTypesManager.tsx`:
 ### Pending action for owner
 - None — Render auto-deploys on push
 - **Revoke GitHub token after session**
+
+---
+## Session — 2026-09-02 (part 2)
+
+### Bug fixes — duplicate + hotel img edit (commit 723f396)
+
+**Bug 1 — Duplicate package missing V2 fields:**
+All these were silently dropped: `cardVersion`, `flightType`, `luggage`, `transportType`,
+`totalSeats`, `makkahHotel/Distance/Nights/Img`, `madinahHotel/Distance/Nights/Img`.
+Fixed in `app/api/admin/packages/[id]/duplicate/route.ts`.
+
+**Bug 2 — Edit form wiping hotel images on save:**
+Root cause: `makkahImgMode` always defaulted to `"upload"`, so on save with no new file,
+nothing was sent → API saw blank → DB field wiped.
+Fix: mode now defaults to `"url"` when `existing?.makkahHotelImg` exists.
+Also: `coverImgUrl` now pre-populated from `existing?.imageUrl`.
+
+**UX improvements in PackageForm:**
+- All 3 image upload fields (cover, makkah, madinah): custom styled button, filename shown on pick, thumbnail preview in both url+upload modes
+- Gallery: custom Add button, live thumbnails for new uploads with individual remove, bigger 80px existing thumbs
+
+**No SQL needed. No schema changes.**
+
+**Reminder:** Revoke GitHub token after session.
