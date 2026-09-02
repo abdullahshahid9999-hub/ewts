@@ -121,7 +121,7 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
     transportType: existing?.transportType ?? "",
     totalSeats: existing?.totalSeats != null ? String(existing.totalSeats) : "",
     // URL images
-    coverImgUrl: "", makkahHotelImgUrl: existing?.makkahHotelImg ?? "", madinahHotelImgUrl: existing?.madinahHotelImg ?? "",
+    coverImgUrl: existing?.imageUrl ?? "", makkahHotelImgUrl: existing?.makkahHotelImg ?? "", madinahHotelImgUrl: existing?.madinahHotelImg ?? "",
     // Auto-derived (shown read-only)
     depDate: existing?.depDate ?? "", retDate: existing?.retDate ?? "",
     airline: existing?.airline ?? "", route: existing?.route ?? "",
@@ -129,14 +129,14 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
     duration: existing?.duration ?? "",
   });
 
-  // Images
-  const [coverImgMode, setCoverImgMode] = useState<ImgMode>("upload");
+  // Images — in edit mode, default to "url" if an existing image URL already exists
+  const [coverImgMode, setCoverImgMode] = useState<ImgMode>(existing?.imageUrl ? "url" : "upload");
   const [file, setFile] = useState<File | null>(null);
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [removeGalleryUrls, setRemoveGalleryUrls] = useState<string[]>([]);
-  const [makkahImgMode, setMakkahImgMode] = useState<ImgMode>("upload");
+  const [makkahImgMode, setMakkahImgMode] = useState<ImgMode>(existing?.makkahHotelImg ? "url" : "upload");
   const [makkahHotelFile, setMakkahHotelFile] = useState<File | null>(null);
-  const [madinahImgMode, setMadinahImgMode] = useState<ImgMode>("upload");
+  const [madinahImgMode, setMadinahImgMode] = useState<ImgMode>(existing?.madinahHotelImg ? "url" : "upload");
   const [madinahHotelFile, setMadinahHotelFile] = useState<File | null>(null);
 
   // Itinerary
@@ -525,8 +525,27 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
                             borderColor: makkahImgMode === m ? "#0ea5e9" : "var(--a-border)" }}>{m === "upload" ? "📁 Upload" : "🔗 URL"}</button>
                       ))}
                     </div>
-                    {makkahImgMode === "upload" ? <input type="file" accept="image/*" onChange={e => setMakkahHotelFile(e.target.files?.[0] ?? null)} />
-                      : <input placeholder="https://…" value={form.makkahHotelImgUrl} onChange={e => setForm(f => ({ ...f, makkahHotelImgUrl: e.target.value }))} />}
+                    {makkahImgMode === "upload" ? (
+                      <div>
+                        <label style={{ display: "inline-block", padding: "5px 12px", background: "var(--a-blue)", color: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          📁 Choose File
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => setMakkahHotelFile(e.target.files?.[0] ?? null)} />
+                        </label>
+                        {makkahHotelFile && <span style={{ fontSize: 10, marginLeft: 8, color: "var(--a-muted)" }}>✅ {makkahHotelFile.name}</span>}
+                        {!makkahHotelFile && form.makkahHotelImgUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={form.makkahHotelImgUrl} alt="" style={{ display: "block", marginTop: 6, width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--a-border)" }} />
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <input placeholder="https://…" value={form.makkahHotelImgUrl} onChange={e => setForm(f => ({ ...f, makkahHotelImgUrl: e.target.value }))} />
+                        {form.makkahHotelImgUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={form.makkahHotelImgUrl} alt="" style={{ display: "block", marginTop: 6, width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--a-border)" }} />
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div><label style={{ fontSize: 11 }}>Madinah Hotel Name</label>
                     <input value={form.madinahHotel} onChange={e => setForm(f => ({ ...f, madinahHotel: e.target.value }))} placeholder="e.g. Kinan Madina" /></div>
@@ -543,8 +562,27 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
                             borderColor: madinahImgMode === m ? "#0ea5e9" : "var(--a-border)" }}>{m === "upload" ? "📁 Upload" : "🔗 URL"}</button>
                       ))}
                     </div>
-                    {madinahImgMode === "upload" ? <input type="file" accept="image/*" onChange={e => setMadinahHotelFile(e.target.files?.[0] ?? null)} />
-                      : <input placeholder="https://…" value={form.madinahHotelImgUrl} onChange={e => setForm(f => ({ ...f, madinahHotelImgUrl: e.target.value }))} />}
+                    {madinahImgMode === "upload" ? (
+                      <div>
+                        <label style={{ display: "inline-block", padding: "5px 12px", background: "var(--a-blue)", color: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                          📁 Choose File
+                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => setMadinahHotelFile(e.target.files?.[0] ?? null)} />
+                        </label>
+                        {madinahHotelFile && <span style={{ fontSize: 10, marginLeft: 8, color: "var(--a-muted)" }}>✅ {madinahHotelFile.name}</span>}
+                        {!madinahHotelFile && form.madinahHotelImgUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={form.madinahHotelImgUrl} alt="" style={{ display: "block", marginTop: 6, width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--a-border)" }} />
+                        )}
+                      </div>
+                    ) : (
+                      <div>
+                        <input placeholder="https://…" value={form.madinahHotelImgUrl} onChange={e => setForm(f => ({ ...f, madinahHotelImgUrl: e.target.value }))} />
+                        {form.madinahHotelImgUrl && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={form.madinahHotelImgUrl} alt="" style={{ display: "block", marginTop: 6, width: 80, height: 56, objectFit: "cover", borderRadius: 6, border: "1px solid var(--a-border)" }} />
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div><label style={{ fontSize: 11 }}>Transport Type</label>
                     <input value={form.transportType} onChange={e => setForm(f => ({ ...f, transportType: e.target.value }))} placeholder="e.g. A/C Bus" /></div>
@@ -624,26 +662,70 @@ export default function PackageForm({ existing }: { existing?: ExistingPackage }
                           borderColor: coverImgMode === m ? "var(--a-blue)" : "var(--a-border)" }}>{m === "upload" ? "📁 Upload" : "🔗 URL"}</button>
                     ))}
                   </div>
-                  {coverImgMode === "upload" ? <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
-                    : <input placeholder="https://…" value={form.coverImgUrl} onChange={e => setForm(f => ({ ...f, coverImgUrl: e.target.value }))} />}
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label>Gallery Images (carousel on detail page)</label>
-                  {isEdit && (existing!.galleryUrls ?? []).length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
-                      {(existing!.galleryUrls ?? []).map(url => (
-                        <div key={url} style={{ position: "relative", width: 72, height: 72 }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="" style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 6, opacity: removeGalleryUrls.includes(url) ? 0.3 : 1 }} />
-                          <button type="button" onClick={() => setRemoveGalleryUrls(r => r.includes(url) ? r.filter(u => u !== url) : [...r, url])}
-                            style={{ position: "absolute", top: 2, right: 2, background: removeGalleryUrls.includes(url) ? "#16a34a" : "#ef4444", color: "white", border: "none", borderRadius: "50%", width: 18, height: 18, fontSize: 10, cursor: "pointer" }}>
-                            {removeGalleryUrls.includes(url) ? "↩" : "×"}
-                          </button>
-                        </div>
-                      ))}
+                  {coverImgMode === "upload" ? (
+                    <div>
+                      <label style={{ display: "inline-block", padding: "5px 14px", background: "var(--a-blue)", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        📁 Choose Cover Image
+                        <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
+                      </label>
+                      {file && <span style={{ fontSize: 11, marginLeft: 10, color: "var(--a-muted)" }}>✅ {file.name}</span>}
+                      {!file && existing?.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={existing.imageUrl} alt="" style={{ display: "block", marginTop: 8, width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: "1px solid var(--a-border)" }} />
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <input placeholder="https://…" value={form.coverImgUrl} onChange={e => setForm(f => ({ ...f, coverImgUrl: e.target.value }))} />
+                      {form.coverImgUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={form.coverImgUrl} alt="" style={{ display: "block", marginTop: 8, width: 120, height: 80, objectFit: "cover", borderRadius: 8, border: "1px solid var(--a-border)" }} />
+                      )}
                     </div>
                   )}
-                  <input type="file" accept="image/*" multiple onChange={e => setGalleryFiles(Array.from(e.target.files ?? []))} />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label>Gallery Images <span style={{ fontSize: 10, fontWeight: 400, color: "var(--a-muted)" }}>(multiple allowed — shown in carousel on detail page)</span></label>
+                  {/* Existing gallery thumbnails */}
+                  {isEdit && (existing!.galleryUrls ?? []).length > 0 && (
+                    <div>
+                      <p style={{ fontSize: 10, color: "var(--a-muted)", marginBottom: 6 }}>Existing — click × to remove:</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                        {(existing!.galleryUrls ?? []).map(url => (
+                          <div key={url} style={{ position: "relative", width: 80, height: 80 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, border: "2px solid", borderColor: removeGalleryUrls.includes(url) ? "#ef4444" : "var(--a-border)", opacity: removeGalleryUrls.includes(url) ? 0.35 : 1, transition: "opacity 0.15s" }} />
+                            <button type="button" onClick={() => setRemoveGalleryUrls(r => r.includes(url) ? r.filter(u => u !== url) : [...r, url])}
+                              style={{ position: "absolute", top: -6, right: -6, background: removeGalleryUrls.includes(url) ? "#16a34a" : "#ef4444", color: "white", border: "2px solid white", borderRadius: "50%", width: 22, height: 22, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, lineHeight: 1 }}>
+                              {removeGalleryUrls.includes(url) ? "↩" : "×"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* New uploads */}
+                  <label style={{ display: "inline-block", padding: "6px 14px", background: "var(--a-blue)", color: "#fff", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    📎 Add Gallery Images
+                    <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={e => setGalleryFiles(Array.from(e.target.files ?? []))} />
+                  </label>
+                  {galleryFiles.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <p style={{ fontSize: 10, color: "var(--a-muted)", marginBottom: 6 }}>New uploads ({galleryFiles.length}):</p>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {galleryFiles.map((f, i) => (
+                          <div key={i} style={{ position: "relative", width: 80, height: 80 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={URL.createObjectURL(f)} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, border: "2px solid #0ea5e9" }} />
+                            <button type="button" onClick={() => setGalleryFiles(prev => prev.filter((_, j) => j !== i))}
+                              style={{ position: "absolute", top: -6, right: -6, background: "#ef4444", color: "white", border: "2px solid white", borderRadius: "50%", width: 22, height: 22, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, lineHeight: 1 }}>
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

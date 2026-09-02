@@ -36,6 +36,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       copyEnabled: src.copyEnabled,
       groupTicketEnabled: src.groupTicketEnabled,
       visaEnabled: src.visaEnabled,
+      // V2 fields — all copied
+      cardVersion: src.cardVersion,
+      flightType: src.flightType,
+      luggage: src.luggage,
+      transportType: src.transportType,
+      totalSeats: src.totalSeats,
+      makkahHotel: src.makkahHotel,
+      makkahHotelDistance: src.makkahHotelDistance,
+      makkahHotelNights: src.makkahHotelNights,
+      makkahHotelImg: src.makkahHotelImg,
+      madinahHotel: src.madinahHotel,
+      madinahHotelDistance: src.madinahHotelDistance,
+      madinahHotelNights: src.madinahHotelNights,
+      madinahHotelImg: src.madinahHotelImg,
       roomTypes: {
         create: src.roomTypes.map(({ id: _rid, packageId: _pid, ...rt }) => {
           void _rid; void _pid;
