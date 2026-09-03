@@ -113,7 +113,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{log.adminEmail}</td>
                   <td style={{ ...tdStyle, color: "var(--a-muted)", fontFamily: "monospace", fontSize: 11 }}>{log.target}</td>
                   <td style={tdStyle}>
-                    {meta.name && <span style={{ fontWeight: 600 }}>{String(meta.name)}</span>}
+                    {meta.name && <span style={{ fontWeight: 600 }}>{String(meta.name as string)}</span>}
                     {meta.changedFields && (
                       <span style={{ color: "var(--a-muted)", fontSize: 10 }}> · {(meta.changedFields as string[]).join(", ")}</span>
                     )}
