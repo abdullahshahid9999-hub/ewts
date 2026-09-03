@@ -62,7 +62,7 @@ export default function AgentNotificationBell() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label="Notifications"
-        style={{ position: "relative", width: 34, height: 34, borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--white)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}
+        style={{ position: "relative", width: 34, height: 34, borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, cursor: "pointer" }}
       >
         🔔
         {unreadCount > 0 && (

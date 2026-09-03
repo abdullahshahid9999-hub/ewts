@@ -23,23 +23,25 @@ export default function AgentTopbar({
 }) {
   const { agent, subUser, logout } = useAgentAuth();
   const pathname = usePathname();
-  const balance = agent ? Number(agent.balance ?? 0) : 0;
 
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(href + "/");
   }
 
+  const agentName  = agent?.fullName ?? "Agent";
+  const agentEmail = agent?.email ?? "";
+  const agentLogo  = agent?.logoUrl ?? null;
+
   return (
     <div className="ap-tbar">
-      {/* ── Left: Logo + nav links (desktop) ── */}
+
+      {/* ── LEFT: E&W logo + nav links ── */}
       <div className="ap-tbar-left">
-        {/* Logo */}
-        <Link href="/agent/dashboard" className="ap-tbar-logo" aria-label="Dashboard">
+        <Link href="/agent/dashboard" className="ap-tbar-logo" aria-label="Home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="East & West" height={34} style={{ objectFit: "contain", display: "block" }} />
+          <img src="/logo.png" alt="East & West" className="ap-tbar-logo-img" />
         </Link>
 
-        {/* Desktop nav links */}
         <nav className="ap-tbar-nav">
           {NAV_LINKS.map((l) => (
             <Link
@@ -53,42 +55,40 @@ export default function AgentTopbar({
         </nav>
       </div>
 
-      {/* ── Right: sub-user badge, balance, bell, dark toggle, sign-out ── */}
+      {/* ── RIGHT: agent chip + bell + dark toggle ── */}
       <div className="ap-tbar-right">
+
+        {/* Sub-user badge */}
         {subUser && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 11,
-              padding: "3px 10px",
-              borderRadius: 20,
-              background: "rgba(184,142,62,0.12)",
-              border: "1px solid rgba(184,142,62,0.3)",
-              color: "#9C7E3A",
-              maxWidth: 180,
-              overflow: "hidden",
-            }}
-          >
-            <span style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {subUser.fullName}
-            </span>
-            {subUser.designation && (
-              <span style={{ opacity: 0.7, whiteSpace: "nowrap" }}>· {subUser.designation}</span>
-            )}
+          <div className="ap-tbar-subuser">
+            <span>{subUser.fullName}</span>
+            {subUser.designation && <span className="ap-tbar-subuser-desg">· {subUser.designation}</span>}
           </div>
         )}
 
-        <div className="ap-tbar-bal">
-          <span className="ap-tbar-bal-label">Balance</span>
-          <span className={`ap-tbar-bal-amt${balance < 0 ? " neg" : ""}`}>
-            {balance < 0 ? "-" : ""}PKR {Math.abs(balance).toLocaleString()}
-          </span>
+        {/* Agent identity chip — matches Abid Air right-side chip exactly */}
+        <div className="ap-tbar-agent-chip">
+          <div className="ap-tbar-agent-avatar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={agentLogo || "/avatar.png"}
+              alt={agentName}
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+            />
+          </div>
+          <div className="ap-tbar-agent-info">
+            <span className="ap-tbar-agent-name">{agentName}</span>
+            <span className="ap-tbar-agent-email">{agentEmail}</span>
+          </div>
+          <svg className="ap-tbar-agent-caret" width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
 
+        {/* Notification bell */}
         <AgentNotificationBell />
 
+        {/* Dark mode toggle */}
         {onToggleDark && (
           <button
             className={`ap-dark-toggle${dark ? " on" : ""}`}
@@ -98,16 +98,13 @@ export default function AgentTopbar({
           />
         )}
 
+        {/* Sign out */}
         <button onClick={logout} className="ap-tbar-signout">
           Sign Out
         </button>
 
         {/* Hamburger — mobile only */}
-        <button
-          onClick={onMenuToggle}
-          className="ap-tbar-hamburger"
-          aria-label="Toggle menu"
-        >
+        <button onClick={onMenuToggle} className="ap-tbar-hamburger" aria-label="Toggle menu">
           ☰
         </button>
       </div>

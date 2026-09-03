@@ -128,38 +128,44 @@
 }
 .ap-sb-out:hover { border-color: #F87171; color: #F87171; }
 
-/* TOPBAR */
+/* ══════════════════════════════════════════════════════
+   TOPBAR — dark navy, exact Abid Air reference
+   ══════════════════════════════════════════════════════ */
 .ap-tbar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: #fff;
-  border-bottom: 1px solid var(--bdr);
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  background: #0A1628;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 0 20px;
+  gap: 12px;
+  padding: 0 24px;
   z-index: 90;
-  box-shadow: 0 1px 6px rgba(20, 20, 43, 0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
-/* Left side: logo + nav */
+/* ── Left: logo + nav ── */
 .ap-tbar-left {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
 }
 .ap-tbar-logo {
   display: flex;
   align-items: center;
   text-decoration: none;
-  padding-right: 12px;
-  border-right: 1px solid var(--bdr);
-  margin-right: 6px;
+  margin-right: 8px;
+}
+.ap-tbar-logo-img {
+  height: 36px;
+  width: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
 }
 .ap-tbar-nav {
   display: flex;
@@ -167,26 +173,27 @@
   gap: 2px;
 }
 .ap-tbar-navlink {
-  padding: 6px 14px;
+  padding: 7px 16px;
   border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text2);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.72);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 .ap-tbar-navlink:hover {
-  background: #f1f5f9;
-  color: var(--navy);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
 }
 .ap-tbar-navlink.active {
-  background: rgba(10, 25, 48, 0.08);
-  color: var(--navy);
+  background: #1D6CF6;
+  color: #fff;
   font-weight: 700;
 }
 
-/* Right side */
+/* ── Right ── */
 .ap-tbar-right {
   display: flex;
   align-items: center;
@@ -194,60 +201,114 @@
   flex-shrink: 0;
 }
 
-/* Hamburger — hidden on desktop */
-.ap-tbar-hamburger {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid var(--bdr);
-  background: white;
-  font-size: 14px;
-  cursor: pointer;
-}
-.ap-tbar-bal {
+/* Sub-user badge */
+.ap-tbar-subuser {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 6px 12px;
-  border-radius: 9px;
-  background: #F6F8FB;
-  border: 1px solid var(--bdr);
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(184,142,62,0.18);
+  border: 1px solid rgba(184,142,62,0.35);
+  color: #D4A843;
+  max-width: 180px;
+  overflow: hidden;
+  font-weight: 600;
 }
-.ap-tbar-bal-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-.ap-tbar-bal-amt { font-size: 14px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
-.ap-tbar-bal-amt.neg { color: #DC2626; }
+.ap-tbar-subuser-desg { opacity: 0.7; white-space: nowrap; }
 
-/* Topbar's own Sign Out — NOT .ap-sb-out (that one's colors assume the
-   dark sidebar background: translucent white text/border, invisible on
-   this white topbar). This is what was actually happening — the button
-   was always rendering, just invisible, which is why refreshing never
-   fixed it. */
+/* Agent identity chip — right side, like Abid Air */
+.ap-tbar-agent-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ap-tbar-agent-chip:hover { background: rgba(255,255,255,0.14); }
+.ap-tbar-agent-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.1);
+}
+.ap-tbar-agent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 160px;
+}
+.ap-tbar-agent-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.ap-tbar-agent-email {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.ap-tbar-agent-caret {
+  color: rgba(255,255,255,0.45);
+  flex-shrink: 0;
+}
+
+/* Sign out */
 .ap-tbar-signout {
   background: none;
-  border: 1px solid var(--bdr);
-  color: var(--text2);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.75);
   padding: 6px 14px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all .15s;
+  white-space: nowrap;
 }
 .ap-tbar-signout:hover { border-color: #F87171; color: #F87171; }
-.ap-dark .ap-tbar-signout { border-color: var(--bdr); color: var(--text2); }
 
-/* Topbar's dark-mode toggle — same fix: the base .ap-dark-toggle track/
-   knob colors also assumed a dark background (translucent-white track,
-   solid-white knob), nearly invisible on the white topbar. */
-.ap-tbar .ap-dark-toggle { background: var(--bdr); }
-.ap-tbar .ap-dark-toggle::after { background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+/* Notification bell — white icon on dark bg */
+.ap-tbar .ap-nbell-btn { color: rgba(255,255,255,0.75); }
+.ap-tbar .ap-nbell-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Dark toggle on dark topbar */
+.ap-tbar .ap-dark-toggle { background: rgba(255,255,255,0.2); }
+.ap-tbar .ap-dark-toggle::after { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 .ap-tbar .ap-dark-toggle.on { background: var(--gold); }
 
-/* MAIN — sidebar is mobile-only now, no left margin needed on desktop */
-.ap-main { margin-left: 0; flex: 1; padding: 80px 28px 24px; min-height: 100vh; max-width: 1200px; margin-right: auto; }
+/* Hamburger — hidden on desktop, shown on mobile */
+.ap-tbar-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* MAIN — full width, topbar is 64px */
+.ap-main { margin-left: 0; flex: 1; padding: 84px 32px 32px; min-height: 100vh; max-width: 1280px; margin-left: auto; margin-right: auto; }
 
 /* PAGE HEADER */
 .ap-ph {
@@ -379,10 +440,13 @@
 
 @media (max-width: 900px) {
   .ap-sb.open { transform: translateX(0); }
-  .ap-main { margin-left: 0; padding: 72px 16px 16px; }
-  .ap-tbar { padding: 0 12px; gap: 6px; }
+  .ap-main { margin-left: 0; padding: 76px 16px 16px; }
+  .ap-tbar { padding: 0 14px; gap: 6px; }
   .ap-tbar-nav { display: none; }
-  .ap-tbar-logo { border-right: none; padding-right: 0; margin-right: 0; }
+  .ap-tbar-agent-info { display: none; }
+  .ap-tbar-agent-caret { display: none; }
+  .ap-tbar-agent-chip { padding: 4px; background: transparent; border-color: transparent; }
+  .ap-tbar-signout { display: none; }
   .ap-tbar-hamburger { display: flex; }
   .ap-sg { grid-template-columns: 1fr 1fr; }
 }
@@ -423,12 +487,8 @@
 .ap-dark .ap-table tbody tr:hover { background: var(--surface); }
 .ap-dark .ap-table td, .ap-dark .ap-table th { border-color: var(--bdr); }
 .ap-dark .ap-tw { background: var(--white); }
-.ap-dark .ap-tbar { background: var(--white); border-color: var(--bdr); }
-.ap-dark .ap-tbar-navlink { color: var(--text2); }
-.ap-dark .ap-tbar-navlink:hover { background: var(--surface); color: var(--text); }
-.ap-dark .ap-tbar-navlink.active { background: var(--surface2); color: var(--text); }
-.ap-dark .ap-tbar-logo { border-color: var(--bdr); }
-.ap-dark .ap-tbar-hamburger { background: var(--white); border-color: var(--bdr); color: var(--text); }
+/* Topbar is always dark navy — dark mode changes nothing here */
+.ap-dark .ap-tbar { background: #060E1A; border-color: rgba(255,255,255,0.06); }
 .ap-dark .ap-field input, .ap-dark .ap-field select, .ap-dark .ap-field textarea { background: var(--surface); color: var(--text); border-color: var(--bdr); }
 .ap-dark .ap-btn { color: var(--text); }
 .ap-dark .ap-btn-ghost { border-color: var(--bdr); }
