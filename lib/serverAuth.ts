@@ -8,7 +8,7 @@ export async function requireAdminPage() {
   if (!token) redirect("/admin/login");
   try {
     const payload = verifyAccessToken(token);
-    if (payload.role !== "admin") redirect("/admin/login");
+    if (!payload || payload.role !== "admin") redirect("/admin/login");
     return payload;
   } catch {
     redirect("/admin/login");
