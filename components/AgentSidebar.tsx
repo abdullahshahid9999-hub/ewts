@@ -77,11 +77,14 @@ export default function AgentSidebar({ open, onClose, dark, onToggleDark }: { op
         <div className="ap-sb-brand-txt">East &amp; <span>West</span></div>
       </div>
       <div className="ap-sb-agent">
-        {agent?.logoUrl && (
-          <div style={{ padding: "10px 18px 4px", display: "flex", justifyContent: "center" }}>
-            <img src={agent.logoUrl} alt="Agency Logo" style={{ maxHeight: 64, maxWidth: 140, objectFit: "contain", borderRadius: 8, background: "rgba(255,255,255,0.1)", padding: "4px 10px" }} />
-          </div>
-        )}
+        <div style={{ padding: "10px 18px 4px", display: "flex", justifyContent: "center" }}>
+          {/* Show agent's own logo if they have one, otherwise show E&W logo */}
+          <img
+            src={agent?.logoUrl || "/logo.png"}
+            alt={agent?.logoUrl ? "Agency Logo" : "East & West Travel"}
+            style={{ maxHeight: 64, maxWidth: 140, objectFit: "contain", borderRadius: 8, background: "rgba(255,255,255,0.1)", padding: "4px 10px" }}
+          />
+        </div>
         <div className="ap-sb-agent-name">{agent?.fullName ?? "Loading…"}</div>
         <div className="ap-sb-agent-meta">
           <span className="ap-sb-agent-code">{agent?.agentCode ?? "—"}</span>
