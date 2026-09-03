@@ -683,3 +683,35 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action  ON admin_audit_logs (action);
 5. **lib/rateLimit.ts** — restored + added `getClientIp` export
 
 **Reminder:** Revoke GitHub token after this session.
+
+---
+## Session — 2026-09-03
+
+### Agent portal: horizontal topbar nav + logo fallback (commit a1f5262)
+
+**Reference:** Abid Air Travel dashboard design (blue topbar, logo left, nav links, right-side utilities)
+
+**1. AgentTopbar rewrite** (`components/AgentTopbar.tsx`)
+- Logo (`/logo.png`) on the far left, separated by a vertical border
+- 4 nav links: Dashboard | New Booking | My Bookings | Finance
+- Active link: darker bg + bold; hover: light gray bg
+- Right side unchanged: sub-user badge, balance pill, notification bell, dark toggle, Sign Out
+- Hamburger button (☰) added — hidden on desktop (`>900px`), visible on mobile — opens the sidebar drawer
+
+**2. Sidebar logo fallback** (`components/AgentSidebar.tsx`)
+- Previously: logo `<img>` only rendered if `agent.logoUrl` existed — nothing shown for agents without a custom logo
+- Now: always renders; shows agent's custom logo if available, otherwise shows `/logo.png` (East & West logo)
+
+**3. CSS updates** (`app/agent/portal.css`)
+- `.ap-tbar`: now spans full width (`left: 0`), height 60px, `justify-content: space-between`
+- New classes: `.ap-tbar-left`, `.ap-tbar-right`, `.ap-tbar-nav`, `.ap-tbar-navlink`, `.ap-tbar-logo`, `.ap-tbar-hamburger`
+- `.ap-sb`: always starts as hidden (`transform: translateX(-100%)`) — desktop no longer shows sidebar; only `.open` class reveals it on mobile
+- `.ap-main`: `margin-left: 0`, max-width 1200px, centered — content now fills full width on desktop
+- `@media (max-width: 900px)`: hides nav links, shows hamburger, sidebar opens on `.open`
+- Dark mode overrides added for all new classes
+
+### No SQL needed. No schema changes.
+
+### Pending (owner action)
+- None — Render auto-deploys on push.
+- **Revoke GitHub token after this session.**
