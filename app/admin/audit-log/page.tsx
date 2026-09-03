@@ -96,6 +96,8 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
               const { label, color } = actionStyle(log.action);
               let meta: Record<string, unknown> = {};
               try { meta = JSON.parse(log.meta ?? "{}"); } catch { /* ignore */ }
+              const metaName = typeof meta.name === "string" ? meta.name : undefined;
+              const metaFields = Array.isArray(meta.changedFields) ? (meta.changedFields as string[]).join(", ") : undefined;
               return (
                 <tr key={log.id} style={{ transition: "background 0.1s" }}>
                   <td style={{ ...tdStyle, color: "var(--a-muted)", whiteSpace: "nowrap" }}>
@@ -113,9 +115,9 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
                   <td style={{ ...tdStyle, fontWeight: 600 }}>{log.adminEmail}</td>
                   <td style={{ ...tdStyle, color: "var(--a-muted)", fontFamily: "monospace", fontSize: 11 }}>{log.target}</td>
                   <td style={tdStyle}>
-                    {meta.name && <span style={{ fontWeight: 600 }}>{String(meta.name as string)}</span>}
-                    {meta.changedFields && (
-                      <span style={{ color: "var(--a-muted)", fontSize: 10 }}> · {(meta.changedFields as string[]).join(", ")}</span>
+                    {metaName && <span style={{ fontWeight: 600 }}>{metaName}</span>}
+                    {metaFields && (
+                      <span style={{ color: "var(--a-muted)", fontSize: 10 }}> · {metaFields}</span>
                     )}
                   </td>
                   <td style={{ ...tdStyle, color: "var(--a-muted)", fontSize: 10, fontFamily: "monospace" }}>{log.ip ?? "—"}</td>
