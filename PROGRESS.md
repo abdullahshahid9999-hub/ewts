@@ -715,3 +715,30 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_action  ON admin_audit_logs (action);
 ### Pending (owner action)
 - None — Render auto-deploys on push.
 - **Revoke GitHub token after this session.**
+
+---
+## Session — 2026-09-04
+
+### Topbar dark navy redesign — exact Abid Air reference (commit d4efbf5)
+
+**Files changed:** `components/AgentTopbar.tsx`, `components/AgentNotificationBell.tsx`, `app/agent/portal.css`, `public/avatar.png` (new)
+
+**Topbar:**
+- Background: `#0A1628` dark navy (matches reference exactly)
+- Height: 64px, `box-shadow: 0 2px 12px rgba(0,0,0,0.25)`
+- Left: circular E&W logo (36px, white border) → nav links in white rgba text
+- Active nav link: solid blue pill `#1D6CF6`
+- Hover: `rgba(255,255,255,0.1)` bg
+
+**Agent chip (right side):**
+- Shows agent `logoUrl` if exists, else `/avatar.png` (businessman fallback)
+- Name (bold white) + email (muted white) + caret icon
+- Semi-transparent white border/bg chip
+
+**Bell button:** border/bg updated to white-rgba for dark bg visibility
+
+**Mobile (<900px):** nav links hidden, agent chip shows avatar only, sign out hidden, hamburger shown
+
+**No SQL needed. No schema changes.**
+
+**Reminder:** Revoke GitHub token after session.
