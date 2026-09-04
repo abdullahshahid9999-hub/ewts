@@ -552,15 +552,15 @@
 /* ── Hero banner ── */
 .db-hero {
   position: relative;
-  background: linear-gradient(135deg, #1547c0 0%, #1a56db 40%, #3b82f6 100%);
+  background: linear-gradient(135deg, #1263e8 0%, #1a56db 50%, #4d8ef0 100%);
   border-radius: 0;
   margin: 0;
-  padding: 88px 40px 80px;
-  overflow: hidden;
-  min-height: 260px;
+  padding: 80px 48px 68px;
+  min-height: 210px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  overflow: hidden;
 }
 .db-hero-live {
   display: inline-flex;
@@ -593,13 +593,12 @@
 }
 .db-hero-plane {
   position: absolute;
-  top: 20px; right: 24px;
-  width: 60px; height: 60px;
+  top: 24px; right: 32px;
+  width: 72px; height: 72px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
-  border: 1.5px solid rgba(255,255,255,0.25);
+  border: 1.5px solid rgba(255,255,255,0.3);
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
 }
 .db-hero-cta {
   position: absolute;
@@ -618,19 +617,19 @@
 .db-status-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: -48px;
-  margin-bottom: 24px;
+  gap: 20px;
+  margin-top: -52px;
+  margin-bottom: 32px;
   position: relative;
   z-index: 2;
-  padding: 0 32px;
+  padding: 0 48px;
 }
 .db-status-card {
   background: #fff;
-  border-radius: 18px;
-  padding: 22px 22px 18px;
-  border: none;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+  border-radius: 16px;
+  padding: 24px 24px 20px;
+  border: 1px solid #e8edf3;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .db-status-top {
   display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;
@@ -659,8 +658,8 @@
 .db-status-bar-fill--red    { background: #ef4444; }
 
 /* ── Agent identity card ── */
-.db-content-wrap { padding: 0 32px; }
-@media (max-width: 700px) { .db-content-wrap { padding: 0 16px; } }
+.db-content-wrap { padding: 0 48px 48px; }
+@media (max-width: 700px) { .db-content-wrap { padding: 0 16px 32px; } }
 .db-identity {
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   background: #fff; border: 1.5px solid #e8edf3; border-radius: 18px;
@@ -694,7 +693,13 @@
 .db-stat-label { font-size: 10.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
 
 /* ── Explore + Special row ── */
-.db-explore-row { display: grid; grid-template-columns: 1fr 380px; gap: 24px; margin-bottom: 24px; align-items: start; }
+.db-explore-row {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  margin-bottom: 0;
+  align-items: start;
+}
 .db-section-tag { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .db-section-tag-icon { font-size: 14px; }
 .db-section-tag-text { font-size: 11px; font-weight: 800; color: #6d28d9; letter-spacing: .1em; text-transform: uppercase; }
@@ -703,9 +708,13 @@
 /* Destination cards */
 .db-dest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .db-dest-card {
-  position: relative; border-radius: 16px; overflow: hidden;
-  aspect-ratio: 4/3; display: block; text-decoration: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 220px;
+  display: block;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 .db-dest-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
 .db-dest-card:hover .db-dest-img { transform: scale(1.04); }
