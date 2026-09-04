@@ -117,7 +117,9 @@ function DashboardInner() {
         </div>
 
         {/* Airplane icon circle — top right of banner */}
-        <div className="db-hero-plane">✈️</div>
+        <div className="db-hero-plane">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white" opacity="0.9"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+        </div>
 
         {/* Contact button */}
         <a href="https://wa.me/923336515349" target="_blank" rel="noopener noreferrer" className="db-hero-cta">
@@ -136,7 +138,9 @@ function DashboardInner() {
               <div className="db-status-num">{loadingSummary ? "—" : statusCounts.confirmed}</div>
               <div className="db-status-label">CONFIRMED BOOKINGS</div>
             </div>
-            <div className="db-status-icon db-status-icon--green">✓</div>
+            <div className="db-status-icon db-status-icon--green">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 10 8 14 16 6"/></svg>
+            </div>
           </div>
           <div className="db-status-prog-row">
             <span>Progress</span>
@@ -152,7 +156,9 @@ function DashboardInner() {
               <div className="db-status-num">{loadingSummary ? "—" : statusCounts.on_hold}</div>
               <div className="db-status-label">ON HOLD BOOKINGS</div>
             </div>
-            <div className="db-status-icon db-status-icon--yellow">◷</div>
+            <div className="db-status-icon db-status-icon--yellow">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="10" cy="10" r="7"/><polyline points="10 6 10 10 13 12" strokeLinecap="round"/></svg>
+            </div>
           </div>
           <div className="db-status-prog-row">
             <span>Progress</span>
@@ -168,7 +174,9 @@ function DashboardInner() {
               <div className="db-status-num">{loadingSummary ? "—" : statusCounts.cancelled}</div>
               <div className="db-status-label">CANCELLED BOOKINGS</div>
             </div>
-            <div className="db-status-icon db-status-icon--red">✕</div>
+            <div className="db-status-icon db-status-icon--red">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/></svg>
+            </div>
           </div>
           <div className="db-status-prog-row">
             <span>Progress</span>
@@ -238,7 +246,7 @@ function DashboardInner() {
         {/* LEFT: Popular Destinations */}
         <div className="db-explore-col">
           <div className="db-section-tag">
-            <span className="db-section-tag-icon">🌐</span>
+            <svg className="db-section-tag-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="2.83" y2="8"/><line x1="21.17" y1="16" x2="2.83" y2="16"/></svg>
             <span className="db-section-tag-text">EXPLORE</span>
           </div>
           <h2 className="db-section-title">Popular Destinations</h2>
@@ -247,7 +255,7 @@ function DashboardInner() {
             <Link href="/agent/group-flights" className="db-dest-card">
               <img src="/office-photo-1.jpeg" alt="All Groups" className="db-dest-img" />
               <div className="db-dest-overlay">
-                <span className="db-dest-chip">✈ All routes</span>
+                <span className="db-dest-chip"><svg style={{display:"inline",marginRight:4,verticalAlign:"middle"}} width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>All routes</span>
                 <div className="db-dest-arrow">↗</div>
               </div>
               <div className="db-dest-label">All Groups</div>
@@ -256,7 +264,7 @@ function DashboardInner() {
             <Link href="/agent/umrah" className="db-dest-card">
               <img src="/hotel-makarem-1.jpeg" alt="Umrah Packages" className="db-dest-img" />
               <div className="db-dest-overlay">
-                <span className="db-dest-chip">📦 Packages</span>
+                <span className="db-dest-chip"><svg style={{display:"inline",marginRight:4,verticalAlign:"middle"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 1 4 0"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/></svg>Packages</span>
                 <div className="db-dest-arrow">↗</div>
               </div>
               <div className="db-dest-label">Umrah Packages</div>
@@ -267,7 +275,7 @@ function DashboardInner() {
         {/* RIGHT: Exclusive Deals */}
         <div className="db-special-col">
           <div className="db-section-tag">
-            <span className="db-section-tag-icon" style={{ color: "#e11d78" }}>🎁</span>
+            <svg className="db-section-tag-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e11d78" strokeWidth="2.5"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M9 4a2 2 0 0 1 3 3v1H9V4z"/><path d="M15 4a2 2 0 0 0-3 3v1h3V4z"/><line x1="3" y1="8" x2="21" y2="8"/></svg>
             <span className="db-section-tag-text" style={{ color: "#e11d78" }}>SPECIAL</span>
           </div>
           <h2 className="db-section-title">Exclusive Deals</h2>
