@@ -555,9 +555,9 @@
   background: linear-gradient(135deg, #1547c0 0%, #1a56db 40%, #3b82f6 100%);
   border-radius: 0;
   margin: 0;
-  padding: 64px 40px 72px;
+  padding: 88px 40px 80px;
   overflow: hidden;
-  min-height: 200px;
+  min-height: 260px;
   display: flex;
   flex-direction: column;
   gap: 8px;
