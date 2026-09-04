@@ -186,6 +186,9 @@ function DashboardInner() {
         </div>
       </div>
 
+      {/* ══ padded content below hero ══ */}
+      <div className="db-content-wrap">
+
       {/* ══════════════════════════════════════════════
           AGENT IDENTITY CARD
           ══════════════════════════════════════════════ */}
@@ -346,6 +349,7 @@ function DashboardInner() {
           ))}
         </div>
       </div>
+    </div>{/* end db-content-wrap */}
     </>
   );
 }

@@ -307,8 +307,8 @@
   cursor: pointer;
 }
 
-/* MAIN — full width, topbar is 64px */
-.ap-main { margin-left: 0; flex: 1; padding: 84px 32px 32px; min-height: 100vh; max-width: 1400px; margin-left: auto; margin-right: auto; overflow-x: hidden; }
+/* MAIN — zero padding so hero bleeds full width */
+.ap-main { margin-left: 0; flex: 1; padding: 64px 0 0; min-height: 100vh; overflow-x: hidden; }
 
 /* PAGE HEADER */
 .ap-ph {
@@ -554,13 +554,10 @@
   position: relative;
   background: linear-gradient(135deg, #1547c0 0%, #1a56db 40%, #3b82f6 100%);
   border-radius: 0;
-  margin-top: -84px;
-  margin-left: -32px;
-  margin-right: -32px;
-  padding: 104px 40px 72px;
-  margin-bottom: 0;
+  margin: 0;
+  padding: 36px 40px 72px;
   overflow: hidden;
-  min-height: 220px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -622,18 +619,18 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  margin-top: -44px;
+  margin-top: -48px;
   margin-bottom: 24px;
   position: relative;
   z-index: 2;
-  padding: 0 8px;
+  padding: 0 32px;
 }
 .db-status-card {
   background: #fff;
   border-radius: 18px;
   padding: 22px 22px 18px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+  border: none;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.09);
 }
 .db-status-top {
   display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;
@@ -662,6 +659,8 @@
 .db-status-bar-fill--red    { background: #ef4444; }
 
 /* ── Agent identity card ── */
+.db-content-wrap { padding: 0 32px; }
+@media (max-width: 700px) { .db-content-wrap { padding: 0 16px; } }
 .db-identity {
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   background: #fff; border: 1.5px solid #e8edf3; border-radius: 18px;
@@ -793,9 +792,9 @@
 
 /* ── Mobile responsive ── */
 @media (max-width: 700px) {
-  .db-hero { padding: 76px 18px 64px; min-height: 180px; margin-left: -16px; margin-right: -16px; margin-top: -76px; }
+  .db-hero { padding: 28px 18px 64px; min-height: 180px; margin: 0; }
   .db-hero-greeting h1 { font-size: 22px; }
-  .db-status-row { grid-template-columns: 1fr; margin-top: -36px; padding: 0 2px; }
+  .db-status-row { grid-template-columns: 1fr; margin-top: -36px; padding: 0 16px; }
   .db-stats-row  { grid-template-columns: 1fr 1fr; }
   .db-explore-row { grid-template-columns: 1fr; }
   .db-dest-grid { grid-template-columns: 1fr; }
