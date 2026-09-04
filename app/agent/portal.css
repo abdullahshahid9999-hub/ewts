@@ -602,7 +602,7 @@
 }
 .db-hero-cta {
   position: absolute;
-  bottom: 20px; right: 24px;
+  bottom: 20px; right: 48px;
   display: inline-flex; align-items: center; gap: 7px;
   background: #25D366; color: #fff;
   font-weight: 700; font-size: 13px;
