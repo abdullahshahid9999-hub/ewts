@@ -176,7 +176,7 @@ function DashboardInner() {
             </Link>
             {/* Umrah Packages card */}
             <Link href="/agent/umrah" className="db-dest-card">
-              <img src="/images/makarem_1.jpeg" alt="Umrah Packages" className="db-dest-img" />
+              <img src="/images/umrah-bg.png" alt="Umrah Packages" className="db-dest-img" />
               <div className="db-dest-overlay">
                 <span className="db-dest-chip"><svg style={{display:"inline",marginRight:4,verticalAlign:"middle"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 1 4 0"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/></svg>Packages</span>
                 <div className="db-dest-arrow">↗</div>

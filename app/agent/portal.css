@@ -552,7 +552,7 @@
 /* ── Hero banner ── */
 .db-hero {
   position: relative;
-  background: linear-gradient(135deg, #1263e8 0%, #1a56db 50%, #4d8ef0 100%);
+  background: linear-gradient(135deg, #0060b0 0%, #0080DC 50%, #2fa0f0 100%);
   border-radius: 0;
   margin: 0;
   padding: 80px 48px 68px;
@@ -602,7 +602,7 @@
 }
 .db-hero-cta {
   position: absolute;
-  bottom: 20px; right: 48px;
+  bottom: 24px; left: 48px;
   display: inline-flex; align-items: center; gap: 7px;
   background: #25D366; color: #fff;
   font-weight: 700; font-size: 13px;
