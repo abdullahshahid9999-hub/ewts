@@ -167,7 +167,7 @@ function DashboardInner() {
           <div className="db-dest-grid">
             {/* All Groups card */}
             <Link href="/agent/group-flights" className="db-dest-card">
-              <img src="/allgroups-bg.jpg" alt="All Groups" className="db-dest-img" />
+              <img src="/images/allgroups-bg.jpg" alt="All Groups" className="db-dest-img" />
               <div className="db-dest-overlay">
                 <span className="db-dest-chip"><svg style={{display:"inline",marginRight:4,verticalAlign:"middle"}} width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>All routes</span>
                 <div className="db-dest-arrow">↗</div>
@@ -176,7 +176,7 @@ function DashboardInner() {
             </Link>
             {/* Umrah Packages card */}
             <Link href="/agent/umrah" className="db-dest-card">
-              <img src="/umrah-bg.png" alt="Umrah Packages" className="db-dest-img" />
+              <img src="/images/makarem_1.jpeg" alt="Umrah Packages" className="db-dest-img" />
               <div className="db-dest-overlay">
                 <span className="db-dest-chip"><svg style={{display:"inline",marginRight:4,verticalAlign:"middle"}} width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 1 4 0"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/></svg>Packages</span>
                 <div className="db-dest-arrow">↗</div>
